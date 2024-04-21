@@ -8,6 +8,7 @@ import com.example.learning_api.model.OauthProperties;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -44,10 +45,7 @@ public class DemoController {
         return new ResponseEntity("Hello from user only url", HttpStatus.OK);
     }
 
-    @GetMapping("/oauth2/user-info")
-    public Object home(@AuthenticationPrincipal OAuth2User principal) {
-        return  principal.getAttributes();
-    }
+
 
 
 }

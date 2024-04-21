@@ -57,7 +57,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
 
                 .authorizeRequests(authorizeRequests -> authorizeRequests
-                        .requestMatchers("/login/oauth2/code/google", "/api/auth/user/**", "/oauth2/**").permitAll()
+                        .requestMatchers("/login/oauth2/code/google", "/auth/**").permitAll()
                         .requestMatchers("/admin/**").hasAnyAuthority(RoleEnum.ADMIN.name()) // Added "ROLE_" prefix
                         .requestMatchers("/user/**").hasAnyAuthority(RoleEnum.USER.name()) // Added "ROLE_" prefix
                         .anyRequest().authenticated()

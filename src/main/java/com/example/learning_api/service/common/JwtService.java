@@ -7,7 +7,6 @@ import com.example.learning_api.config.JwtProperties;
 import com.example.learning_api.entity.sql.database.UserEntity;
 import com.example.learning_api.enums.RoleEnum;
 import com.example.learning_api.repository.database.UserRepository;
-import com.example.learning_api.secutiry.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,14 +46,7 @@ public class JwtService {
                 .sign(Algorithm.HMAC256(properties.getRefreshTokenKey()));
     }
 
-    public UserPrincipal convert(DecodedJWT jwt) {
-        return UserPrincipal.builder()
-                .userId(jwt.getSubject())
-                .username(jwt.getClaim(EMAIL_CLAIM_KEY).asString())
-                .authorities(extractAuthoritiesFromClaim(jwt))
-                .build();
-
-    }
+    
     public boolean isValid(String token, UserDetails user) {
         var jwt = extractUsername(token);
         var temp = user.getUsername();
