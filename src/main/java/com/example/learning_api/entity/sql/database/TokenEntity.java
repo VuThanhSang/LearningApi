@@ -2,21 +2,26 @@ package com.example.learning_api.entity.sql.database;
 
 
 import jakarta.persistence.Id;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Date;
 
 @Data
+@Builder
 @NoArgsConstructor
-@Document(collection = "user_tokens")
-public class UserTokenEntity {
+@AllArgsConstructor
+@Document(collection = "token")
+public class TokenEntity {
     @Id
     private String id;
-    private String userId;
+    @DBRef
+    private UserEntity user;
     private String token;
-    private Date expiresAt;
-    private Date createdAt;
-    private Date updatedAt;
+
+    private boolean loggedOut;
 }
