@@ -1,12 +1,14 @@
 package com.example.learning_api.controller;
 
 
+import com.example.learning_api.constant.ErrorConstant;
 import com.example.learning_api.constant.StatusCode;
 import com.example.learning_api.constant.SuccessConstant;
-import com.example.learning_api.dto.request.LoginUserRequest;
-import com.example.learning_api.dto.request.RegisterUserRequest;
+import com.example.learning_api.dto.request.*;
 import com.example.learning_api.dto.response.LoginResponse;
+import com.example.learning_api.dto.response.RefreshTokenResponse;
 import com.example.learning_api.dto.response.RegisterResponse;
+import com.example.learning_api.model.CustomException;
 import com.example.learning_api.model.ResponseAPI;
 import com.example.learning_api.service.core.IUserAuthService;
 import com.example.learning_api.utils.CookieUtils;
@@ -60,9 +62,22 @@ public class UserAuthController {
         return new ResponseEntity<>(res, headers, StatusCode.CREATED);
     }
 
-    @GetMapping("/test")
-    public String test() {
-        return "Hello World";
+    @Operation(summary = USER_AUTH_REFRESH_SUM)
+    @GetMapping(USER_AUTH_REFRESH_PATH)
+    public ResponseEntity<ResponseAPI<RefreshTokenResponse>> refreshToken(@CookieValue(name = "refreshToken", required = false) String refreshToken) {
+        if (refreshToken == null) {
+            throw new CustomException(ErrorConstant.UNAUTHORIZED, "Token is null");
+        }
+        RefreshTokenResponse data = userAuthService.refreshToken(refreshToken);
+
+        ResponseAPI<RefreshTokenResponse> res = ResponseAPI.<RefreshTokenResponse>builder()
+                .timestamp(new Date())
+                .data(data)
+                .message(SuccessConstant.GET)
+                .build();
+
+        HttpHeaders headers = CookieUtils.setRefreshTokenCookie(data.getRefreshToken(), 604800L);
+        return new ResponseEntity<>(res, headers, StatusCode.OK);
     }
 
     @Operation(summary = USER_AUTH_LOGIN_SUM)
@@ -79,6 +94,90 @@ public class UserAuthController {
         HttpHeaders headers = CookieUtils.setRefreshTokenCookie(data.getRefreshToken(), 604800L);
         return new ResponseEntity<>(res, headers, StatusCode.OK);
 
+    }
+    @Operation(summary = USER_AUTH_GOOGLE_LOGIN_SUM)
+    @GetMapping(USER_AUTH_GOOGLE_LOGIN_PATH)
+    public ResponseEntity<ResponseAPI<LoginResponse>> googleAuth(@AuthenticationPrincipal OAuth2User principal) {
+
+        LoginResponse data = userAuthService.loginGoogleUser(principal);
+        ResponseAPI<LoginResponse> res = ResponseAPI.<LoginResponse>builder()
+                .timestamp(new Date())
+                .success(true)
+                .message(SuccessConstant.LOGIN)
+                .data(data)
+                .build();
+        HttpHeaders headers = CookieUtils.setRefreshTokenCookie(data.getRefreshToken(), 604800L);
+        return new ResponseEntity<>(res, headers, StatusCode.OK);
+    }
+
+    @Operation(summary = USER_AUTH_LOGOUT_SUM)
+    @GetMapping(USER_AUTH_LOGOUT_PATH)
+    public ResponseEntity<ResponseAPI<?>> logoutUser(@CookieValue(name = "refreshToken", required = false) String refreshToken
+                                                     ) {
+
+        if (refreshToken == null) {
+            throw new CustomException(ErrorConstant.NOT_FOUND);
+        }
+
+        ResponseAPI<?> res = ResponseAPI.builder()
+                .timestamp(new Date())
+                .message(SuccessConstant.LOGOUT)
+                .build();
+
+        HttpHeaders headers = CookieUtils.setRefreshTokenCookie("", 0L);
+        return new ResponseEntity<>(res, headers, StatusCode.OK);
+    }
+
+
+    @Operation(summary = USER_AUTH_SEND_CODE_TO_EMAIL_TO_REGISTER_SUM)
+    @PostMapping(POST_USER_AUTH_SEND_CODE_TO_REGISTER_SUB_PATH)
+    public ResponseEntity<ResponseAPI<?>> sendCodeToRegister(@RequestBody @Valid SendCodeRequest body) {
+        userAuthService.sendCodeToRegister(body.getEmail());
+        ResponseAPI<?> res = ResponseAPI.builder()
+                .timestamp(new Date())
+                .message(SuccessConstant.SEND_CODE_TO_EMAIL)
+                .build();
+        return new ResponseEntity<>(res, StatusCode.OK);
+
+    }
+
+    @Operation(summary = USER_AUTH_SEND_CODE_TO_EMAIL_TO_GET_PWD_SUM)
+    @PostMapping(POST_USER_AUTH_SEND_CODE_TO_GET_PWD_SUB_PATH)
+    public ResponseEntity<ResponseAPI<?>> sendCodeToGetPassword(@RequestBody @Valid SendCodeRequest body) {
+
+        userAuthService.sendCodeToGetPassword(body.getEmail());
+        ResponseAPI<?> res = ResponseAPI.builder()
+                .timestamp(new Date())
+                .message(SuccessConstant.SEND_CODE_TO_EMAIL)
+                .build();
+        return new ResponseEntity<>(res, StatusCode.OK);
+
+    }
+
+    @Operation(summary = USER_AUTH_VERIFY_EMAIL_SUM)
+    @PostMapping(POST_USER_AUTH_VERIFY_EMAIL_SUB_PATH)
+    public ResponseEntity<ResponseAPI<?>> verifyCodeByEmail(@RequestBody @Valid VerifyEmailRequest body) {
+
+        log.debug("YOUR CODE: " + body.getCode());
+        userAuthService.verifyCodeByEmail(body.getCode(), body.getEmail());
+        ResponseAPI<?> res = ResponseAPI.builder()
+                .message(SuccessConstant.EMAIL_VERIFIED)
+                .timestamp(new Date())
+                .build();
+        return new ResponseEntity<>(res, StatusCode.OK);
+
+    }
+
+    @Operation(summary = USER_AUTH_CHANGE_PASSWORD_SUM)
+    @PatchMapping(PATCH_USER_AUTH_CHANGE_PASSWORD_SUB_PATH)
+    public ResponseEntity<ResponseAPI<?>> changePasswordForgot(@RequestBody @Valid ChangePasswordRequest body) {
+        userAuthService.changePasswordForgot(body);
+
+        ResponseAPI<?> res = ResponseAPI.builder()
+                .message(SuccessConstant.UPDATED)
+                .timestamp(new Date())
+                .build();
+        return new ResponseEntity<>(res, StatusCode.OK);
     }
 
 }

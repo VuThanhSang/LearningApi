@@ -15,4 +15,8 @@ public class SwaggerConstant {
     public static final String USER_AUTH_CONTROLLER_TITLE = "USER AUTH MANAGEMENT";
     public static final String USER_AUTH_REGISTER_SUM = "Register new user account with some information";
     public static final String USER_AUTH_REGISTER_DESC = "Register new user account with some information";
+
+    public static final String CODE_EX = "123456";
+    public static final String PASSWORD_USER_EX = "123456";
+
 }
