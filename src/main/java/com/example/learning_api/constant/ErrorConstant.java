@@ -17,4 +17,5 @@ public class ErrorConstant {
     //
     public static final String USER_TOKEN_NOT_FOUND = "User token not found: ";
     public static final String USER_NOT_FOUND = "User not found: ";
+    public static final String INTERNAL_SERVER_ERROR = "Internal server error";
 }
