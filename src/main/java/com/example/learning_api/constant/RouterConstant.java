@@ -18,7 +18,7 @@ public class RouterConstant {
     public static final String POST_USER_AUTH_SEND_CODE_TO_REGISTER_SUB_PATH = "/send-code-register";
     public static final String USER_AUTH_SEND_CODE_TO_EMAIL_TO_REGISTER_SUM = "/verify-code";
 
-    public static final String POST_USER_AUTH_SEND_CODE_TO_GET_PWD_SUB_PATH = "/send-code-get-pwd";
+    public static final String POST_AUTH_SEND_CODE_FORGOT_PWD = "/send-code-forgot-pwd";
     public static final String USER_AUTH_SEND_CODE_TO_EMAIL_TO_GET_PWD_SUM = "/send-code-get-pwd";
 
     public static final String POST_USER_AUTH_VERIFY_EMAIL_SUB_PATH = "/verify-email";

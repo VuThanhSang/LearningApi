@@ -17,7 +17,7 @@ public interface IUserAuthService {
 
     void sendCodeToRegister(String email);
 
-    void sendCodeToGetPassword(String email);
+    void sendCodeForgotPassword(String email);
 
     void verifyCodeByEmail(String code, String email);
 

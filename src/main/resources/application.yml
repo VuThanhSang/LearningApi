@@ -6,6 +6,38 @@ spring:
       uri: mongodb+srv://zimb240:0908218507zimb240@cluster0.4emxftv.mongodb.net/learningDB?retryWrites=true&w=majority
   main:
     allow-bean-definition-overriding: true
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: learningsendcode001@gmail.com
+    password: "ucnu jjxz akok rkhp"
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+    verify:
+      host: http://localhost:8080
+  kafka:
+    bootstrap-servers: http://localhost:9092
+    producer:
+      acks: -1
+      #      retries: 1
+      bootstrap-servers: http://localhost:9092
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties.[enable.idempotence]: true
+      properties.[max.in.flight.requests.per.connection]: 5
+
+    consumer:
+      #      auto-offset-reset: earliest
+      bootstrap-servers: http://localhost:9092
+      group-id: group-01
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.example.learning_api.dto.*
   security:
     oauth2:
       client:

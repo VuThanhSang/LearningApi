@@ -14,7 +14,6 @@ import com.example.learning_api.entity.sql.database.TokenEntity;
 import com.example.learning_api.entity.sql.database.UserEntity;
 import com.example.learning_api.enums.ConfirmationCodeStatus;
 import com.example.learning_api.enums.RoleEnum;
-import com.example.learning_api.kafka.publisher.MailerKafkaPublisher;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.ConfirmationRepository;
 import com.example.learning_api.repository.database.TokenRepository;
@@ -23,17 +22,23 @@ import com.example.learning_api.service.common.JwtService;
 import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.IUserAuthService;
 import com.example.learning_api.utils.GeneratorUtils;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -43,18 +48,26 @@ import java.util.List;
 import static com.example.learning_api.constant.ErrorConstant.EXISTED_DATA;
 import static com.example.learning_api.constant.ErrorConstant.UNAUTHORIZED;
 
+
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class UserAuthService implements IUserAuthService {
 
+    @Value("${spring.mail.username}")
+    private String mailFrom;
     private final ModelMapperService modelMapperService;
     private final UserRepository userRepository;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final TokenRepository tokenRepository;
     private final ConfirmationRepository confirmationRepository;
-    private final MailerKafkaPublisher mailerKafkaPublisher;
+    @Autowired
+    private final JavaMailSender javaMailSender;
     @Autowired
     @Lazy
     private PasswordEncoder passwordEncoder;
@@ -190,8 +203,6 @@ public class UserAuthService implements IUserAuthService {
             confirmationRepository.save(oldConfirmation);
         }
     }
-
-
     @Override
     public void sendCodeToRegister(String email) {
         UserEntity user = userRepository.findByEmail(email).orElse(null);
@@ -200,15 +211,39 @@ public class UserAuthService implements IUserAuthService {
         }
         String code = GeneratorUtils.generateRandomCode(6);
         createOrUpdateConfirmationInfo(email, code);
-        mailerKafkaPublisher.sendMessageToCodeEmail(new CodeEmailDto(code, email));
+        sendEmailWithCode(email, code, "Register User Code Learning App");
     }
+
     @Override
-    public void sendCodeToGetPassword(String email) {
-        userRepository.findByEmail(email)
+    public void sendCodeForgotPassword(String email) {
+        userRepository.findByEmailAndAuthType(email,"normal")
                 .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND, "User with email " + email));
         String code = GeneratorUtils.generateRandomCode(6);
         createOrUpdateConfirmationInfo(email, code);
-        mailerKafkaPublisher.sendMessageToCodeEmail(new CodeEmailDto(code, email));
+        sendEmailWithCode(email, code, "Get Password Code Learning App");
+
+    }
+    private void sendEmailWithCode(String toMail,
+                                   String body,
+                                   String subject
+                                   ) {
+        try {
+            MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+
+            MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage,true);
+
+            mimeMessageHelper.setFrom(mailFrom);
+            mimeMessageHelper.setTo(toMail);
+            mimeMessageHelper.setText(body);
+            mimeMessageHelper.setSubject(subject);
+
+
+
+            javaMailSender.send(mimeMessage);
+            System.out.println("Mail sent aith attachment to mail addresss: "+toMail);
+        } catch (MessagingException e) {
+            throw new CustomException(ErrorConstant.INTERNAL_SERVER_ERROR, "Error while sending email");
+        }
     }
     @Override
     public void verifyCodeByEmail(String code, String email) {
