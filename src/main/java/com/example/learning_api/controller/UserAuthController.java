@@ -4,10 +4,10 @@ package com.example.learning_api.controller;
 import com.example.learning_api.constant.ErrorConstant;
 import com.example.learning_api.constant.StatusCode;
 import com.example.learning_api.constant.SuccessConstant;
-import com.example.learning_api.dto.request.*;
-import com.example.learning_api.dto.response.LoginResponse;
-import com.example.learning_api.dto.response.RefreshTokenResponse;
-import com.example.learning_api.dto.response.RegisterResponse;
+import com.example.learning_api.dto.request.auth.*;
+import com.example.learning_api.dto.response.AuthResponse.LoginResponse;
+import com.example.learning_api.dto.response.AuthResponse.RefreshTokenResponse;
+import com.example.learning_api.dto.response.AuthResponse.RegisterResponse;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.model.ResponseAPI;
 import com.example.learning_api.service.core.IUserAuthService;
@@ -21,22 +21,14 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
-import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
-import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.servlet.view.RedirectView;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+
 import static com.example.learning_api.constant.SwaggerConstant.*;
 import static com.example.learning_api.constant.RouterConstant.*;
 

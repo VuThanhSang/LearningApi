@@ -1,6 +1,7 @@
 package com.example.learning_api.constant;
 
 public class SwaggerConstant {
+    public static final String ID_EX = "60f1b0b3b3b3b3b3b3b3b3b";
     public static final String EMAIL_EX = "vts@gmail.com";
     public static final String USERNAME_EX = "zimb240";
     public static final String PASSWORD_EX = "123456";
@@ -19,4 +20,9 @@ public class SwaggerConstant {
     public static final String CODE_EX = "123456";
     public static final String PASSWORD_USER_EX = "123456";
 
+    //Classroom
+    public static final String IMAGE_EX = "https://www.google.com";
+    public static final String NAME_EX = "Classroom 1";
+    public static final String DESCRIPTION_EX = "This is classroom 1";
+    public static final String TEACHER_ID_EX = "60f1b0b3b3b3b3b3b3b3b3b";
 }

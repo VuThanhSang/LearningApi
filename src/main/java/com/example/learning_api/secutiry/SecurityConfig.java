@@ -59,7 +59,7 @@ public class SecurityConfig {
                 .authorizeRequests(authorizeRequests -> authorizeRequests
                         .requestMatchers("/login/oauth2/code/google", "/auth/**").permitAll()
                         .requestMatchers("/admin/**").hasAnyAuthority(RoleEnum.ADMIN.name()) // Added "ROLE_" prefix
-                        .requestMatchers("/user/**").hasAnyAuthority(RoleEnum.USER.name()) // Added "ROLE_" prefix
+                        .requestMatchers("/user/**","/classroom/**").hasAnyAuthority(RoleEnum.USER.name()) // Added "ROLE_" prefix
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))

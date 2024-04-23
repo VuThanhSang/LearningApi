@@ -1,0 +1,18 @@
+{
+  "properties": {
+    "name": {
+      "type": "text",
+      "analyzer": "standard"
+    },
+    "description": {
+      "type": "text",
+      "analyzer": "standard"
+    },
+    "image": {
+      "type": "keyword"
+    },
+    "teacherId": {
+      "type": "keyword"
+    }
+  }
+}

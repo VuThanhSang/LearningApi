@@ -1,6 +1,12 @@
 package com.example.learning_api.constant;
 
 public class RouterConstant {
+    // CRUD PATH
+    public static final String CREATE_PATH = "/create";
+    public static final String READ_PATH = "/read";
+    public static final String UPDATE_PATH = "/update";
+    public static final String DELETE_PATH = "/delete";
+
     //==========================================
     public static final String USER_AUTH_BASE_PATH = "/auth";
     //authentication
@@ -26,4 +32,8 @@ public class RouterConstant {
 
     public static final String PATCH_USER_AUTH_CHANGE_PASSWORD_SUB_PATH = "/change-password";
     public static final String USER_AUTH_CHANGE_PASSWORD_SUM = "/change-password";
+
+
+    // ClassRoom path
+    public static final String CLASSROOM_BASE_PATH = "/classroom";
 }

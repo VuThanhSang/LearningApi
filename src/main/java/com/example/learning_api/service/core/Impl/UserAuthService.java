@@ -2,13 +2,12 @@ package com.example.learning_api.service.core.Impl;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.example.learning_api.constant.ErrorConstant;
-import com.example.learning_api.dto.kafka.CodeEmailDto;
-import com.example.learning_api.dto.request.ChangePasswordRequest;
-import com.example.learning_api.dto.request.LoginUserRequest;
-import com.example.learning_api.dto.request.RegisterUserRequest;
-import com.example.learning_api.dto.response.LoginResponse;
-import com.example.learning_api.dto.response.RefreshTokenResponse;
-import com.example.learning_api.dto.response.RegisterResponse;
+import com.example.learning_api.dto.request.auth.ChangePasswordRequest;
+import com.example.learning_api.dto.request.auth.LoginUserRequest;
+import com.example.learning_api.dto.request.auth.RegisterUserRequest;
+import com.example.learning_api.dto.response.AuthResponse.LoginResponse;
+import com.example.learning_api.dto.response.AuthResponse.RefreshTokenResponse;
+import com.example.learning_api.dto.response.AuthResponse.RegisterResponse;
 import com.example.learning_api.entity.sql.database.ConfirmationEntity;
 import com.example.learning_api.entity.sql.database.TokenEntity;
 import com.example.learning_api.entity.sql.database.UserEntity;
@@ -30,7 +29,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -38,7 +36,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -49,7 +46,6 @@ import static com.example.learning_api.constant.ErrorConstant.EXISTED_DATA;
 import static com.example.learning_api.constant.ErrorConstant.UNAUTHORIZED;
 
 
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 
 

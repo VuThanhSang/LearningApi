@@ -1,11 +1,11 @@
 package com.example.learning_api.service.core;
 
-import com.example.learning_api.dto.request.ChangePasswordRequest;
-import com.example.learning_api.dto.request.LoginUserRequest;
-import com.example.learning_api.dto.request.RegisterUserRequest;
-import com.example.learning_api.dto.response.LoginResponse;
-import com.example.learning_api.dto.response.RefreshTokenResponse;
-import com.example.learning_api.dto.response.RegisterResponse;
+import com.example.learning_api.dto.request.auth.ChangePasswordRequest;
+import com.example.learning_api.dto.request.auth.LoginUserRequest;
+import com.example.learning_api.dto.request.auth.RegisterUserRequest;
+import com.example.learning_api.dto.response.AuthResponse.LoginResponse;
+import com.example.learning_api.dto.response.AuthResponse.RefreshTokenResponse;
+import com.example.learning_api.dto.response.AuthResponse.RegisterResponse;
 import jakarta.transaction.Transactional;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 

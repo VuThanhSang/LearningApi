@@ -22,4 +22,6 @@ public class TeacherEntity {
     private Date updatedAt;
     @DBRef
     private List<CourseEntity> courses;
+    @DBRef
+    private List<ClassRoomEntity> classRooms;
 }
