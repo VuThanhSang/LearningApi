@@ -1,4 +1,4 @@
-package com.example.learning_api.dto.response;
+package com.example.learning_api.dto.response.AuthResponse;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Builder;
 import lombok.Data;

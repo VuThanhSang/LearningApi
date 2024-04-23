@@ -1,4 +1,4 @@
-package com.example.learning_api.dto.request;
+package com.example.learning_api.dto.request.auth;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;

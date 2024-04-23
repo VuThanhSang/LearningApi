@@ -19,6 +19,8 @@ public class ClassRoomEntity {
     private CourseEntity course;
     private String name;
     private String description;
+    private String image;
+    private String teacherId;
     private Date createdAt;
     private Date updatedAt;
     @DBRef

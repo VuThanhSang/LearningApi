@@ -1,16 +1,18 @@
 spring:
   application:
     name: learning_api
+  config:
+    import: optional:file:.env[.properties]
   data:
     mongodb:
-      uri: mongodb+srv://zimb240:0908218507zimb240@cluster0.4emxftv.mongodb.net/learningDB?retryWrites=true&w=majority
+      uri: ${MONGODB_URI}
   main:
     allow-bean-definition-overriding: true
   mail:
     host: smtp.gmail.com
     port: 587
-    username: learningsendcode001@gmail.com
-    password: "ucnu jjxz akok rkhp"
+    username: ${EMAIL_ID}
+    password: ${EMAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -23,15 +25,12 @@ spring:
     bootstrap-servers: http://localhost:9092
     producer:
       acks: -1
-      #      retries: 1
       bootstrap-servers: http://localhost:9092
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties.[enable.idempotence]: true
       properties.[max.in.flight.requests.per.connection]: 5
-
     consumer:
-      #      auto-offset-reset: earliest
       bootstrap-servers: http://localhost:9092
       group-id: group-01
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -43,14 +42,17 @@ spring:
       client:
         registration:
           google:
-            client-id: "590210671995-vqvohsa8ue8a0aljda9gp0hj3vfsduh9.apps.googleusercontent.com"
-            client-secret: "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"
-#            redirect-uri: "http://localhost:8080/oauth2/callback/google"
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
             scope:
-                  - email
-                  - profile
-                  - openid
+              - email
+              - profile
+              - openid
 security:
   jwt:
     accessTokenKey: YourAccessTokenKey
     refreshTokenKey: YourRefreshTokenKey
+cloudinary:
+  cloud_name: ${CLOUDINARY_NAME}
+  api_key: ${CLOUDINARY_API_KEY}
+  api_secret: ${CLOUDINARY_API_SECRET}

@@ -64,6 +64,12 @@ public class JwtService {
                 .getClaim(EMAIL_CLAIM_KEY)
                 .asString();
     }
+    public String extractUserId(String token) {
+        return JWT.require(Algorithm.HMAC256(properties.getAccessTokenKey()))
+                .build()
+                .verify(token)
+                .getSubject();
+    }
     public DecodedJWT decodeAccessToken(String token) {
         return JWT.require(Algorithm.HMAC256(properties.getAccessTokenKey()))
                 .build()
