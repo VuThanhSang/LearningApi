@@ -188,6 +188,8 @@ public class UserAuthController {
                     .build();
             return new ResponseEntity<>(res, StatusCode.OK);
         }catch (Exception e){
+            e.printStackTrace();
+
             return new ResponseEntity<>(ResponseAPI.builder()
                     .message(e.getMessage())
                     .timestamp(new Date())

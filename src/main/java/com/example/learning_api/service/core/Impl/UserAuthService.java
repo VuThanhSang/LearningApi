@@ -75,7 +75,7 @@ public class UserAuthService implements IUserAuthService {
     public RegisterResponse registerUser(RegisterUserRequest body) {
         UserEntity userEntity = modelMapperService.mapClass(body, UserEntity.class);
         if(userRepository.findByEmail(userEntity.getEmail()).orElse(null) != null) {
-            throw new CustomException(EXISTED_DATA, "Email already registered");
+            throw new CustomException( "Email already registered");
         }
 
         RegisterResponse resData = new RegisterResponse();
@@ -204,18 +204,21 @@ public class UserAuthService implements IUserAuthService {
     @Override
     public void sendCodeToRegister(String email) {
         UserEntity user = userRepository.findByEmail(email).orElse(null);
-        if (user != null) {
-            throw new CustomException(EXISTED_DATA, "Email is already registered");
+        if (user != null && user.getStatus() == UserStatus.INACTIVE){
+            String code = GeneratorUtils.generateRandomCode(6);
+            createOrUpdateConfirmationInfo(email, code);
+            sendEmailWithCode(email, code, "Active User Successfully");
+            return;
+        }else if(user != null && user.getStatus() == UserStatus.ACTIVE){
+            throw new CustomException( "User already Active");
         }
-        String code = GeneratorUtils.generateRandomCode(6);
-        createOrUpdateConfirmationInfo(email, code);
-        sendEmailWithCode(email, code, "Register User Code Learning App");
+        throw new CustomException( "Not Found User with email");
     }
 
     @Override
     public void sendCodeForgotPassword(String email) {
         userRepository.findByEmailAndAuthType(email,"normal")
-                .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND, "User with email " + email));
+                .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND + "User with email " + email));
         String code = GeneratorUtils.generateRandomCode(6);
         createOrUpdateConfirmationInfo(email, code);
         sendEmailWithCode(email, code, "Get Password Code Learning App");
@@ -240,20 +243,21 @@ public class UserAuthService implements IUserAuthService {
             javaMailSender.send(mimeMessage);
             System.out.println("Mail sent aith attachment to mail addresss: "+toMail);
         } catch (MessagingException e) {
-            throw new CustomException(ErrorConstant.INTERNAL_SERVER_ERROR, "Error while sending email");
+            throw new CustomException( "Error while sending email");
         }
     }
     @Override
     public void verifyCodeByEmail(String code, String email) {
         ConfirmationEntity confirmationCollection = confirmationRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND, "Confirmation data with email " + email));
+                .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND + "Confirmation data with email " + email));
         UserEntity user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND, "User with email " + email));
+                .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND + "User with email " + email));
         Date currentTime = new Date();
 
         if (code.equals(confirmationCollection.getCode()) && currentTime.before(confirmationCollection.getExpireAt())) {
             confirmationCollection.setStatus(ConfirmationCodeStatus.USED);
             user.setStatus(UserStatus.ACTIVE);
+            userRepository.save(user);
             confirmationRepository.save(confirmationCollection);
             return;
         }
