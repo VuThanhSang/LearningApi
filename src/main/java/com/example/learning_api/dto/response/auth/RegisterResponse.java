@@ -1,4 +1,4 @@
-package com.example.learning_api.dto.response.AuthResponse;
+package com.example.learning_api.dto.response.auth;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

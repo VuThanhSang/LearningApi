@@ -3,9 +3,9 @@ package com.example.learning_api.service.core;
 import com.example.learning_api.dto.request.auth.ChangePasswordRequest;
 import com.example.learning_api.dto.request.auth.LoginUserRequest;
 import com.example.learning_api.dto.request.auth.RegisterUserRequest;
-import com.example.learning_api.dto.response.AuthResponse.LoginResponse;
-import com.example.learning_api.dto.response.AuthResponse.RefreshTokenResponse;
-import com.example.learning_api.dto.response.AuthResponse.RegisterResponse;
+import com.example.learning_api.dto.response.auth.LoginResponse;
+import com.example.learning_api.dto.response.auth.RefreshTokenResponse;
+import com.example.learning_api.dto.response.auth.RegisterResponse;
 import jakarta.transaction.Transactional;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 

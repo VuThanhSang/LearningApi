@@ -1,4 +1,4 @@
-package com.example.learning_api.dto.response.ClassRoomResponse;
+package com.example.learning_api.dto.response.classroom;
 
 
 import com.example.learning_api.entity.sql.database.ClassRoomEntity;

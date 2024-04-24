@@ -57,10 +57,9 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
 
                 .authorizeRequests(authorizeRequests -> authorizeRequests
-                        .requestMatchers("/login/oauth2/code/google", "/auth/**").permitAll()
+                        .requestMatchers("/login/oauth2/code/google", "/api/v1/auth/**").permitAll()
                         .requestMatchers("/admin/**").hasAnyAuthority(RoleEnum.ADMIN.name()) // Added "ROLE_" prefix
-                        .requestMatchers("/user/**","/classroom/**").hasAnyAuthority(RoleEnum.USER.name()) // Added "ROLE_" prefix
-                        .anyRequest().authenticated()
+                        .requestMatchers("/api/v1/classroom/**","/api/v1/course/**","/api/v1/section/**").hasAnyAuthority(RoleEnum.USER.name()) // Added "ROLE_" prefix
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authenticationProvider(authenticationProvider()).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

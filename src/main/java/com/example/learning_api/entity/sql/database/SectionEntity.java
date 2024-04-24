@@ -17,9 +17,9 @@ public class SectionEntity {
     private String id;
     @DBRef
     private ClassRoomEntity classRoom;
+    private String classRoomId;
     private String name;
     private String description;
-    private int order;
     private Date createdAt;
     private Date updatedAt;
     @DBRef

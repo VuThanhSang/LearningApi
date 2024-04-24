@@ -3,14 +3,15 @@ package com.example.learning_api.service.core.Impl;
 import com.example.learning_api.constant.CloudinaryConstant;
 import com.example.learning_api.constant.ErrorConstant;
 import com.example.learning_api.dto.request.classroom.CreateClassRoomRequest;
-import com.example.learning_api.dto.request.classroom.DeleteClassRoomRequest;
 import com.example.learning_api.dto.request.classroom.UpdateClassRoomRequest;
-import com.example.learning_api.dto.response.ClassRoomResponse.CreateClassRoomResponse;
-import com.example.learning_api.dto.response.ClassRoomResponse.GetClassRoomsResponse;
+import com.example.learning_api.dto.response.classroom.CreateClassRoomResponse;
+import com.example.learning_api.dto.response.classroom.GetClassRoomsResponse;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.entity.sql.database.ClassRoomEntity;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.ClassRoomRepository;
+import com.example.learning_api.repository.database.CourseRepository;
+import com.example.learning_api.repository.database.UserRepository;
 import com.example.learning_api.service.common.CloudinaryService;
 import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.IClassRoomService;
@@ -33,16 +34,22 @@ public class ClassRoomService implements IClassRoomService {
     private final ModelMapperService modelMapperService;
     private final ClassRoomRepository classRoomRepository;
     private final CloudinaryService cloudinaryService;
+    private final CourseRepository courseRepository;
     @Override
     public CreateClassRoomResponse createClassRoom(CreateClassRoomRequest body) {
         try{
-            if (!ImageUtils.isValidImageFile(body.getImage())) {
+            if (!ImageUtils.isValidImageFile(body.getImage())&&body.getImage()!=null) {
                 throw new CustomException(ErrorConstant.IMAGE_INVALID);
             }
             if (body.getName()==null){
                 throw new IllegalArgumentException("Name is required");
             }
-
+            if (body.getCourseId()==null){
+                throw new IllegalArgumentException("CourseId is required");
+            }
+            if (courseRepository.findById(body.getCourseId()).isEmpty()){
+                throw new IllegalArgumentException("CourseId is not found");
+            }
             ClassRoomEntity classRoomEntity = modelMapperService.mapClass(body, ClassRoomEntity.class);
             CreateClassRoomResponse resData = new CreateClassRoomResponse();
             if (body.getImage()!=null){
@@ -58,7 +65,7 @@ public class ClassRoomService implements IClassRoomService {
             }
 
             classRoomRepository.save(classRoomEntity);
-
+            resData.setId(classRoomEntity.getId());
             resData.setName(classRoomEntity.getName());
             resData.setDescription(classRoomEntity.getDescription());
             resData.setImage(classRoomEntity.getImage());
