@@ -13,6 +13,7 @@ import com.example.learning_api.entity.sql.database.TokenEntity;
 import com.example.learning_api.entity.sql.database.UserEntity;
 import com.example.learning_api.enums.ConfirmationCodeStatus;
 import com.example.learning_api.enums.RoleEnum;
+import com.example.learning_api.enums.UserStatus;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.ConfirmationRepository;
 import com.example.learning_api.repository.database.TokenRepository;
@@ -83,6 +84,7 @@ public class UserAuthService implements IUserAuthService {
         userEntity.setAuthType("normal");
         userEntity.setCreatedAt(new Date());
         userEntity.setUpdatedAt(new Date());
+        userEntity.setStatus(UserStatus.INACTIVE);
         userEntity = userRepository.save(userEntity);
         var accessToken = jwtService.issueAccessToken(userEntity.getId(), userEntity.getEmail(), userEntity.getRole());
         var refreshToken = jwtService.issueRefreshToken(userEntity.getId(), userEntity.getEmail(), userEntity.getRole());
@@ -245,10 +247,13 @@ public class UserAuthService implements IUserAuthService {
     public void verifyCodeByEmail(String code, String email) {
         ConfirmationEntity confirmationCollection = confirmationRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND, "Confirmation data with email " + email));
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND, "User with email " + email));
         Date currentTime = new Date();
 
         if (code.equals(confirmationCollection.getCode()) && currentTime.before(confirmationCollection.getExpireAt())) {
             confirmationCollection.setStatus(ConfirmationCodeStatus.USED);
+            user.setStatus(UserStatus.ACTIVE);
             confirmationRepository.save(confirmationCollection);
             return;
         }
