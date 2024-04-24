@@ -1,5 +1,6 @@
 package com.example.learning_api.entity.sql.database;
 import com.example.learning_api.enums.RoleEnum;
+import com.example.learning_api.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -26,6 +27,7 @@ public class UserEntity implements UserDetails  {
     private RoleEnum role;
     private List<RoleEnum> roleList;
     private String phone;
+    private UserStatus status;
     private String authType;
     private Date createdAt;
     private Date updatedAt;
