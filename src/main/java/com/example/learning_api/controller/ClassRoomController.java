@@ -4,15 +4,14 @@ import com.example.learning_api.constant.StatusCode;
 import com.example.learning_api.dto.request.classroom.CreateClassRoomRequest;
 
 import com.example.learning_api.dto.request.classroom.UpdateClassRoomRequest;
-import com.example.learning_api.dto.response.ClassRoomResponse.CreateClassRoomResponse;
-import com.example.learning_api.dto.response.ClassRoomResponse.GetClassRoomsResponse;
+import com.example.learning_api.dto.response.classroom.CreateClassRoomResponse;
+import com.example.learning_api.dto.response.classroom.GetClassRoomsResponse;
 import com.example.learning_api.model.ResponseAPI;
 import com.example.learning_api.service.common.JwtService;
 import com.example.learning_api.service.core.IClassRoomService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.annotations.Parameter;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

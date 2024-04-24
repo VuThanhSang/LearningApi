@@ -18,8 +18,8 @@ public class CreateClassRoomRequest {
     private String description;
     @Schema(example = IMAGE_EX)
     private MultipartFile image;
-    @Schema(example = TEACHER_ID_EX)
+    @Schema(example = ID_EX)
     @NotBlank
-    private String teacherId;
+    private String courseId;
 
 }
