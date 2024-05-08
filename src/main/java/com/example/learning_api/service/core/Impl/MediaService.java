@@ -15,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -44,6 +46,9 @@ public class MediaService implements IMediaService {
                 );
                 mediaEntity.setFilePath(fileUploaded.getUrl());
             }
+            mediaEntity.setCreatedAt(new Date());
+            mediaEntity.setUpdatedAt(new Date());
+            mediaRepository.save(mediaEntity);
         }
         catch (Exception e) {
             log.error("Error in createMedia: ", e);
@@ -76,7 +81,6 @@ public class MediaService implements IMediaService {
             if (mediaEntity==null){
                 throw new IllegalArgumentException("Media is not found");
             }
-            mediaEntity = modelMapperService.mapClass(body, MediaEntity.class);
             if (body.getFile() != null) {
                 byte[] fileBytes = body.getFile().getBytes();
                 String fileType = body.getFile().getOriginalFilename().substring(body.getFile().getOriginalFilename().lastIndexOf("."));
@@ -87,6 +91,12 @@ public class MediaService implements IMediaService {
                         "video"
                 );
                 mediaEntity.setFilePath(fileUploaded.getUrl());
+            }
+            if (body.getName()!=null){
+                mediaEntity.setName(body.getName());
+            }
+            if (body.getDescription()!=null){
+                mediaEntity.setDescription(body.getDescription());
             }
             mediaRepository.save(mediaEntity);
         }

@@ -56,7 +56,8 @@ public class CloudinaryService {
                             PUBLIC_ID, fileName,
                             UPLOAD_PRESET, pathName,
                             OVERWRITE, true,
-                            "resource_type", resourceType));
+                            "resource_type", resourceType,
+                            "public", "true"));
             String response = file.toString();
             if (response == null || response.isEmpty()) {
                 throw new IOException("Cloudinary returned an empty or null response");

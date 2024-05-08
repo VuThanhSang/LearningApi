@@ -9,4 +9,6 @@ import org.springframework.data.mongodb.repository.Query;
 public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, String>{
     @Query("{ 'name' : { $regex: ?0, $options: 'i' } }")
     Page<ClassRoomEntity> findByNameContaining(String search,Pageable pageable);
+    @Query("{ 'courseId' : ?0 }")
+    Page<ClassRoomEntity> findByCourseId(String courseId,Pageable pageable);
 }

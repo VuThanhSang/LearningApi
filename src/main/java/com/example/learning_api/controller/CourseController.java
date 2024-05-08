@@ -5,6 +5,7 @@ import com.example.learning_api.constant.StatusCode;
 import com.example.learning_api.dto.request.course.CreateCourseRequest;
 import com.example.learning_api.dto.request.course.DeleteCourseRequest;
 import com.example.learning_api.dto.request.course.UpdateCourseRequest;
+import com.example.learning_api.dto.response.classroom.GetClassRoomsResponse;
 import com.example.learning_api.dto.response.course.CreateCourseResponse;
 import com.example.learning_api.dto.response.course.GetCoursesResponse;
 import com.example.learning_api.model.ResponseAPI;
@@ -102,6 +103,29 @@ public class CourseController {
         }
         catch (Exception e){
             ResponseAPI<GetCoursesResponse> res = ResponseAPI.<GetCoursesResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
+    @GetMapping(path = "/{courseId}/classrooms")
+    public ResponseEntity<ResponseAPI<GetClassRoomsResponse>> getClassRoomsByCourseId(
+            @PathVariable String courseId,
+                                                                                      @RequestParam(name="page",required = false,defaultValue = "1") int page,
+                                                                                      @RequestParam(name="size",required = false,defaultValue = "10") int size) {
+        try{
+            GetClassRoomsResponse resData = courseService.getClassRoomsByCourseId( page-1, size,courseId);
+            ResponseAPI<GetClassRoomsResponse> res = ResponseAPI.<GetClassRoomsResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get classroom by course id successfully")
+                    .data(resData)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetClassRoomsResponse> res = ResponseAPI.<GetClassRoomsResponse>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();

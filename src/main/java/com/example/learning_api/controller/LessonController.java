@@ -3,6 +3,7 @@ package com.example.learning_api.controller;
 import com.example.learning_api.constant.StatusCode;
 import com.example.learning_api.dto.request.lesson.CreateLessonRequest;
 import com.example.learning_api.dto.request.lesson.UpdateLessonRequest;
+import com.example.learning_api.dto.response.lesson.GetLessonDetailResponse;
 import com.example.learning_api.model.ResponseAPI;
 import com.example.learning_api.service.core.ILessonService;
 import jakarta.validation.Valid;
@@ -73,6 +74,26 @@ public class LessonController {
         }
         catch (Exception e){
             ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping(path = "/{lessonId}")
+    public ResponseEntity<ResponseAPI<GetLessonDetailResponse>> getLessonWithResourcesAndMediaAndSubstances(@PathVariable String lessonId) {
+        try{
+            GetLessonDetailResponse data= lessonService.getLessonWithResourcesAndMediaAndSubstances(lessonId);
+            ResponseAPI<GetLessonDetailResponse> res = ResponseAPI.<GetLessonDetailResponse>builder()
+                    .timestamp(new Date())
+                    .data(data)
+                    .message("Get lesson successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetLessonDetailResponse> res = ResponseAPI.<GetLessonDetailResponse>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();

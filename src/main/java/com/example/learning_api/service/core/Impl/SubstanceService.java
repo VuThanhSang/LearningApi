@@ -17,8 +17,8 @@ import java.util.Date;
 @RequiredArgsConstructor
 @Slf4j
 public class SubstanceService implements ISubstanceService {
-    private static SubstanceRepository substanceRepository;
-    private static LessonRepository lessonRepository;
+    private final LessonRepository lessonRepository;
+    private final SubstanceRepository substanceRepository;
     private final ModelMapperService modelMapperService;
 
     @Override

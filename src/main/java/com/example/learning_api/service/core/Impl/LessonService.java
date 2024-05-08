@@ -2,6 +2,7 @@ package com.example.learning_api.service.core.Impl;
 
 import com.example.learning_api.dto.request.lesson.CreateLessonRequest;
 import com.example.learning_api.dto.request.lesson.UpdateLessonRequest;
+import com.example.learning_api.dto.response.lesson.GetLessonDetailResponse;
 import com.example.learning_api.entity.sql.database.LessonEntity;
 import com.example.learning_api.repository.database.LessonRepository;
 import com.example.learning_api.repository.database.SectionRepository;
@@ -71,4 +72,21 @@ public class LessonService implements ILessonService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
+
+    @Override
+    public GetLessonDetailResponse getLessonWithResourcesAndMediaAndSubstances(String id) {
+        try {
+            GetLessonDetailResponse getLessonDetailResponse = lessonRepository.getLessonWithResourcesAndMediaAndSubstances(id);
+            if (getLessonDetailResponse==null){
+                throw new IllegalArgumentException("Lesson not found");
+            }
+            return getLessonDetailResponse;
+        }
+        catch (Exception e){
+            log.error(e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+
 }

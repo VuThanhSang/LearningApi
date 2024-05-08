@@ -24,7 +24,6 @@ public class GetClassRoomsResponse {
             classRoomResponse.setId(classRoomEntity.getId());
             classRoomResponse.setName(classRoomEntity.getName());
             classRoomResponse.setDescription(classRoomEntity.getDescription());
-            classRoomResponse.setTeacherId(classRoomEntity.getTeacherId());
             classRoomResponse.setCreatedAt(classRoomEntity.getCreatedAt().toString());
             classRoomResponse.setUpdatedAt(classRoomEntity.getUpdatedAt().toString());
             return classRoomResponse;
