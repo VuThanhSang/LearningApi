@@ -21,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -43,6 +44,8 @@ public class CourseService implements ICourseService {
                 throw new IllegalArgumentException("TeacherId is not found");
             }
             CourseEntity courseEntity = modelMapperService.mapClass(body, CourseEntity.class);
+            courseEntity.setCreatedAt(new Date());
+            courseEntity.setUpdatedAt(new Date());
             CreateCourseResponse resData = new CreateCourseResponse();
 
 

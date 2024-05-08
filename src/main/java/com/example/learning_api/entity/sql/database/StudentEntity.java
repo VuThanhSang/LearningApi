@@ -17,6 +17,7 @@ public class StudentEntity {
     private String id;
     private String userId;
     private String gradeLevel;
+    private UserEntity user;
     private Date createdAt;
     private Date updatedAt;
     @DBRef

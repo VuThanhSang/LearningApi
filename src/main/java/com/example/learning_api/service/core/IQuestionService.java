@@ -1,0 +1,14 @@
+package com.example.learning_api.service.core;
+
+import com.example.learning_api.dto.request.question.CreateQuestionRequest;
+import com.example.learning_api.dto.request.question.UpdateQuestionRequest;
+import com.example.learning_api.dto.response.question.CreateQuestionResponse;
+import com.example.learning_api.dto.response.question.GetQuestionsResponse;
+
+public interface IQuestionService {
+    CreateQuestionResponse createQuestion(CreateQuestionRequest body);
+    void updateQuestion(UpdateQuestionRequest body);
+    void deleteQuestion(String id);
+    GetQuestionsResponse getQuestions(int page, int size, String search);
+
+}

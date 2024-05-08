@@ -7,7 +7,15 @@ public class RouterConstant {
     public static final String UPDATE_PATH = "/update";
     public static final String DELETE_PATH = "/delete";
 
-
+    public static final String TEST_BASE_PATH = "/api/v1/test";
+    public static final String LESSON_BASE_PATH = "/api/v1/lesson";
+    public static final String SUBSTANCE_BASE_PATH = "/api/v1/substance";
+    public static final String MEDIA_BASE_PATH = "/api/v1/media";
+    public static final String RESOURCE_BASE_PATH = "/api/v1/resource";
+    public static final String QUESTION_BASE_PATH = "/api/v1/question";
+    public static final String ANSWER_BASE_PATH = "/api/v1/answer";
+    public static final String STUDENT_BASE_PATH = "/api/v1/student";
+    public static final String TEACHER_BASE_PATH = "/api/v1/teacher";
     public static final String COURSE_BASE_PATH = "/api/v1/course";
     public static final String SECTION_BASE_PATH = "/api/v1/section";
     public static final String CLASSROOM_BASE_PATH = "/api/v1/classroom";

@@ -13,8 +13,10 @@ import java.util.Date;
 public class MediaEntity {
     @Id
     private String id;
-    private String resourceId;
+    private String lessonId;
     private String filePath;
+    private String description;
+    private String name;
     private Date createdAt;
     private Date updatedAt;
 }

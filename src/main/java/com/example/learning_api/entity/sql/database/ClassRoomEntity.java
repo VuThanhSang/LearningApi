@@ -25,6 +25,4 @@ public class ClassRoomEntity {
     private Date updatedAt;
     @DBRef
     private List<SectionEntity> sections;
-    @DBRef
-    private List<IntensionRoomEntity> intensionRooms;
 }

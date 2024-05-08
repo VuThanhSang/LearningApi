@@ -37,6 +37,9 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: com.example.learning_api.dto.*
+  redis:
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT}
   security:
     oauth2:
       client:

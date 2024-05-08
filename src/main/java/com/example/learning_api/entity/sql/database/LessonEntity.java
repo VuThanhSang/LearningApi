@@ -9,11 +9,11 @@ import java.util.Date;
 
 @Data
 @NoArgsConstructor
-@Document(collection = "intension_rooms")
-public class IntensionRoomEntity {
+@Document(collection = "lessons")
+public class LessonEntity {
     @Id
     private String id;
-    private String classroomId;
+    private String sectionId;
     private String name;
     private String description;
     private Date createdAt;

@@ -20,6 +20,7 @@ public class TeacherEntity {
     private String qualifications;
     private Date createdAt;
     private Date updatedAt;
+    private UserEntity user;
     @DBRef
     private List<CourseEntity> courses;
     @DBRef

@@ -59,7 +59,8 @@ public class ClassRoomService implements IClassRoomService {
                 CloudinaryUploadResponse imageUploaded = cloudinaryService.uploadFileToFolder(
                         CloudinaryConstant.CLASSROOM_PATH,
                         StringUtils.generateFileName(body.getName(), "classroom"),
-                        newImage
+                        newImage,
+                        "image"
                 );
                 classRoomEntity.setImage(imageUploaded.getUrl());
             }
@@ -89,7 +90,8 @@ public class ClassRoomService implements IClassRoomService {
                 CloudinaryUploadResponse imageUploaded = cloudinaryService.uploadFileToFolder(
                         CloudinaryConstant.CLASSROOM_PATH,
                         StringUtils.generateFileName(body.getName(), "classroom"),
-                        newImage
+                        newImage,
+                        "image"
                 );
                 classroom.setImage(imageUploaded.getUrl());
             }
