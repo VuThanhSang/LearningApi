@@ -20,13 +20,11 @@ import java.util.stream.Collectors;
 public class UserEntity implements UserDetails  {
     @Id
     private String id;
-    private String username;
     private String email;
     private String password;
     private String fullname;
     private RoleEnum role;
     private List<RoleEnum> roleList;
-    private String phone;
     private UserStatus status;
     private String authType;
     private Date createdAt;

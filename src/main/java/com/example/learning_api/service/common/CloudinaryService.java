@@ -49,11 +49,23 @@ public class CloudinaryService {
         }
     }
 
-    public CloudinaryUploadResponse uploadFileToFolder(String pathName, String fileName, byte[] imageData) throws IOException {
-        var file = cloudinary.uploader()
-                .upload(imageData, Map.of(PUBLIC_ID, fileName, UPLOAD_PRESET, pathName, OVERWRITE, true));
-        return CloudinaryUploadResponse.fromString(file.toString());
-
+    public CloudinaryUploadResponse uploadFileToFolder(String pathName, String fileName, byte[] fileData, String resourceType) throws IOException {
+        try {
+            var file = cloudinary.uploader()
+                    .upload(fileData, Map.of(
+                            PUBLIC_ID, fileName,
+                            UPLOAD_PRESET, pathName,
+                            OVERWRITE, true,
+                            "resource_type", resourceType,
+                            "public", "true"));
+            String response = file.toString();
+            if (response == null || response.isEmpty()) {
+                throw new IOException("Cloudinary returned an empty or null response");
+            }
+            return CloudinaryUploadResponse.fromString(response);
+        } catch (IOException e) {
+            throw new IOException("Failed to upload file to Cloudinary", e);
+        }
     }
 
     public void deleteImage(String publicId) throws IOException {

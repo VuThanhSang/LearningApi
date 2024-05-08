@@ -14,6 +14,7 @@ public class ErrorConstant {
     public static final String INVALID_COIN_NUMBER = "Invalid coin number";
     public static final String VNP_ERROR = "VNPay error";
     public static final String SERVER_ERROR = "Server error";
+    public static final String FILE_INVALID = "Invalid file";
     //
     public static final String USER_TOKEN_NOT_FOUND = "User token not found: ";
     public static final String USER_NOT_FOUND = "User not found: ";

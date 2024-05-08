@@ -16,8 +16,10 @@ public class AnswerEntity {
     private String id;
     @DBRef
     private QuestionEntity question;
-    private String answerText;
+    private String content;
     private boolean isCorrect;
+    private String questionId;
+    private String source;
     private Date createdAt;
     private Date updatedAt;
 }

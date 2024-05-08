@@ -4,10 +4,13 @@ import com.example.learning_api.constant.ErrorConstant;
 import com.example.learning_api.dto.request.course.CreateCourseRequest;
 import com.example.learning_api.dto.request.course.DeleteCourseRequest;
 import com.example.learning_api.dto.request.course.UpdateCourseRequest;
+import com.example.learning_api.dto.response.classroom.GetClassRoomsResponse;
 import com.example.learning_api.dto.response.course.CreateCourseResponse;
 import com.example.learning_api.dto.response.course.GetCoursesResponse;
+import com.example.learning_api.entity.sql.database.ClassRoomEntity;
 import com.example.learning_api.entity.sql.database.CourseEntity;
 import com.example.learning_api.model.CustomException;
+import com.example.learning_api.repository.database.ClassRoomRepository;
 import com.example.learning_api.repository.database.CourseRepository;
 import com.example.learning_api.repository.database.UserRepository;
 import com.example.learning_api.service.common.CloudinaryService;
@@ -21,6 +24,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -30,6 +34,7 @@ public class CourseService implements ICourseService {
     private final ModelMapperService modelMapperService;
     private final CourseRepository courseRepository;
     private final UserRepository userRepository;
+    private final ClassRoomRepository classRoomRepository;
     @Override
     public CreateCourseResponse createCourse(CreateCourseRequest body) {
         try{
@@ -43,6 +48,8 @@ public class CourseService implements ICourseService {
                 throw new IllegalArgumentException("TeacherId is not found");
             }
             CourseEntity courseEntity = modelMapperService.mapClass(body, CourseEntity.class);
+            courseEntity.setCreatedAt(new Date());
+            courseEntity.setUpdatedAt(new Date());
             CreateCourseResponse resData = new CreateCourseResponse();
 
 
@@ -112,5 +119,25 @@ public class CourseService implements ICourseService {
             throw new IllegalArgumentException(e.getMessage());
         }
 
+    }
+    @Override
+    public GetClassRoomsResponse getClassRoomsByCourseId(int page, int size, String courseId) {
+        try{
+            Pageable pageAble = PageRequest.of(page, size);
+            Page<ClassRoomEntity> classRooms = classRoomRepository.findByCourseId(courseId, pageAble);
+            List<GetClassRoomsResponse.ClassRoomResponse> resData = new ArrayList<>();
+            for (ClassRoomEntity classRoom : classRooms){
+                GetClassRoomsResponse.ClassRoomResponse classRoomResponse = modelMapperService.mapClass(classRoom, GetClassRoomsResponse.ClassRoomResponse.class);
+                resData.add(classRoomResponse);
+            }
+            GetClassRoomsResponse res = new GetClassRoomsResponse();
+            res.setClassRooms(resData);
+            res.setTotalPage(classRooms.getTotalPages());
+            res.setTotalElements(classRooms.getTotalElements());
+            return res;
+        }
+        catch (Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
     }
 }

@@ -6,6 +6,7 @@ import com.example.learning_api.dto.request.classroom.CreateClassRoomRequest;
 import com.example.learning_api.dto.request.classroom.UpdateClassRoomRequest;
 import com.example.learning_api.dto.response.classroom.CreateClassRoomResponse;
 import com.example.learning_api.dto.response.classroom.GetClassRoomsResponse;
+import com.example.learning_api.dto.response.section.GetSectionsResponse;
 import com.example.learning_api.model.ResponseAPI;
 import com.example.learning_api.service.common.JwtService;
 import com.example.learning_api.service.core.IClassRoomService;
@@ -102,6 +103,28 @@ public class ClassRoomController {
         }
         catch (Exception e){
             ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
+
+    @GetMapping(path = "/{classroomId}/sections")
+    public ResponseEntity<ResponseAPI<GetSectionsResponse>> getSectionsByClassroomId(@PathVariable String classroomId
+                                                                                     ) {
+        try{
+            GetSectionsResponse data= classRoomService.getSectionsByClassroomId(0,10,classroomId);
+            ResponseAPI<GetSectionsResponse> res = ResponseAPI.<GetSectionsResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get sections by classroomId successfully")
+                    .data(data)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetSectionsResponse> res = ResponseAPI.<GetSectionsResponse>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();

@@ -13,10 +13,10 @@ import java.util.Date;
 public class ResourceEntity {
     @Id
     private String id;
-    private String sectionId;
+    private String lessonId;
     private String name;
     private String description;
-    private String type;
+    private String filePath;
     private Date createdAt;
     private Date updatedAt;
 }

@@ -1,6 +1,7 @@
 package com.example.learning_api.entity.sql.database;
 
 
+import com.example.learning_api.enums.QuestionType;
 import jakarta.persistence.Id;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,9 +17,11 @@ import java.util.List;
 public class QuestionEntity {
     @Id
     private String id;
-    @DBRef
-    private TestEntity test;
-    private String questionText;
+    private String content;
+    private String testId;
+    private String description;
+    private String source;
+    private QuestionType type;
     private Date createdAt;
     private Date updatedAt;
     @DBRef

@@ -15,16 +15,13 @@ import java.util.List;
 public class ClassRoomEntity {
     @Id
     private String id;
-    @DBRef
-    private CourseEntity course;
+
     private String name;
     private String description;
     private String image;
-    private String teacherId;
+    private String courseId;
     private Date createdAt;
     private Date updatedAt;
     @DBRef
     private List<SectionEntity> sections;
-    @DBRef
-    private List<IntensionRoomEntity> intensionRooms;
 }

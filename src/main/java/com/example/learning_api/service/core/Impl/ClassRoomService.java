@@ -7,10 +7,13 @@ import com.example.learning_api.dto.request.classroom.UpdateClassRoomRequest;
 import com.example.learning_api.dto.response.classroom.CreateClassRoomResponse;
 import com.example.learning_api.dto.response.classroom.GetClassRoomsResponse;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
+import com.example.learning_api.dto.response.section.GetSectionsResponse;
 import com.example.learning_api.entity.sql.database.ClassRoomEntity;
+import com.example.learning_api.entity.sql.database.SectionEntity;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.ClassRoomRepository;
 import com.example.learning_api.repository.database.CourseRepository;
+import com.example.learning_api.repository.database.SectionRepository;
 import com.example.learning_api.repository.database.UserRepository;
 import com.example.learning_api.service.common.CloudinaryService;
 import com.example.learning_api.service.common.ModelMapperService;
@@ -25,6 +28,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -35,6 +39,7 @@ public class ClassRoomService implements IClassRoomService {
     private final ClassRoomRepository classRoomRepository;
     private final CloudinaryService cloudinaryService;
     private final CourseRepository courseRepository;
+    private final SectionRepository sectionRepository;
     @Override
     public CreateClassRoomResponse createClassRoom(CreateClassRoomRequest body) {
         try{
@@ -51,6 +56,9 @@ public class ClassRoomService implements IClassRoomService {
                 throw new IllegalArgumentException("CourseId is not found");
             }
             ClassRoomEntity classRoomEntity = modelMapperService.mapClass(body, ClassRoomEntity.class);
+            classRoomEntity.setCourseId(body.getCourseId());
+            classRoomEntity.setCreatedAt(new Date());
+            classRoomEntity.setUpdatedAt(new Date());
             CreateClassRoomResponse resData = new CreateClassRoomResponse();
             if (body.getImage()!=null){
                 byte[] originalImage = new byte[0];
@@ -59,7 +67,8 @@ public class ClassRoomService implements IClassRoomService {
                 CloudinaryUploadResponse imageUploaded = cloudinaryService.uploadFileToFolder(
                         CloudinaryConstant.CLASSROOM_PATH,
                         StringUtils.generateFileName(body.getName(), "classroom"),
-                        newImage
+                        newImage,
+                        "image"
                 );
                 classRoomEntity.setImage(imageUploaded.getUrl());
             }
@@ -89,7 +98,8 @@ public class ClassRoomService implements IClassRoomService {
                 CloudinaryUploadResponse imageUploaded = cloudinaryService.uploadFileToFolder(
                         CloudinaryConstant.CLASSROOM_PATH,
                         StringUtils.generateFileName(body.getName(), "classroom"),
-                        newImage
+                        newImage,
+                        "image"
                 );
                 classroom.setImage(imageUploaded.getUrl());
             }
@@ -142,4 +152,24 @@ public class ClassRoomService implements IClassRoomService {
         }
 
     }
+
+    @Override
+    public GetSectionsResponse getSectionsByClassroomId(int page, int size, String classroomId) {
+        try{
+            Pageable pageAble = PageRequest.of(page, size);
+            Page<SectionEntity> sectionEntities = sectionRepository.findByClassRoomId(classroomId, pageAble);
+            List<GetSectionsResponse.SectionResponse> sectionResponses = modelMapperService.mapList(sectionEntities.getContent(), GetSectionsResponse.SectionResponse.class);
+            GetSectionsResponse resData = new GetSectionsResponse();
+            resData.setTotalPage(sectionEntities.getTotalPages());
+            resData.setTotalElements(sectionEntities.getTotalElements());
+            resData.setSections(sectionResponses);
+            return resData;
+        }
+        catch (Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
+
+    }
+
+
 }

@@ -15,10 +15,11 @@ import java.util.List;
 public class TestEntity {
     @Id
     private String id;
-    @DBRef
-    private SectionEntity section;
     private String name;
     private String description;
+    private int duration;
+    private String createdBy;
+    private String source;
     private Date createdAt;
     private Date updatedAt;
     @DBRef

@@ -21,6 +21,8 @@ import com.example.learning_api.repository.database.UserRepository;
 import com.example.learning_api.service.common.JwtService;
 import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.IUserAuthService;
+import com.example.learning_api.service.redis.Impl.BaseRedisServiceImpl;
+import com.example.learning_api.service.redis.UserTokenRedisService;
 import com.example.learning_api.utils.GeneratorUtils;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -30,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -53,7 +56,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class UserAuthService implements IUserAuthService {
+public class UserAuthService  implements IUserAuthService {
 
     @Value("${spring.mail.username}")
     private String mailFrom;
@@ -63,11 +66,14 @@ public class UserAuthService implements IUserAuthService {
     private final AuthenticationManager authenticationManager;
     private final TokenRepository tokenRepository;
     private final ConfirmationRepository confirmationRepository;
+    private final UserTokenRedisService userTokenRedisService;
     @Autowired
     private final JavaMailSender javaMailSender;
     @Autowired
     @Lazy
     private PasswordEncoder passwordEncoder;
+
+
 
 
     @Transactional
@@ -97,47 +103,59 @@ public class UserAuthService implements IUserAuthService {
 
     @Override
     public LoginResponse loginUser(LoginUserRequest body) {
-        var authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        body.getEmail(),
-                        body.getPassword()
-                )
-        );
+        try{
+            var authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            body.getEmail(),
+                            body.getPassword()
+                    )
+            );
 
-        UserEntity user = userRepository.findByEmail(body.getEmail()).orElseThrow();
-        String jwt = jwtService.issueAccessToken(user.getId(), user.getEmail(), user.getRole());
-        String refreshToken = jwtService.issueRefreshToken(user.getId(), user.getEmail(), user.getRole());
-        revokeAllTokenByUser(user);
-        saveUserToken(refreshToken, user);
-        return LoginResponse.builder()
-                .accessToken(jwt)
-                .refreshToken(refreshToken)
-                .userId(user.getId())
-                .build();
+            UserEntity user = userRepository.findByEmail(body.getEmail()).orElseThrow();
+            String jwt = jwtService.issueAccessToken(user.getId(), user.getEmail(), user.getRole());
+            String refreshToken = jwtService.issueRefreshToken(user.getId(), user.getEmail(), user.getRole());
+//            userTokenRedisService.createNewUserRefreshToken(refreshToken, user.getId(),user.getEmail());
+            return LoginResponse.builder()
+                    .accessToken(jwt)
+                    .refreshToken(refreshToken)
+                    .userId(user.getId())
+                    .build();
+        }
+        catch (Exception e){
+
+            throw new CustomException(e.getMessage());
+        }
+
     }
 
     @Override
     public LoginResponse loginGoogleUser(OAuth2User oAuth2User) {
-        String email = oAuth2User.getAttribute("email");
-        UserEntity user = userRepository.findByEmail(email).orElse(null);
-        if(user == null) {
-            user = new UserEntity();
-            user.setEmail(email);
-            user.setFullname(oAuth2User.getAttribute("name"));
-            user.setRole(RoleEnum.USER);
-            user.setAuthType("google");
-            user.setCreatedAt(new Date());
-            user.setUpdatedAt(new Date());
-            user = userRepository.save(user);
-        }
-        String jwt = jwtService.issueAccessToken(user.getId(), user.getEmail(), user.getRole());
-        String refreshToken = jwtService.issueRefreshToken(user.getId(), user.getEmail(), user.getRole());
+        try {
+            String email = oAuth2User.getAttribute("email");
+            UserEntity user = userRepository.findByEmail(email).orElse(null);
+            if(user == null) {
+                user = new UserEntity();
+                user.setEmail(email);
+                user.setFullname(oAuth2User.getAttribute("name"));
+                user.setRole(RoleEnum.USER);
+                user.setAuthType("google");
+                user.setCreatedAt(new Date());
+                user.setUpdatedAt(new Date());
+                user = userRepository.save(user);
+            }
+            String jwt = jwtService.issueAccessToken(user.getId(), user.getEmail(), user.getRole());
+            String refreshToken = jwtService.issueRefreshToken(user.getId(), user.getEmail(), user.getRole());
 
-        return LoginResponse.builder()
-                .accessToken(jwt)
-                .refreshToken(refreshToken)
-                .userId(user.getId())
-                .build();
+            return LoginResponse.builder()
+                    .accessToken(jwt)
+                    .refreshToken(refreshToken)
+                    .userId(user.getId())
+                    .build();
+        }
+        catch (Exception e){
+            throw new CustomException(e.getMessage());
+        }
+
     }
 
     @Override

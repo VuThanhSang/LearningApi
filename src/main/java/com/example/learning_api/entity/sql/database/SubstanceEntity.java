@@ -13,7 +13,7 @@ import java.util.Date;
 public class SubstanceEntity {
     @Id
     private String id;
-    private String sectionId;
+    private String lessonId;
     private String content;
     private Date createdAt;
     private Date updatedAt;

@@ -1,0 +1,16 @@
+version: '3.7'
+services:
+  redis-container:
+    image: docker.io/redis:7.2.3
+    container_name: redis-container
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis-data:/data
+    restart: always
+    networks:
+      - learning-app-network
+
+networks:
+  learning-app-network:
+    driver: bridge
