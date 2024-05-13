@@ -1,6 +1,5 @@
 package com.example.learning_api.entity.sql.database;
 
-import com.example.learning_api.enums.FaqTargetType;
 import jakarta.persistence.Id;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,14 +9,12 @@ import java.util.Date;
 
 @Data
 @NoArgsConstructor
-@Document(collection = "faqs")
-public class FAQEntity {
+@Document(collection = "faculties")
+public class FacultyEntity {
     @Id
     private String id;
-    private String targetId;
-    private String question;
-    private String userId;
-    private FaqTargetType type;
+    private String name;
+    private String description;
     private Date createdAt;
     private Date updatedAt;
 }

@@ -21,6 +21,10 @@ public class CourseEntity {
     @DBRef
     private TeacherEntity teacher;
     private String teacherId;
+    private Date startDate;
+    private String thumbnail;
+    private String videoIntro;
+    private Date endDate;
     private Date createdAt;
     private Date updatedAt;
     @DBRef

@@ -1,7 +1,6 @@
 package com.example.learning_api.entity.sql.database;
 
-import com.example.learning_api.enums.FaqTargetType;
-import jakarta.persistence.Id;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -10,14 +9,13 @@ import java.util.Date;
 
 @Data
 @NoArgsConstructor
-@Document(collection = "faqs")
-public class FAQEntity {
-    @Id
+@Document(collection = "comments")
+public class CommentEntity {
     private String id;
-    private String targetId;
-    private String question;
+    private String faqId;
     private String userId;
-    private FaqTargetType type;
+    private String content;
+    private String parentId;
     private Date createdAt;
     private Date updatedAt;
 }
