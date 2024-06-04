@@ -11,4 +11,8 @@ public class CreateStudentRequest {
     @NotBlank
     private String userId;
     private String gradeLevel;
+    private String gender;
+    private String address;
+    private String phone;
+    private String schoolYear;
 }

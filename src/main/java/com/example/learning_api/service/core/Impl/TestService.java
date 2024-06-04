@@ -4,22 +4,15 @@ import com.example.learning_api.constant.CloudinaryConstant;
 import com.example.learning_api.constant.ErrorConstant;
 import com.example.learning_api.dto.request.test.CreateTestRequest;
 import com.example.learning_api.dto.request.test.ImportTestRequest;
+import com.example.learning_api.dto.request.test.TestSubmitRequest;
 import com.example.learning_api.dto.request.test.UpdateTestRequest;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.question.GetQuestionsResponse;
-import com.example.learning_api.dto.response.test.CreateTestResponse;
-import com.example.learning_api.dto.response.test.GetTestDetailResponse;
-import com.example.learning_api.dto.response.test.GetTestsResponse;
-import com.example.learning_api.entity.sql.database.AnswerEntity;
-import com.example.learning_api.entity.sql.database.QuestionEntity;
-import com.example.learning_api.entity.sql.database.TestEntity;
-import com.example.learning_api.entity.sql.database.UserEntity;
+import com.example.learning_api.dto.response.test.*;
+import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.ImportTestType;
 import com.example.learning_api.model.CustomException;
-import com.example.learning_api.repository.database.AnswerRepository;
-import com.example.learning_api.repository.database.QuestionRepository;
-import com.example.learning_api.repository.database.TestRepository;
-import com.example.learning_api.repository.database.UserRepository;
+import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
 import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.ITestService;
@@ -35,7 +28,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
+import org.springframework.data.domain.Slice;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -48,17 +42,18 @@ import java.util.regex.Pattern;
 public class TestService implements ITestService {
     private final ModelMapperService modelMapperService;
     private final TestRepository testRepository;
+    private final TestResultRepository testResultRepository;
     private final UserRepository userRepository;
+    private final CourseRepository courseRepository;
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
     private final CloudinaryService cloudinaryService;
-
     @Override
     public CreateTestResponse createTest(CreateTestRequest body) {
         try{
             UserEntity userEntity = userRepository.findById(body.getCreatedBy())
                     .orElseThrow(() -> new IllegalArgumentException("User not found"));
-            if (!ImageUtils.isValidImageFile(body.getSource())&&body.getSource()!=null) {
+            if (!ImageUtils.isValidImageFile(body.getSource()) && body.getSource()!=null) {
                 throw new CustomException(ErrorConstant.IMAGE_INVALID);
             }
             if (body.getCreatedBy()==null){
@@ -66,6 +61,18 @@ public class TestService implements ITestService {
             }
             if (userEntity==null){
                 throw new IllegalArgumentException("UserId is not found");
+            }
+            if (body.getCourseId() == null){
+                throw new IllegalArgumentException("CourseId is required");
+            }
+            if (courseRepository.findById(body.getCourseId()).isEmpty()){
+                throw new IllegalArgumentException("CourseId is not found");
+            }
+            if (body.getStartTime()==null){
+                throw new IllegalArgumentException("Start time is required");
+            }
+            if (body.getEndTime()==null){
+                throw new IllegalArgumentException("End time is required");
             }
             CreateTestResponse resData = new CreateTestResponse();
             TestEntity testEntity = modelMapperService.mapClass(body, TestEntity.class);
@@ -82,6 +89,12 @@ public class TestService implements ITestService {
                 testEntity.setSource(imageUploaded.getUrl());
             }
             testEntity.setCreatedAt(new Date());
+            testEntity.setStartTime(new Date());
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+            Date startdate = formatter.parse(body.getStartTime());
+            Date enddate = formatter.parse(body.getEndTime());
+            testEntity.setStartTime(startdate);
+            testEntity.setEndTime(enddate);
             testEntity.setUpdatedAt(new Date());
             testRepository.save(testEntity);
             resData.setCreatedBy(body.getCreatedBy());
@@ -89,6 +102,7 @@ public class TestService implements ITestService {
             resData.setDescription(body.getDescription());
             resData.setDuration(body.getDuration());
             resData.setId(testEntity.getId());
+            resData.setSource(testEntity.getSource());
             resData.setName(body.getName());
             resData.setUpdatedAt(testEntity.getUpdatedAt().toString());
             return resData;
@@ -131,6 +145,9 @@ public class TestService implements ITestService {
     @Override
     public void deleteTest(String id) {
         try{
+            TestEntity testEntity = testRepository.findById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Test not found"));
+            cloudinaryService.deleteImage(testEntity.getSource());
             List<QuestionEntity> questionEntities = questionRepository.findByTestId(id);
             for (QuestionEntity questionEntity : questionEntities){
                 answerRepository.deleteByQuestionId(questionEntity.getId());
@@ -269,6 +286,101 @@ public class TestService implements ITestService {
         catch (Exception e){
             throw new IllegalArgumentException(e.getMessage());
         }
+    }
+    @Override
+    public GetTestInProgress getTestInProgress(int page,int size,String studentId) {
+        try{
+            Pageable pageAble = PageRequest.of(page, size);
+            Slice<TestEntity> testEntities = testRepository.findTestInProgressByStudentId(studentId, pageAble);
+            GetTestInProgress resData = new GetTestInProgress();
+            List<GetTestInProgress.TestResponse> testResponses = new ArrayList<>();
+            for (TestEntity testEntity : testEntities){
+                GetTestInProgress.TestResponse testResponse = modelMapperService.mapClass(testEntity, GetTestInProgress.TestResponse.class);
+                testResponses.add(testResponse);
+            }
+            resData.setTests(testResponses);
+            resData.setTotalElements((long) testEntities.getNumberOfElements());
+            resData.setTotalPage(testEntities.getNumber());
+            return resData;
+        }
+        catch (Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public GetTestInProgress getTestOnSpecificDayByStudentId(String studentId, String date, int page, int size) {
+        try{
+            Pageable pageAble = PageRequest.of(page, size);
+            Slice<TestEntity> testEntities = testRepository.findTestsOnSpecificDateByStudentId(studentId, date, pageAble);
+            GetTestInProgress resData = new GetTestInProgress();
+            List<GetTestInProgress.TestResponse> testResponses = new ArrayList<>();
+            for (TestEntity testEntity : testEntities){
+                GetTestInProgress.TestResponse testResponse = modelMapperService.mapClass(testEntity, GetTestInProgress.TestResponse.class);
+                testResponses.add(testResponse);
+            }
+            resData.setTests(testResponses);
+            resData.setTotalElements((long) testEntities.getNumberOfElements());
+            resData.setTotalPage(testEntities.getNumber());
+            return resData;
+        }
+        catch (Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public TestSubmitResponse submitTest( TestSubmitRequest body) {
+        TestResultEntity testResult = testResultRepository.findByStudentIdAndTestId(body.getStudentId(), body.getTestId());
+        if(testResult!=null){
+            throw new CustomException(ErrorConstant.TEST_SUBMITTED);
+        }
+        GetTestDetailResponse testDetail = getTestDetail(body.getTestId());
+        List<GetQuestionsResponse.QuestionResponse> questions = testDetail.getQuestions();
+        List<List<Integer>> correctAnswers = new ArrayList<>();
+        int result = 0;
+        for (GetQuestionsResponse.QuestionResponse question : questions) {
+            int correctCount = 0;
+            int answerCorrectCount = 0;
+            List<GetQuestionsResponse.AnswerResponse> answers = question.getAnswers();
+            List<Integer> correctAnswer = new ArrayList<>();
+            for (GetQuestionsResponse.AnswerResponse answer : answers) {
+                if (answer.isCorrect()) {
+                    correctCount++;
+                    correctAnswer.add(answers.indexOf(answer));
+                    if (body.getAnswers().size() > questions.indexOf(question)){
+                        if (body.getAnswers().get(questions.indexOf(question)).contains(answers.indexOf(answer))) {
+                            answerCorrectCount++;
+                        }
+                    }
+                }
+            }
+            correctAnswers.add(correctAnswer);
+            if (correctCount == answerCorrectCount) {
+                result++;
+            }
+        }
+        TestResultEntity testResultEntity = new TestResultEntity();
+        testResultEntity.setTestId(body.getTestId());
+        testResultEntity.setStudentId(body.getStudentId());
+        testResultEntity.setGrade(result);
+        testResultEntity.setTestType("test");
+        testResultEntity.setAttendedAt(new Date());
+        testResultEntity.setCreatedAt(new Date());
+        testResultEntity.setUpdatedAt(new Date());
+        testResultRepository.save(testResultEntity);
+        TestSubmitResponse resData = new TestSubmitResponse();
+        resData.setTestType("test");
+        resData.setStudentId(body.getStudentId());
+        resData.setTestId(body.getTestId());
+        resData.setAttendedAt(testResultEntity.getAttendedAt());
+        resData.setTotalCorrectAnswers(result);
+        resData.setTotalQuestions(questions.size());
+        resData.setAnswers(correctAnswers);
+        double grade = (double) result / questions.size() * 10;
+        grade = Math.round(grade * 100.0) / 100.0;
+        resData.setGrade(grade);
+        return resData;
     }
 
 }

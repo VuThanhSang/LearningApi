@@ -2,13 +2,12 @@ package com.example.learning_api.dto.response.test;
 
 import com.example.learning_api.entity.sql.database.QuestionEntity;
 import com.example.learning_api.entity.sql.database.TestEntity;
-import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
 
 @Data
-public class GetTestsResponse {
+public class GetTestInProgress {
     private Integer totalPage;
     private Long totalElements;
     private List<TestResponse> tests;
@@ -25,8 +24,8 @@ public class GetTestsResponse {
         private String createdAt;
         private String updatedAt;
 
-        public static TestResponse fromTestEntity(TestEntity testEntity){
-            TestResponse testResponse = new TestResponse();
+        public static GetTestsResponse.TestResponse fromTestEntity(TestEntity testEntity){
+            GetTestsResponse.TestResponse testResponse = new GetTestsResponse.TestResponse();
             testResponse.setId(testEntity.getId());
             testResponse.setName(testEntity.getName());
             testResponse.setDescription(testEntity.getDescription());

@@ -18,8 +18,11 @@ public class TestEntity {
     private String name;
     private String description;
     private int duration;
+    private String courseId;
     private String createdBy;
     private String source;
+    private Date startTime;
+    private Date endTime;
     private Date createdAt;
     private Date updatedAt;
     @DBRef

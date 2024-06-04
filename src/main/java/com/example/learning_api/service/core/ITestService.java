@@ -2,10 +2,9 @@ package com.example.learning_api.service.core;
 
 import com.example.learning_api.dto.request.test.CreateTestRequest;
 import com.example.learning_api.dto.request.test.ImportTestRequest;
+import com.example.learning_api.dto.request.test.TestSubmitRequest;
 import com.example.learning_api.dto.request.test.UpdateTestRequest;
-import com.example.learning_api.dto.response.test.CreateTestResponse;
-import com.example.learning_api.dto.response.test.GetTestDetailResponse;
-import com.example.learning_api.dto.response.test.GetTestsResponse;
+import com.example.learning_api.dto.response.test.*;
 
 public interface ITestService {
     CreateTestResponse createTest(CreateTestRequest body);
@@ -14,4 +13,7 @@ public interface ITestService {
     GetTestsResponse getTests(int page, int size,String search);
     void importTest(ImportTestRequest body);
     GetTestDetailResponse getTestDetail(String id);
+    GetTestInProgress getTestInProgress(int page,int size,String studentId);
+    GetTestInProgress getTestOnSpecificDayByStudentId(String studentId,String date,int page,int size);
+    TestSubmitResponse submitTest( TestSubmitRequest body);
 }

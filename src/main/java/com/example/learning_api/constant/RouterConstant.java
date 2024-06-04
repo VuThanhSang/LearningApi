@@ -23,6 +23,7 @@ public class RouterConstant {
     public static final String SECTION_BASE_PATH = "/api/v1/section";
     public static final String CLASSROOM_BASE_PATH = "/api/v1/classroom";
     public static final String USER_AUTH_BASE_PATH = "/api/v1/auth";
+    public static final String STUDENT_ENROLLMENTS_BASE_PATH = "/api/v1/student-enrollments";
     //authentication
     public static final String POST_USER_AUTH_REGISTER_SUB_PATH = "/register";
     public static final String POST_USER_AUTH_LOGIN_SUB_PATH = "/login";

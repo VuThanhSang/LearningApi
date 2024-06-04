@@ -21,11 +21,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -66,7 +69,6 @@ public class CourseService implements ICourseService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
-
     @Override
     public void updateCourse(UpdateCourseRequest body) {
         try {
@@ -79,13 +81,24 @@ public class CourseService implements ICourseService {
             if(body.getDescription()!=null){
                 courseEntity.setDescription(body.getDescription());
             }
+            if(body.getTeacherId()!=null){
+                courseEntity.setTeacherId(body.getTeacherId());
+            }
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+            if(body.getStartDate()!=null){
+                Date startDate = formatter.parse(body.getStartDate());
+                courseEntity.setStartDate(startDate);
+            }
+            if(body.getEndDate()!=null){
+                Date endDate = formatter.parse(body.getEndDate());
+                courseEntity.setEndDate(endDate);
+            }
             courseRepository.save(courseEntity);
         }
         catch (Exception e){
             throw new IllegalArgumentException(e.getMessage());
         }
     }
-
     @Override
     public void deleteCourse(DeleteCourseRequest body) {
         try {
@@ -137,6 +150,33 @@ public class CourseService implements ICourseService {
             return res;
         }
         catch (Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public GetCoursesResponse getCoursesInProgress(int page, int size, String studentId, String dateStr) {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+            Date date = sdf.parse(dateStr);
+
+            List<CourseEntity> courses = courseRepository.findCoursesInProgressByDateAndStudentId(date, studentId);
+
+            // Phân trang thủ công vì Aggregation không hỗ trợ Pageable
+            int start = page * size;
+            int end = Math.min(start + size, courses.size());
+            List<CourseEntity> pagedCourses = courses.subList(start, end);
+
+            List<GetCoursesResponse.CourseResponse> resData = pagedCourses.stream()
+                    .map(course -> modelMapperService.mapClass(course, GetCoursesResponse.CourseResponse.class))
+                    .collect(Collectors.toList());
+
+            GetCoursesResponse res = new GetCoursesResponse();
+            res.setCourses(resData);
+            res.setTotalPage((int) Math.ceil((double) courses.size() / size));
+            res.setTotalElements((long) courses.size());
+            return res;
+        } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }
     }

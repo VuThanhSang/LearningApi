@@ -110,6 +110,31 @@ public class CourseController {
         }
 
     }
+
+    @GetMapping(path = "/in-progress")
+    public ResponseEntity<ResponseAPI<GetCoursesResponse>> getCoursesInProgress(@RequestParam(name="studentId",required = true) String studentId,
+                                                                               @RequestParam(name="date",required = true) String date,
+                                                                               @RequestParam(name="page",required = false,defaultValue = "1") int page,
+                                                                               @RequestParam(name="size",required = false,defaultValue = "10") int size) {
+        try{
+            GetCoursesResponse resData = courseService.getCoursesInProgress( page-1, size,studentId,date);
+            ResponseAPI<GetCoursesResponse> res = ResponseAPI.<GetCoursesResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get course in progress successfully")
+                    .data(resData)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetCoursesResponse> res = ResponseAPI.<GetCoursesResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
+
     @GetMapping(path = "/{courseId}/classrooms")
     public ResponseEntity<ResponseAPI<GetClassRoomsResponse>> getClassRoomsByCourseId(
             @PathVariable String courseId,
