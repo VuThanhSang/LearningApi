@@ -21,4 +21,7 @@ public class UpdateCourseRequest {
     private MultipartFile image;
     @Schema(example = TEACHER_ID_EX)
     private String teacherId;
+    private String startDate;
+    private String endDate;
+
 }

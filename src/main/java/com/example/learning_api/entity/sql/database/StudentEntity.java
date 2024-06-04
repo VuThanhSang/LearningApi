@@ -18,6 +18,10 @@ public class StudentEntity {
     private String userId;
     private String gradeLevel;
     private UserEntity user;
+    private String gender;
+    private String address;
+    private String phone;
+    private String schoolYear;
     private Date createdAt;
     private Date updatedAt;
     @DBRef

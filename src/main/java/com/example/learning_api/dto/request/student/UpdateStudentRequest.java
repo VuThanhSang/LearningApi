@@ -10,4 +10,8 @@ public class UpdateStudentRequest {
     @NotBlank
     private String id;
     private String gradeLevel;
+    private String gender;
+    private String address;
+    private String phone;
+    private String schoolYear;
 }

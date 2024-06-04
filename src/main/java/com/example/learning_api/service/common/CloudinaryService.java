@@ -67,8 +67,40 @@ public class CloudinaryService {
             throw new IOException("Failed to upload file to Cloudinary", e);
         }
     }
+    public static String getPublicId(String url) {
+        // Kiểm tra đường dẫn hợp lệ
+        if (!url.startsWith("http")) {
+            return null;
+        }
 
-    public void deleteImage(String publicId) throws IOException {
+        // Tìm vị trí của dấu / cuối cùng
+        int lastSlashIndex = url.lastIndexOf('/');
+
+        // Nếu không có dấu / trong URL
+        if (lastSlashIndex == -1) {
+            return null;
+        }
+
+        // Lấy phần sau dấu / cuối cùng
+        String fileNameWithExtension = url.substring(lastSlashIndex + 1);
+
+        // Tìm vị trí của dấu chấm (.) cuối cùng để lấy phần mở rộng
+        int lastDotIndex = fileNameWithExtension.lastIndexOf('.');
+
+        // Nếu không có phần mở rộng
+        if (lastDotIndex == -1) {
+            return null;
+        }
+
+        // Lấy public ID bằng cách xóa phần mở rộng
+        String publicId = fileNameWithExtension.substring(0, lastDotIndex);
+
+        return publicId;
+    }
+
+    public void deleteImage(String url) throws IOException {
+        // Lấy public ID từ URL
+        String publicId = getPublicId(url);
         // Xóa hình ảnh từ Cloudinary bằng cách sử dụng public ID
         Map<String, String> options = ObjectUtils.asMap("invalidate", true);
         cloudinary.uploader().destroy(publicId, options);

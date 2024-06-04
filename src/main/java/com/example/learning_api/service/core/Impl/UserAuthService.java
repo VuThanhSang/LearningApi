@@ -8,16 +8,12 @@ import com.example.learning_api.dto.request.auth.RegisterUserRequest;
 import com.example.learning_api.dto.response.auth.LoginResponse;
 import com.example.learning_api.dto.response.auth.RefreshTokenResponse;
 import com.example.learning_api.dto.response.auth.RegisterResponse;
-import com.example.learning_api.entity.sql.database.ConfirmationEntity;
-import com.example.learning_api.entity.sql.database.TokenEntity;
-import com.example.learning_api.entity.sql.database.UserEntity;
+import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.ConfirmationCodeStatus;
 import com.example.learning_api.enums.RoleEnum;
 import com.example.learning_api.enums.UserStatus;
 import com.example.learning_api.model.CustomException;
-import com.example.learning_api.repository.database.ConfirmationRepository;
-import com.example.learning_api.repository.database.TokenRepository;
-import com.example.learning_api.repository.database.UserRepository;
+import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.JwtService;
 import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.IUserAuthService;
@@ -67,6 +63,8 @@ public class UserAuthService  implements IUserAuthService {
     private final TokenRepository tokenRepository;
     private final ConfirmationRepository confirmationRepository;
     private final UserTokenRedisService userTokenRedisService;
+    private final TeacherRepository teacherRepository;
+    private final StudentRepository studentRepository;
     @Autowired
     private final JavaMailSender javaMailSender;
     @Autowired
@@ -74,6 +72,36 @@ public class UserAuthService  implements IUserAuthService {
     private PasswordEncoder passwordEncoder;
 
 
+    private UserEntity authenticateUser(String email, String password) {
+        UserEntity user = userRepository.findByEmail(email).orElseThrow(() -> new CustomException("Account not found"));
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new CustomException("Password is incorrect");
+        }
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
+        return user;
+    }
+
+    private LoginResponse buildLoginResponse(UserEntity user, String jwt, String refreshToken) {
+        LoginResponse.LoginResponseBuilder responseBuilder = LoginResponse.builder()
+                .accessToken(jwt)
+                .refreshToken(refreshToken)
+                .userId(user.getId())
+                .status(user.getStatus().toString());
+
+        if (user.getRole() == RoleEnum.TEACHER) {
+            TeacherEntity teacher = teacherRepository.findByUserId(user.getId());
+            if (teacher == null) {
+                throw new CustomException("Teacher not found");
+            }
+            responseBuilder.teacher(teacher);
+        } else if (user.getRole() == RoleEnum.USER) {
+            StudentEntity student = studentRepository.findByUserId(user.getId());
+            if (student != null) {
+                responseBuilder.student(student);
+            }
+        }
+        return responseBuilder.build();
+    }
 
 
     @Transactional
@@ -100,45 +128,29 @@ public class UserAuthService  implements IUserAuthService {
         resData.setUserId(userEntity.getId());
         return resData;
     }
-
     @Override
     public LoginResponse loginUser(LoginUserRequest body) {
-        try{
-            var authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            body.getEmail(),
-                            body.getPassword()
-                    )
-            );
-
-            UserEntity user = userRepository.findByEmail(body.getEmail()).orElseThrow();
+        try {
+            UserEntity user = authenticateUser(body.getEmail(), body.getPassword());
             String jwt = jwtService.issueAccessToken(user.getId(), user.getEmail(), user.getRole());
             String refreshToken = jwtService.issueRefreshToken(user.getId(), user.getEmail(), user.getRole());
-//            userTokenRedisService.createNewUserRefreshToken(refreshToken, user.getId(),user.getEmail());
-            return LoginResponse.builder()
-                    .accessToken(jwt)
-                    .refreshToken(refreshToken)
-                    .userId(user.getId())
-                    .build();
-        }
-        catch (Exception e){
-
+            return buildLoginResponse(user, jwt, refreshToken);
+        } catch (Exception e) {
             throw new CustomException(e.getMessage());
         }
-
     }
-
     @Override
     public LoginResponse loginGoogleUser(OAuth2User oAuth2User) {
         try {
             String email = oAuth2User.getAttribute("email");
-            UserEntity user = userRepository.findByEmail(email).orElse(null);
+            UserEntity user = userRepository.findByEmailAndAuthType(email,"google").orElse(null);
             if(user == null) {
                 user = new UserEntity();
                 user.setEmail(email);
                 user.setFullname(oAuth2User.getAttribute("name"));
                 user.setRole(RoleEnum.USER);
                 user.setAuthType("google");
+                user.setStatus(UserStatus.ACTIVE);
                 user.setCreatedAt(new Date());
                 user.setUpdatedAt(new Date());
                 user = userRepository.save(user);
@@ -146,18 +158,32 @@ public class UserAuthService  implements IUserAuthService {
             String jwt = jwtService.issueAccessToken(user.getId(), user.getEmail(), user.getRole());
             String refreshToken = jwtService.issueRefreshToken(user.getId(), user.getEmail(), user.getRole());
 
-            return LoginResponse.builder()
+            LoginResponse.LoginResponseBuilder responseBuilder = LoginResponse.builder()
                     .accessToken(jwt)
                     .refreshToken(refreshToken)
                     .userId(user.getId())
-                    .build();
+                    .role(user.getRole().toString())
+                    .status(user.getStatus().toString());
+
+
+            if (user.getRole() == RoleEnum.TEACHER) {
+                TeacherEntity teacher = teacherRepository.findByUserId(user.getId());
+                if (teacher == null) {
+                    throw new CustomException("Teacher not found");
+                }
+                responseBuilder.teacher(teacher);
+            } else if (user.getRole() == RoleEnum.USER) {
+                StudentEntity student = studentRepository.findByUserId(user.getId());
+                if (student != null) {
+                    responseBuilder.student(student);
+                }
+            }
+            return responseBuilder.build();
         }
         catch (Exception e){
             throw new CustomException(e.getMessage());
         }
-
     }
-
     @Override
     public RefreshTokenResponse refreshToken(String refreshToken) {
         DecodedJWT decodedJWT = jwtService.decodeRefreshToken(refreshToken);
@@ -272,15 +298,18 @@ public class UserAuthService  implements IUserAuthService {
                 .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND + "User with email " + email));
         Date currentTime = new Date();
 
-        if (code.equals(confirmationCollection.getCode()) && currentTime.before(confirmationCollection.getExpireAt())) {
-            confirmationCollection.setStatus(ConfirmationCodeStatus.USED);
-            user.setStatus(UserStatus.ACTIVE);
-            userRepository.save(user);
-            confirmationRepository.save(confirmationCollection);
-            return;
+        if (!code.equals(confirmationCollection.getCode())) {
+            throw new CustomException("Code is incorrect");
         }
 
-        throw new CustomException(UNAUTHORIZED, "Code is not valid");
+        if (currentTime.after(confirmationCollection.getExpireAt())) {
+            throw new CustomException( "Code has expired");
+        }
+
+        confirmationCollection.setStatus(ConfirmationCodeStatus.USED);
+        user.setStatus(UserStatus.ACTIVE);
+        userRepository.save(user);
+        confirmationRepository.save(confirmationCollection);
     }
 
     @Transactional

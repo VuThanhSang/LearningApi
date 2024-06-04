@@ -10,5 +10,7 @@ import org.springframework.data.mongodb.repository.Query;
 public interface TeacherRepository extends MongoRepository<TeacherEntity, String>{
   @Query("{'user.fullname': {$regex: ?0, $options: 'i'}}")
   Page<TeacherEntity> findByNameContaining(String name, Pageable pageable);
+
+  TeacherEntity findByUserId(String userId);
 }
 

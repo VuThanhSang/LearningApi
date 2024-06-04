@@ -1,14 +1,11 @@
 package com.example.learning_api.controller;
 
 import com.example.learning_api.constant.StatusCode;
-import com.example.learning_api.dto.request.test.CreateTestRequest;
-import com.example.learning_api.dto.request.test.ImportTestRequest;
-import com.example.learning_api.dto.request.test.UpdateTestRequest;
+import com.example.learning_api.dto.request.test.*;
 import com.example.learning_api.dto.response.teacher.GetTeachersResponse;
-import com.example.learning_api.dto.response.test.CreateTestResponse;
-import com.example.learning_api.dto.response.test.GetTestDetailResponse;
-import com.example.learning_api.dto.response.test.GetTestsResponse;
+import com.example.learning_api.dto.response.test.*;
 import com.example.learning_api.model.ResponseAPI;
+import com.example.learning_api.service.core.ITestResultService;
 import com.example.learning_api.service.core.ITestService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +24,7 @@ import static com.example.learning_api.constant.RouterConstant.*;
 @RequestMapping(TEST_BASE_PATH)
 public class TestController {
     private final ITestService testService;
+    private final ITestResultService testResultService;
 
     @PostMapping(path = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ResponseAPI<String>> importTest(@ModelAttribute @Valid ImportTestRequest body) {
@@ -150,4 +148,137 @@ public class TestController {
             return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
         }
     }
+
+    @GetMapping(path = "/in-progress/{studentId}")
+    public ResponseEntity<ResponseAPI<GetTestInProgress>> getTestsInProgress (
+            @PathVariable String studentId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "") String search
+    ){
+        try{
+            GetTestInProgress resData = testService.getTestInProgress( page-1, size,studentId );
+            ResponseAPI<GetTestInProgress> res = ResponseAPI.<GetTestInProgress>builder()
+                    .timestamp(new Date())
+                    .message("Get tests in progress successfully")
+                    .data(resData)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetTestInProgress> res = ResponseAPI.<GetTestInProgress>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+    @GetMapping(path = "/on-specific-day/{studentId}")
+    public ResponseEntity<ResponseAPI<GetTestInProgress>> getTestsOnSpecificDayByStudentId (
+            @PathVariable String studentId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "") String date
+    ){
+        try{
+            GetTestInProgress resData = testService.getTestOnSpecificDayByStudentId(studentId, date, page-1, size);
+            ResponseAPI<GetTestInProgress> res = ResponseAPI.<GetTestInProgress>builder()
+                    .timestamp(new Date())
+                    .message("Get tests on specific day successfully")
+                    .data(resData)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetTestInProgress> res = ResponseAPI.<GetTestInProgress>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
+    @PostMapping(path = "/submit")
+    public ResponseEntity<ResponseAPI<TestSubmitResponse>> submitTest(@RequestBody @Valid TestSubmitRequest body) {
+        try{
+            TestSubmitResponse data = testService.submitTest(body);
+            ResponseAPI<TestSubmitResponse> res = ResponseAPI.<TestSubmitResponse>builder()
+                    .timestamp(new Date())
+                    .message("Submit test successfully")
+                    .data(data)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.CREATED);
+        }
+        catch (Exception e){
+            ResponseAPI<TestSubmitResponse> res = ResponseAPI.<TestSubmitResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
+
+    @PostMapping(path = "/result")
+    public ResponseEntity<ResponseAPI<String>> addTestResult(@RequestBody @Valid CreateTestResultRequest body) {
+        try{
+            testResultService.addTestResult(body);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message("Add test result successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.CREATED);
+        }
+        catch (Exception e){
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
+
+    @PatchMapping(path = "/result/{testResultId}")
+    public ResponseEntity<ResponseAPI<String>> updateTestResult(@RequestBody @Valid UpdateTestResultRequest body, @PathVariable String testResultId) {
+        try{
+            body.setId(testResultId);
+            testResultService.updateTestResult(body);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message("Update test result successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
+
+    @DeleteMapping(path = "/result/{studentId}/{courseId}")
+    public ResponseEntity<ResponseAPI<String>> deleteTestResult(@PathVariable String studentId, @PathVariable String courseId) {
+        try{
+            testResultService.deleteTestResult(studentId, courseId);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message("Delete test result successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
+
+
 }
