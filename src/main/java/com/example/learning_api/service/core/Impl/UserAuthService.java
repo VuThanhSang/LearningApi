@@ -85,7 +85,6 @@ public class UserAuthService  implements IUserAuthService {
         LoginResponse.LoginResponseBuilder responseBuilder = LoginResponse.builder()
                 .accessToken(jwt)
                 .refreshToken(refreshToken)
-                .userId(user.getId())
                 .status(user.getStatus().toString());
 
         if (user.getRole() == RoleEnum.TEACHER) {
@@ -161,8 +160,6 @@ public class UserAuthService  implements IUserAuthService {
             LoginResponse.LoginResponseBuilder responseBuilder = LoginResponse.builder()
                     .accessToken(jwt)
                     .refreshToken(refreshToken)
-                    .userId(user.getId())
-                    .role(user.getRole().toString())
                     .status(user.getStatus().toString());
 
 

@@ -9,5 +9,7 @@ public class EnrollStudentRequest {
     private String studentId;
     @NotNull
     private String courseId;
+    @NotNull
+    private String classroomId;
 
 }

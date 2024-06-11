@@ -6,10 +6,11 @@ import lombok.Builder;
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 import static com.example.learning_api.constant.SwaggerConstant.*;
 @Data
 @Builder
-
 public class CreateClassRoomRequest {
     @Schema(example = NAME_EX)
     @NotBlank
@@ -21,5 +22,8 @@ public class CreateClassRoomRequest {
     @Schema(example = ID_EX)
     @NotBlank
     private String courseId;
-
+    @Schema(example = TEACHER_ID_EX)
+    @NotBlank
+    private String teacherId;
+    private List<ClassSessionRequest> sessions;
 }

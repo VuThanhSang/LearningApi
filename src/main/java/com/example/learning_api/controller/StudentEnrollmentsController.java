@@ -24,7 +24,7 @@ public class StudentEnrollmentsController {
     @PostMapping(path = "")
     public ResponseEntity<ResponseAPI<String>> enrollStudent(@RequestBody @Valid EnrollStudentRequest body) {
         try {
-            studentEnrollmentsService.enrollStudent(body.getStudentId(), body.getCourseId());
+            studentEnrollmentsService.enrollStudent(body);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
                     .timestamp(new Date())
                     .message("Enroll student successfully")

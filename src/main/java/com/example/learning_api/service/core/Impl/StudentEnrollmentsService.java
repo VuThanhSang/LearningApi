@@ -1,10 +1,9 @@
 package com.example.learning_api.service.core.Impl;
 
+import com.example.learning_api.dto.request.student_enrollments.EnrollStudentRequest;
 import com.example.learning_api.entity.sql.database.StudentEnrollmentsEntity;
 import com.example.learning_api.enums.StudentEnrollmentStatus;
-import com.example.learning_api.repository.database.CourseRepository;
-import com.example.learning_api.repository.database.StudentEnrollmentsRepository;
-import com.example.learning_api.repository.database.StudentRepository;
+import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.core.IStudentEnrollmentsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,24 +18,29 @@ public class StudentEnrollmentsService implements IStudentEnrollmentsService {
     private final StudentEnrollmentsRepository studentEnrollmentsRepository;
     private final StudentRepository studentRepository;
     private final CourseRepository courseRepository;
+    private final ClassRoomRepository classroomRepository;
     @Override
-    public void enrollStudent(String studentId, String courseId) {
+    public void enrollStudent(EnrollStudentRequest body) {
         try {
-            if (studentId == null) {
+            if (body.getStudentId() == null) {
                 throw new IllegalArgumentException("StudentId is required");
             }
-            if (courseId == null) {
+            if (body.getCourseId() == null) {
                 throw new IllegalArgumentException("CourseId is required");
             }
-             if (studentRepository.findById(studentId).isEmpty()) {
+             if (studentRepository.findById(body.getStudentId()).isEmpty()) {
                 throw new IllegalArgumentException("StudentId is not found");
             }
-            if (courseRepository.findById(courseId).isEmpty()) {
+            if (courseRepository.findById(body.getCourseId()).isEmpty()) {
                 throw new IllegalArgumentException("CourseId is not found");
             }
+            if (classroomRepository.findById(body.getClassroomId()).isEmpty()) {
+                throw new IllegalArgumentException("ClassroomId is not found");
+            }
             StudentEnrollmentsEntity studentEnrollmentsEntity = new StudentEnrollmentsEntity();
-            studentEnrollmentsEntity.setStudentId(studentId);
-            studentEnrollmentsEntity.setCourseId(courseId);
+            studentEnrollmentsEntity.setStudentId(body.getStudentId());
+            studentEnrollmentsEntity.setCourseId(body.getCourseId());
+            studentEnrollmentsEntity.setClassroomId(body.getClassroomId());
             studentEnrollmentsEntity.setGrade("0");
             studentEnrollmentsEntity.setEnrolledAt(new Date());
             studentEnrollmentsEntity.setCreatedAt(new Date());

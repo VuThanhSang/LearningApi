@@ -59,7 +59,10 @@ public class SecurityConfig {
                 .authorizeRequests(authorizeRequests -> authorizeRequests
                         .requestMatchers("/login/oauth2/code/google", "/api/v1/auth/**").permitAll()
                         .requestMatchers("/admin/**").hasAnyAuthority(RoleEnum.ADMIN.name()) // Added "ROLE_" prefix
-                        .requestMatchers("/api/v1/classroom/**","/api/v1/course/**","/api/v1/section/**","/api/v1/test/**").hasAnyAuthority(RoleEnum.USER.name()) // Added "ROLE_" prefix
+                        .requestMatchers("/api/v1/classroom/**",
+                                "/api/v1/course/**","/api/v1/section/**",
+                                "/api/v1/test/**")
+                        .hasAnyAuthority(RoleEnum.USER.name()) // Added "ROLE_" prefix
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authenticationProvider(authenticationProvider()).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

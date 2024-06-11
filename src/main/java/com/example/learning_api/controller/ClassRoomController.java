@@ -5,7 +5,9 @@ import com.example.learning_api.dto.request.classroom.CreateClassRoomRequest;
 
 import com.example.learning_api.dto.request.classroom.UpdateClassRoomRequest;
 import com.example.learning_api.dto.response.classroom.CreateClassRoomResponse;
+import com.example.learning_api.dto.response.classroom.GetClassRoomDetailResponse;
 import com.example.learning_api.dto.response.classroom.GetClassRoomsResponse;
+import com.example.learning_api.dto.response.classroom.GetScheduleResponse;
 import com.example.learning_api.dto.response.section.GetSectionsResponse;
 import com.example.learning_api.model.ResponseAPI;
 import com.example.learning_api.service.common.JwtService;
@@ -18,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
+import java.util.List;
 
 import static com.example.learning_api.constant.RouterConstant.*;
 
@@ -132,4 +135,72 @@ public class ClassRoomController {
         }
 
     }
+
+
+    @GetMapping(path = "/schedule-day/{studentId}")
+    public ResponseEntity<ResponseAPI<GetClassRoomsResponse>> getScheduleByDay(@PathVariable String studentId,
+                                                                              @RequestParam(name="day",required = false,defaultValue = "") String day) {
+        try{
+            GetClassRoomsResponse data= classRoomService.getScheduleByDay(studentId,day);
+            ResponseAPI<GetClassRoomsResponse> res = ResponseAPI.<GetClassRoomsResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get schedule by day successfully")
+                    .data(data)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetClassRoomsResponse> res = ResponseAPI.<GetClassRoomsResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
+
+    @GetMapping(path = "/schedule-week/{studentId}")
+    public ResponseEntity<ResponseAPI<List<GetScheduleResponse>>> getScheduleByStudentId(@PathVariable String studentId) {
+        try{
+            List<GetScheduleResponse> data= classRoomService.getScheduleByStudentId(studentId);
+            ResponseAPI<List<GetScheduleResponse>> res = ResponseAPI.<List<GetScheduleResponse>>builder()
+                    .timestamp(new Date())
+                    .message("Get schedule by studentId successfully")
+                    .data(data)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<List<GetScheduleResponse>> res = ResponseAPI.<List<GetScheduleResponse>>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
+
+    @GetMapping(path = "/detail/{classroomId}")
+    public ResponseEntity<ResponseAPI<GetClassRoomDetailResponse>> getClassRoomDetail(@PathVariable String classroomId) {
+        try{
+            GetClassRoomDetailResponse data= classRoomService.getClassRoomDetail(classroomId);
+            ResponseAPI<GetClassRoomDetailResponse> res = ResponseAPI.<GetClassRoomDetailResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get class room detail successfully")
+                    .data(data)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetClassRoomDetailResponse> res = ResponseAPI.<GetClassRoomDetailResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
+
+
+
 }

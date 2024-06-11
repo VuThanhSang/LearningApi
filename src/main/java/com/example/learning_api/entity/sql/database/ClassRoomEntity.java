@@ -15,13 +15,24 @@ import java.util.List;
 public class ClassRoomEntity {
     @Id
     private String id;
-
+    @Data
+    @NoArgsConstructor
+    public static class ClassSession {
+        private String dayOfWeek;
+        private String startTime;
+        private String endTime;
+    }
     private String name;
     private String description;
     private String image;
     private String courseId;
+    private List<ClassSession> sessions;
+    private String startTime;
+    private String endTime;
+    private String teacherId;
     private Date createdAt;
     private Date updatedAt;
     @DBRef
     private List<SectionEntity> sections;
+
 }
