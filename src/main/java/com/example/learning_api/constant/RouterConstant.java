@@ -7,6 +7,7 @@ public class RouterConstant {
     public static final String UPDATE_PATH = "/update";
     public static final String DELETE_PATH = "/delete";
 
+    public static final String ADMIN_BASE_PATH = "/api/v1/admin";
     public static final String FACULTY_BASE_PATH = "/api/v1/faculty";
     public static final String FAQ_BASE_PATH = "/api/v1/faq";
     public static final String COMMENT_BASE_PATH = "/api/v1/comment";

@@ -1,6 +1,7 @@
 package com.example.learning_api.repository.database;
 
 import com.example.learning_api.dto.response.classroom.GetScheduleResponse;
+import com.example.learning_api.dto.response.classroom.TotalClassroomOfDayDto;
 import com.example.learning_api.entity.sql.database.ClassRoomEntity;
 import org.bson.Document;
 import org.springframework.data.domain.Page;
@@ -27,15 +28,10 @@ public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, St
     List<ClassRoomEntity> findStudentScheduleByDayAndStudentId(String dayOfWeek, String studentId);
 
     @Aggregation(pipeline = {
-            "{ $addFields: { id: { $toString: '$_id' } } }",
-            "{ $lookup: { from: 'student_enrollments', localField: 'id', foreignField: 'classroomId', as: 'enrollments' } }",
-            "{ $unwind: '$enrollments' }",
-            "{ $match: { 'enrollments.studentId': 66350b7eafdf6323c9c962d4 } }",
-            "{ $project: { _id: 0, className: '$name', courseId: '$courseId', classroomId: '$_id', sessions: '$sessions' } }",
             "{ $unwind: '$sessions' }",
-            "{ $group: { _id: { dayOfWeek: '$sessions.dayOfWeek', className: '$className' }, sessions: { $push: { startTime: '$sessions.startTime', endTime: '$sessions.endTime' } } } }",
-            "{ $group: { _id: null, schedule: { $push: { day: '$_id.dayOfWeek', className: '$_id.className', sessions: '$sessions' } } } }",
-            "{ $project: { _id: 0, schedule: 1 } }"
+            "{ $group: { _id: '$sessions.dayOfWeek', count: { $sum: 1 } } }"
     })
-    Document getStudentSchedule(String studentId);
+    List<TotalClassroomOfDayDto> countSessionsByDayOfWeek();
+
+
 }

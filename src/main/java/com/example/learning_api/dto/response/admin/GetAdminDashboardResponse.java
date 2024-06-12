@@ -1,6 +1,6 @@
 package com.example.learning_api.dto.response.admin;
 
-import com.example.learning_api.dto.common.TotalClassroomOfDayDto;
+import com.example.learning_api.dto.response.classroom.TotalClassroomOfDayDto;
 import com.example.learning_api.dto.common.TotalTestOfDayDto;
 import lombok.Data;
 

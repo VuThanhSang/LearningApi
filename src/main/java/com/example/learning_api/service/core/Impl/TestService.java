@@ -89,7 +89,6 @@ public class TestService implements ITestService {
                 testEntity.setSource(imageUploaded.getUrl());
             }
             testEntity.setCreatedAt(new Date());
-            testEntity.setStartTime(new Date());
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
             Date startdate = formatter.parse(body.getStartTime());
             Date enddate = formatter.parse(body.getEndTime());
