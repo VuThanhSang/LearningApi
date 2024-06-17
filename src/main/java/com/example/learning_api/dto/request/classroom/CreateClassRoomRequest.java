@@ -25,5 +25,8 @@ public class CreateClassRoomRequest {
     @Schema(example = TEACHER_ID_EX)
     @NotBlank
     private String teacherId;
+    @NotBlank
+    private String termId;
+
     private List<ClassSessionRequest> sessions;
 }

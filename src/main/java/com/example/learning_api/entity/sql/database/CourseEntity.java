@@ -1,5 +1,6 @@
 package com.example.learning_api.entity.sql.database;
 
+import com.example.learning_api.enums.CourseStatus;
 import jakarta.persistence.Id;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,16 +18,12 @@ public class CourseEntity {
     private String id;
     private String name;
     private String description;
-
-    @DBRef
-    private TeacherEntity teacher;
-    private String teacherId;
-    private Date startDate;
     private String thumbnail;
     private String videoIntro;
-    private Date endDate;
+    private String termId;
     private Date createdAt;
     private Date updatedAt;
+    private CourseStatus status;
     @DBRef
     private List<ClassRoomEntity> classRooms;
     @DBRef

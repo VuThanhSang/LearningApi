@@ -25,21 +25,15 @@ public class StudentEnrollmentsService implements IStudentEnrollmentsService {
             if (body.getStudentId() == null) {
                 throw new IllegalArgumentException("StudentId is required");
             }
-            if (body.getCourseId() == null) {
-                throw new IllegalArgumentException("CourseId is required");
-            }
              if (studentRepository.findById(body.getStudentId()).isEmpty()) {
                 throw new IllegalArgumentException("StudentId is not found");
             }
-            if (courseRepository.findById(body.getCourseId()).isEmpty()) {
-                throw new IllegalArgumentException("CourseId is not found");
-            }
+
             if (classroomRepository.findById(body.getClassroomId()).isEmpty()) {
                 throw new IllegalArgumentException("ClassroomId is not found");
             }
             StudentEnrollmentsEntity studentEnrollmentsEntity = new StudentEnrollmentsEntity();
             studentEnrollmentsEntity.setStudentId(body.getStudentId());
-            studentEnrollmentsEntity.setCourseId(body.getCourseId());
             studentEnrollmentsEntity.setClassroomId(body.getClassroomId());
             studentEnrollmentsEntity.setGrade("0");
             studentEnrollmentsEntity.setEnrolledAt(new Date());
@@ -69,7 +63,7 @@ public class StudentEnrollmentsService implements IStudentEnrollmentsService {
             if (courseRepository.findById(courseId).isEmpty()) {
                 throw new IllegalArgumentException("CourseId is not found");
             }
-            studentEnrollmentsRepository.deleteByStudentIdAndCourseId(studentId, courseId);
+//            studentEnrollmentsRepository.deleteByStudentIdAndCourseId(studentId, courseId);
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
 

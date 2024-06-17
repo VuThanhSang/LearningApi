@@ -19,7 +19,6 @@ public class GetClassRoomsResponse {
         private String teacherId;
         private String courseId;
         private String image;
-        private List<ClassRoomEntity.ClassSession> sessions;
         private String createdAt;
         private String updatedAt;
         public static ClassRoomResponse formClassRoomEntity(ClassRoomEntity classRoomEntity){
@@ -31,7 +30,6 @@ public class GetClassRoomsResponse {
             classRoomResponse.setUpdatedAt(classRoomEntity.getUpdatedAt().toString());
             classRoomResponse.setTeacherId(classRoomEntity.getTeacherId());
             classRoomResponse.setCourseId(classRoomEntity.getCourseId());
-            classRoomResponse.setSessions(classRoomEntity.getSessions());
             classRoomResponse.setImage(classRoomEntity.getImage());
             return classRoomResponse;
         }

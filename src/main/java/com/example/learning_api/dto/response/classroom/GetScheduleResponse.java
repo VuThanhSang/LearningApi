@@ -11,6 +11,10 @@ import java.util.stream.Collectors;
 public class GetScheduleResponse {
     private String dayOfWeek;
     private List<Session> sessions;
+    public GetScheduleResponse(String dayOfWeek, List<Session> sessions) {
+        this.dayOfWeek = dayOfWeek;
+        this.sessions = sessions;
+    }
     @Data
     public static class Session {
         private String startTime;

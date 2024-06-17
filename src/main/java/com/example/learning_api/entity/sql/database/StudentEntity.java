@@ -22,6 +22,8 @@ public class StudentEntity {
     private String address;
     private String phone;
     private String schoolYear;
+    private String academicYearId;
+    private String majorId;
     private Date createdAt;
     private Date updatedAt;
     @DBRef

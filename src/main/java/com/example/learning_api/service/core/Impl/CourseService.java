@@ -44,12 +44,6 @@ public class CourseService implements ICourseService {
             if (body.getName()==null){
                 throw new IllegalArgumentException("Name is required");
             }
-            if (body.getTeacherId()==null){
-                throw new IllegalArgumentException("TeacherId is required");
-            }
-            if (userRepository.findById(body.getTeacherId()).isEmpty()){
-                throw new IllegalArgumentException("TeacherId is not found");
-            }
             CourseEntity courseEntity = modelMapperService.mapClass(body, CourseEntity.class);
             courseEntity.setCreatedAt(new Date());
             courseEntity.setUpdatedAt(new Date());
@@ -60,8 +54,13 @@ public class CourseService implements ICourseService {
 
             resData.setName(courseEntity.getName());
             resData.setDescription(courseEntity.getDescription());
-            resData.setTeacherId(courseEntity.getTeacherId());
             resData.setId(courseEntity.getId());
+            resData.setCreatedAt(courseEntity.getCreatedAt().toString());
+            resData.setUpdatedAt(courseEntity.getUpdatedAt().toString());
+            resData.setStatus(courseEntity.getStatus().toString());
+            resData.setTermId(courseEntity.getTermId());
+            resData.setThumbnail(courseEntity.getThumbnail());
+            resData.setVideoIntro(courseEntity.getVideoIntro());
             return resData;
         }
         catch (Exception e){
@@ -81,18 +80,7 @@ public class CourseService implements ICourseService {
             if(body.getDescription()!=null){
                 courseEntity.setDescription(body.getDescription());
             }
-            if(body.getTeacherId()!=null){
-                courseEntity.setTeacherId(body.getTeacherId());
-            }
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-            if(body.getStartDate()!=null){
-                Date startDate = formatter.parse(body.getStartDate());
-                courseEntity.setStartDate(startDate);
-            }
-            if(body.getEndDate()!=null){
-                Date endDate = formatter.parse(body.getEndDate());
-                courseEntity.setEndDate(endDate);
-            }
+
             courseRepository.save(courseEntity);
         }
         catch (Exception e){

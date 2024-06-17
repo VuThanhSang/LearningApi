@@ -12,9 +12,7 @@ import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.classroom.GetScheduleResponse;
 import com.example.learning_api.dto.response.lesson.GetLessonDetailResponse;
 import com.example.learning_api.dto.response.section.GetSectionsResponse;
-import com.example.learning_api.entity.sql.database.ClassRoomEntity;
-import com.example.learning_api.entity.sql.database.LessonEntity;
-import com.example.learning_api.entity.sql.database.SectionEntity;
+import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
@@ -24,6 +22,7 @@ import com.example.learning_api.utils.ImageUtils;
 import com.example.learning_api.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.Document;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -31,6 +30,7 @@ import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -48,6 +48,8 @@ public class ClassRoomService implements IClassRoomService {
     private final StudentRepository studentRepository;
     private final StudentEnrollmentsRepository studentEnrollmentsRepository;
     private final LessonRepository lessonRepository;
+    private final ScheduleRepository scheduleRepository;
+    private final TermsRepository termRepository;
     @Override
     public CreateClassRoomResponse createClassRoom(CreateClassRoomRequest body) {
         try{
@@ -69,10 +71,18 @@ public class ClassRoomService implements IClassRoomService {
             if (teacherRepository.findById(body.getTeacherId()).isEmpty()){
                 throw new IllegalArgumentException("TeacherId is not found");
             }
+            if (body.getTermId()==null){
+                throw new IllegalArgumentException("TermId is required");
+            }
+            if (termRepository.findById(body.getTermId()).isEmpty()){
+                throw new IllegalArgumentException("TermId is not found");
+            }
             ClassRoomEntity classRoomEntity = modelMapperService.mapClass(body, ClassRoomEntity.class);
             classRoomEntity.setCourseId(body.getCourseId());
             classRoomEntity.setCreatedAt(new Date());
             classRoomEntity.setUpdatedAt(new Date());
+            List<ScheduleEntity> schedules = new ArrayList<>();
+
             CreateClassRoomResponse resData = new CreateClassRoomResponse();
             if (body.getImage()!=null){
                 byte[] originalImage = new byte[0];
@@ -88,10 +98,30 @@ public class ClassRoomService implements IClassRoomService {
             }
 
             classRoomRepository.save(classRoomEntity);
+            if (body.getSessions()!=null){
+                for (ClassSessionRequest session : body.getSessions()){
+                    ScheduleEntity schedule = new ScheduleEntity();
+                    schedule.setClassroomId(classRoomEntity.getId());
+                    schedule.setDayOfWeek(session.getDayOfWeek());
+                    schedule.setStartTime(session.getStartTime());
+                    schedule.setEndTime(session.getEndTime());
+                    scheduleRepository.save(schedule);
+                }
+
+            }
+            else{
+                throw new IllegalArgumentException("Sessions is required");
+            }
             resData.setId(classRoomEntity.getId());
             resData.setName(classRoomEntity.getName());
             resData.setDescription(classRoomEntity.getDescription());
             resData.setImage(classRoomEntity.getImage());
+            resData.setCourseId(classRoomEntity.getCourseId());
+            resData.setTeacherId(classRoomEntity.getTeacherId());
+            resData.setTermId(classRoomEntity.getTermId());
+            resData.setCreatedAt(classRoomEntity.getCreatedAt().toString());
+            resData.setUpdatedAt(classRoomEntity.getUpdatedAt().toString());
+            resData.setSchedules(schedules);
             return resData;
         }
         catch (Exception e){
@@ -127,15 +157,15 @@ public class ClassRoomService implements IClassRoomService {
                 classroom.setTeacherId(body.getTeacherId());
             }
             if(body.getSessions()!=null){
-                List<ClassRoomEntity.ClassSession> sessions = new ArrayList<>();
-                for (ClassSessionRequest session : body.getSessions()){
-                    ClassRoomEntity.ClassSession newSession = new ClassRoomEntity.ClassSession();
-                    newSession.setDayOfWeek(session.getDayOfWeek());
-                    newSession.setStartTime(session.getStartTime());
-                    newSession.setEndTime(session.getEndTime());
-                    sessions.add(newSession);
-                }
-                classroom.setSessions(sessions);
+//                List<ClassRoomEntity.ClassSession> sessions = new ArrayList<>();
+//                for (ClassSessionRequest session : body.getSessions()){
+//                    ClassRoomEntity.ClassSession newSession = new ClassRoomEntity.ClassSession();
+//                    newSession.setDayOfWeek(session.getDayOfWeek());
+//                    newSession.setStartTime(session.getStartTime());
+//                    newSession.setEndTime(session.getEndTime());
+//                    sessions.add(newSession);
+//                }
+//                classroom.setSessions(sessions);
             }
             classRoomRepository.save(classroom);
         }
@@ -222,17 +252,38 @@ public class ClassRoomService implements IClassRoomService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
-
     @Override
     public List<GetScheduleResponse> getScheduleByStudentId(String studentId) {
         try {
             if (studentRepository.findById(studentId).isEmpty()) {
                 throw new IllegalArgumentException("StudentId is not found");
             }
-
             AggregationResults<GetScheduleResponse> results = studentEnrollmentsRepository.getWeeklySchedule(studentId);
             List<GetScheduleResponse> resData = results.getMappedResults();
-            return resData;
+
+            // Create a default schedule with all days of the week
+            List<GetScheduleResponse> defaultSchedule = Arrays.asList(
+                    new GetScheduleResponse("Monday", new ArrayList<>()),
+                        new GetScheduleResponse("Tuesday", new ArrayList<>()),
+                    new GetScheduleResponse("Wednesday", new ArrayList<>()),
+                    new GetScheduleResponse("Thursday", new ArrayList<>()),
+                    new GetScheduleResponse("Friday", new ArrayList<>()),
+                    new GetScheduleResponse("Saturday", new ArrayList<>()),
+                    new GetScheduleResponse("Sunday", new ArrayList<>())
+            );
+
+            // Replace the default schedule with the actual data where available
+            for (GetScheduleResponse schedule : defaultSchedule) {
+                GetScheduleResponse foundSchedule = resData.stream()
+                        .filter(s -> s.getDayOfWeek().equals(schedule.getDayOfWeek()))
+                        .findFirst()
+                        .orElse(null);
+                if (foundSchedule != null) {
+                    schedule.setSessions(foundSchedule.getSessions());
+                }
+            }
+
+            return defaultSchedule;
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }
