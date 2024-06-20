@@ -12,5 +12,6 @@ public class MajorsEntity {
     @Id
     private String id;
     private String name;
+    private String facultyId;
     private String description;
 }

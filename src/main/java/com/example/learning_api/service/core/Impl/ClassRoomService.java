@@ -4,6 +4,7 @@ import com.example.learning_api.constant.CloudinaryConstant;
 import com.example.learning_api.constant.ErrorConstant;
 import com.example.learning_api.dto.request.classroom.ClassSessionRequest;
 import com.example.learning_api.dto.request.classroom.CreateClassRoomRequest;
+import com.example.learning_api.dto.request.classroom.ImportClassRoomRequest;
 import com.example.learning_api.dto.request.classroom.UpdateClassRoomRequest;
 import com.example.learning_api.dto.response.classroom.CreateClassRoomResponse;
 import com.example.learning_api.dto.response.classroom.GetClassRoomDetailResponse;
@@ -16,10 +17,12 @@ import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
+import com.example.learning_api.service.common.ExcelReader;
 import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.IClassRoomService;
 import com.example.learning_api.utils.ImageUtils;
 import com.example.learning_api.utils.StringUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
@@ -50,6 +53,8 @@ public class ClassRoomService implements IClassRoomService {
     private final LessonRepository lessonRepository;
     private final ScheduleRepository scheduleRepository;
     private final TermsRepository termRepository;
+    private final ExcelReader excelReader;
+
     @Override
     public CreateClassRoomResponse createClassRoom(CreateClassRoomRequest body) {
         try{
@@ -323,6 +328,41 @@ public class ClassRoomService implements IClassRoomService {
          catch (Exception e){
               throw new IllegalArgumentException(e.getMessage());
          }
+    }
+
+    @Override
+    public void importClassRoom(ImportClassRoomRequest body) {
+        try{
+            if (body.getFile()==null){
+                throw new IllegalArgumentException(" File is required");
+            }
+            ObjectMapper mapper = new ObjectMapper();
+            List<List<String>> data = excelReader.readExcel(body.getFile().getInputStream());
+            for (int i = 1; i < data.size(); i++) {
+                List<String> row = data.get(i);
+                ClassRoomEntity classRoomEntity = new ClassRoomEntity();
+                classRoomEntity.setName(row.get(0));
+                classRoomEntity.setDescription(row.get(1));
+                if (courseRepository.findById(row.get(2)).isEmpty()){
+                    throw new IllegalArgumentException("CourseId is not found");
+                }
+                classRoomEntity.setCourseId(row.get(2));
+                if (teacherRepository.findById(row.get(4)).isEmpty()){
+                    throw new IllegalArgumentException("TeacherId is not found");
+                }
+                classRoomEntity.setTeacherId(row.get(4));
+                if (termRepository.findById(row.get(3)).isEmpty()){
+                    throw new IllegalArgumentException("TermId is not found");
+                }
+                classRoomEntity.setTermId(row.get(3));
+                classRoomEntity.setCreatedAt(new Date());
+                classRoomEntity.setUpdatedAt(new Date());
+                classRoomRepository.save(classRoomEntity);
+            }
+        }
+        catch (Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
     }
 
 }

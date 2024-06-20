@@ -1,6 +1,6 @@
 package com.example.learning_api.enums;
 
-public enum ImportTestType {
+public enum ImportType {
     TEXT,
     FILE
 }

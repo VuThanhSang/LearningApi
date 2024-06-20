@@ -3,7 +3,9 @@ package com.example.learning_api.controller;
 import com.example.learning_api.constant.StatusCode;
 import com.example.learning_api.dto.request.classroom.CreateClassRoomRequest;
 
+import com.example.learning_api.dto.request.classroom.ImportClassRoomRequest;
 import com.example.learning_api.dto.request.classroom.UpdateClassRoomRequest;
+import com.example.learning_api.dto.request.faculty.ImportFacultyRequest;
 import com.example.learning_api.dto.response.classroom.CreateClassRoomResponse;
 import com.example.learning_api.dto.response.classroom.GetClassRoomDetailResponse;
 import com.example.learning_api.dto.response.classroom.GetClassRoomsResponse;
@@ -200,7 +202,23 @@ public class ClassRoomController {
         }
 
     }
-
+    @PostMapping(path = "/import", consumes = "multipart/form-data")
+    public ResponseEntity<ResponseAPI<String>> importFaculty(@ModelAttribute @Valid ImportClassRoomRequest body) {
+        try{
+            classRoomService.importClassRoom(body);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .message("Import classrooms successfully")
+                    .build();
+            return ResponseEntity.ok(res);
+        }
+        catch (Exception e){
+            log.error(e.getMessage());
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .message(e.getMessage())
+                    .build();
+            return ResponseEntity.badRequest().body(res);
+        }
+    }
 
 
 }

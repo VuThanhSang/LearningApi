@@ -15,6 +15,7 @@ public class FacultyEntity {
     private String id;
     private String name;
     private String description;
+    private String dean;
     private Date createdAt;
     private Date updatedAt;
 }
