@@ -1,9 +1,10 @@
 package com.example.learning_api.service.core;
 
+import com.example.learning_api.dto.request.admin.ChangeRoleRequest;
 import com.example.learning_api.dto.response.admin.GetAdminDashboardResponse;
 
 public interface IAdminService {
-    void changeRole(String userId, String role);
+    void changeRole(ChangeRoleRequest body);
     void deleteAccount(String userId);
     GetAdminDashboardResponse getAdminDashboard();
 

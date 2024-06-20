@@ -10,11 +10,9 @@ import lombok.Getter;
 @Getter
 @Builder
 public class LoginResponse {
-    private final String userId;
     private final String accessToken;
     @JsonIgnore
     private final String refreshToken;
-    private final String role;
     private final StudentEntity student;
     private final TeacherEntity teacher;
     private final String status;

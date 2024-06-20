@@ -85,8 +85,7 @@ public class UserAuthService  implements IUserAuthService {
         LoginResponse.LoginResponseBuilder responseBuilder = LoginResponse.builder()
                 .accessToken(jwt)
                 .refreshToken(refreshToken)
-                .userId(user.getId())
-                .status(user.getStatus().toString());
+                .status(user.getStatus()!= null ? user.getStatus().toString() : UserStatus.INACTIVE.toString());
 
         if (user.getRole() == RoleEnum.TEACHER) {
             TeacherEntity teacher = teacherRepository.findByUserId(user.getId());
@@ -161,8 +160,6 @@ public class UserAuthService  implements IUserAuthService {
             LoginResponse.LoginResponseBuilder responseBuilder = LoginResponse.builder()
                     .accessToken(jwt)
                     .refreshToken(refreshToken)
-                    .userId(user.getId())
-                    .role(user.getRole().toString())
                     .status(user.getStatus().toString());
 
 

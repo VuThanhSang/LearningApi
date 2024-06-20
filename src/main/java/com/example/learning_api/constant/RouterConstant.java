@@ -7,6 +7,7 @@ public class RouterConstant {
     public static final String UPDATE_PATH = "/update";
     public static final String DELETE_PATH = "/delete";
 
+    public static final String ADMIN_BASE_PATH = "/api/v1/admin";
     public static final String FACULTY_BASE_PATH = "/api/v1/faculty";
     public static final String FAQ_BASE_PATH = "/api/v1/faq";
     public static final String COMMENT_BASE_PATH = "/api/v1/comment";
@@ -24,6 +25,9 @@ public class RouterConstant {
     public static final String CLASSROOM_BASE_PATH = "/api/v1/classroom";
     public static final String USER_AUTH_BASE_PATH = "/api/v1/auth";
     public static final String STUDENT_ENROLLMENTS_BASE_PATH = "/api/v1/student-enrollments";
+    public static final String ACADEMIC_YEARS_BASE_PATH = "/api/v1/academic-years";
+    public static final String MAJORS_BASE_PATH = "/api/v1/majors";
+    public static final String TERMS_BASE_PATH = "/api/v1/terms";
     //authentication
     public static final String POST_USER_AUTH_REGISTER_SUB_PATH = "/register";
     public static final String POST_USER_AUTH_LOGIN_SUB_PATH = "/login";

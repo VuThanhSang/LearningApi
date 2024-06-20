@@ -28,9 +28,6 @@ public class GetCoursesResponse {
             courseResponse.setDescription(courseEntity.getDescription());
             courseResponse.setCreatedAt(courseEntity.getCreatedAt().toString());
             courseResponse.setUpdatedAt(courseEntity.getUpdatedAt().toString());
-            courseResponse.setTeacherId(courseEntity.getTeacherId());
-            courseResponse.setStartDate(courseEntity.getStartDate().toString());
-            courseResponse.setEndDate(courseEntity.getEndDate().toString());
             return courseResponse;
         }
     }

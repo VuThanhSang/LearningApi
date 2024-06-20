@@ -8,6 +8,6 @@ public class EnrollStudentRequest {
     @NotNull
     private String studentId;
     @NotNull
-    private String courseId;
+    private String classroomId;
 
 }

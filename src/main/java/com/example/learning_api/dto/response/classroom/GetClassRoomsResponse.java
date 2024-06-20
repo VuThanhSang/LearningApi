@@ -17,6 +17,8 @@ public class GetClassRoomsResponse {
         private String name;
         private String description;
         private String teacherId;
+        private String courseId;
+        private String image;
         private String createdAt;
         private String updatedAt;
         public static ClassRoomResponse formClassRoomEntity(ClassRoomEntity classRoomEntity){
@@ -26,6 +28,9 @@ public class GetClassRoomsResponse {
             classRoomResponse.setDescription(classRoomEntity.getDescription());
             classRoomResponse.setCreatedAt(classRoomEntity.getCreatedAt().toString());
             classRoomResponse.setUpdatedAt(classRoomEntity.getUpdatedAt().toString());
+            classRoomResponse.setTeacherId(classRoomEntity.getTeacherId());
+            classRoomResponse.setCourseId(classRoomEntity.getCourseId());
+            classRoomResponse.setImage(classRoomEntity.getImage());
             return classRoomResponse;
         }
     }

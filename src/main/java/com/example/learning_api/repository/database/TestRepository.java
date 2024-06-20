@@ -1,5 +1,6 @@
 package com.example.learning_api.repository.database;
 
+import com.example.learning_api.dto.common.TotalTestOfDayDto;
 import com.example.learning_api.entity.sql.database.TestEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,6 +11,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.util.Date;
+import java.util.List;
 
 public interface TestRepository extends MongoRepository<TestEntity, String> {
     @Query("{'name': {$regex: ?0, $options: 'i'}}")
@@ -33,5 +35,15 @@ public interface TestRepository extends MongoRepository<TestEntity, String> {
             String studentId,
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) String date,
             Pageable pageable
+    );
+
+    @Aggregation(pipeline = {
+            "{ $addFields: { 'dayOfWeek': { $let: { vars: { 'days': [ 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' ] }, in: { $arrayElemAt: [ '$$days', { $subtract: [ { $dayOfWeek: '$startTime' }, 1 ] } ] } } } } }",
+            "{ $group: { _id: '$dayOfWeek', count: { $sum: 1 } } }",
+            "{ $sort: { '_id': 1 } }"
+    })
+    List<TotalTestOfDayDto> findTestsInWeek(
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) String startOfWeek,
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) String endOfWeek
     );
 }

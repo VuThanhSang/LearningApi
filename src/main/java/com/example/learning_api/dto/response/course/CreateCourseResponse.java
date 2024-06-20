@@ -10,5 +10,10 @@ public class CreateCourseResponse {
     private String id;
     private String name;
     private String description;
-    private String teacherId;
+    private String thumbnail;
+    private String videoIntro;
+    private String termId;
+    private String createdAt;
+    private String updatedAt;
+    private String status;
 }

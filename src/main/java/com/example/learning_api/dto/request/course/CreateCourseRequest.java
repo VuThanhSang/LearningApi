@@ -1,5 +1,6 @@
 package com.example.learning_api.dto.request.course;
 
+import com.example.learning_api.enums.CourseStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
@@ -21,11 +22,8 @@ public class CreateCourseRequest {
     private String name;
     @Schema(example = DESCRIPTION_EX)
     private String description;
-    @Schema(example = TEACHER_ID_EX)
-    @NotBlank
-    private String teacherId;
     private MultipartFile thumbnail;
     private MultipartFile videoIntro;
-    private Date startDate;
-    private Date endDate;
+    private String termId;
+    private CourseStatus status;
 }

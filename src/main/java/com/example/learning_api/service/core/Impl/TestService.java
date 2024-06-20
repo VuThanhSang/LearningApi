@@ -10,7 +10,7 @@ import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.question.GetQuestionsResponse;
 import com.example.learning_api.dto.response.test.*;
 import com.example.learning_api.entity.sql.database.*;
-import com.example.learning_api.enums.ImportTestType;
+import com.example.learning_api.enums.ImportType;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
@@ -89,7 +89,6 @@ public class TestService implements ITestService {
                 testEntity.setSource(imageUploaded.getUrl());
             }
             testEntity.setCreatedAt(new Date());
-            testEntity.setStartTime(new Date());
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
             Date startdate = formatter.parse(body.getStartTime());
             Date enddate = formatter.parse(body.getEndTime());
@@ -186,7 +185,7 @@ public class TestService implements ITestService {
     public void importTest(ImportTestRequest body) {
         try {
             String fileContent;
-            if (body.getType()== ImportTestType.FILE){
+            if (body.getType()== ImportType.FILE){
                 String fileName = body.getFile().getOriginalFilename();
                 String fileExtension = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
 

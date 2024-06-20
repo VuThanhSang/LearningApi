@@ -7,6 +7,8 @@ import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
+import java.util.List;
+
 public interface LessonRepository extends MongoRepository<LessonEntity, String>{
     @Aggregation(pipeline = {
             "{ '$match': { '_id': ObjectId(?0) } }",
@@ -16,4 +18,5 @@ public interface LessonRepository extends MongoRepository<LessonEntity, String>{
             "{ '$lookup': { 'from': 'substances', 'localField': '_idString', 'foreignField': 'lessonId', 'as': 'substances' } }"
     })
     GetLessonDetailResponse getLessonWithResourcesAndMediaAndSubstances(String id);
+    List<LessonEntity> findBySectionId(String sectionId);
 }

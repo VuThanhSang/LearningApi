@@ -15,7 +15,7 @@ public class StudentEnrollmentsEntity {
     @Id
     private String id;
     private String studentId;
-    private String courseId;
+    private String classroomId;
     private StudentEnrollmentStatus status;
     private String grade;
     private Date enrolledAt;

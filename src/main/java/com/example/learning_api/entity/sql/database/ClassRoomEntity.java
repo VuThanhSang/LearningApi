@@ -20,8 +20,11 @@ public class ClassRoomEntity {
     private String description;
     private String image;
     private String courseId;
+    private String termId;
+    private String teacherId;
     private Date createdAt;
     private Date updatedAt;
     @DBRef
     private List<SectionEntity> sections;
+
 }

@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 import static com.example.learning_api.constant.SwaggerConstant.*;
 import static com.example.learning_api.constant.SwaggerConstant.TEACHER_ID_EX;
 
@@ -22,4 +24,6 @@ public class UpdateClassRoomRequest {
     private MultipartFile image;
     @Schema(example = TEACHER_ID_EX)
     private String courseId;
+    private String teacherId;
+    private List<ClassSessionRequest> sessions;
 }
