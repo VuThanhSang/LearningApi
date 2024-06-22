@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
@@ -24,6 +25,7 @@ public class LessonController {
     private final ILessonService lessonService;
 
     @PostMapping(path = "")
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<String>> createLesson(@RequestBody @Valid CreateLessonRequest body) {
         try{
             lessonService.createLesson(body);
@@ -42,6 +44,7 @@ public class LessonController {
         }
     }
     @PatchMapping(path = "/{lessonId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<String>> updateLesson(@RequestBody @Valid UpdateLessonRequest body, @PathVariable String lessonId) {
         try{
             body.setId(lessonId);
@@ -63,6 +66,7 @@ public class LessonController {
     }
 
     @DeleteMapping(path = "/{lessonId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<String>> deleteLesson(@PathVariable String lessonId) {
         try{
             lessonService.deleteLesson(lessonId);

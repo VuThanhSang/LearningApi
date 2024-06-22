@@ -1,7 +1,12 @@
 package com.example.learning_api.repository.database;
 
+import com.example.learning_api.dto.response.classroom.GetClassRoomRecentResponse;
 import com.example.learning_api.dto.response.classroom.GetScheduleResponse;
+import com.example.learning_api.entity.sql.database.ClassRoomEntity;
 import com.example.learning_api.entity.sql.database.StudentEnrollmentsEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -9,13 +14,14 @@ import org.springframework.data.mongodb.repository.Query;
 
 import java.util.List;
 
-public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnrollmentsEntity, String>{
-//    void deleteByStudentIdAndCourseId(String studentId, String courseId);
+public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnrollmentsEntity, String> {
+    //    void deleteByStudentIdAndCourseId(String studentId, String courseId);
     @Query("{'studentId': ?0, 'courseId': ?1}")
     StudentEnrollmentsEntity findByStudentIdAndCourseId(String studentId, String courseId);
 
     @Query("{'studentId': ?0}")
     List<StudentEnrollmentsEntity> findByStudentId(String studentId);
+
     @Aggregation(pipeline = {
             "{$addFields: {_classroomId: {$toObjectId: '$classroomId'}}}",
             "{$match: {studentId: '?0'}}",
@@ -29,4 +35,15 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
             "{$sort: {dayOfWeek: 1}}"
     })
     AggregationResults<GetScheduleResponse> getWeeklySchedule(String studentId);
+    @Aggregation(pipeline = {
+            "{$addFields: {_classroomId: {$toObjectId: '$classroomId'}}}",
+            "{$match: {studentId: '?0'}}",
+            "{$lookup: {from: 'classrooms', localField: '_classroomId', foreignField: '_id', as: 'classroom'}}",
+            "{$unwind: '$classroom'}",
+            "{$lookup: {from: 'recent_class', let: {classroomId: '$classroomId', studentId: '$studentId'}, pipeline: [{$match: {$expr: {$and: [{$eq: ['$classroomId', '$$classroomId']}, {$eq: ['$studentId', '$$studentId']}]}}}], as: 'recentAccess'}}",
+            "{$unwind: {path: '$recentAccess', preserveNullAndEmptyArrays: true}}",
+            "{$project: {_id: '$classroom._id', name: '$classroom.name', description: '$classroom.description', courseId: '$classroom.courseId', termId: '$classroom.termId', teacherId: '$classroom.teacherId', createdAt: '$classroom.createdAt', updatedAt: '$classroom.updatedAt', enrolledAt: '$enrolledAt', lastAccessedAt: {$ifNull: ['$recentAccess.lastAccessedAt', null]}}}",
+            "{$sort: {lastAccessedAt: -1}}"
+    })
+    Slice<GetClassRoomRecentResponse.ClassRoomResponse> getRecentClasses(String studentId, Pageable pageable);
 }

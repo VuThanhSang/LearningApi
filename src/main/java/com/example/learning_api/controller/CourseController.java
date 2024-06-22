@@ -28,6 +28,7 @@ import static com.example.learning_api.constant.RouterConstant.COURSE_BASE_PATH;
 public class CourseController {
     private final ICourseService courseService;
     @PostMapping(path = "")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<ResponseAPI<CreateCourseResponse>> createCourse(@RequestBody @Valid CreateCourseRequest body) {
         try{
             CreateCourseResponse resDate = courseService.createCourse(body);
@@ -48,6 +49,7 @@ public class CourseController {
 
     }
     @PatchMapping(path = "/{courseId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<String>> updateCourse(@RequestBody @Valid UpdateCourseRequest body, @PathVariable String courseId) {
         try{
             body.setId(courseId);
@@ -68,6 +70,7 @@ public class CourseController {
 
     }
     @DeleteMapping(path = "/{courseId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<ResponseAPI<String>> deleteCourse(@PathVariable String courseId) {
         try{
             DeleteCourseRequest deleteCourseRequest = new DeleteCourseRequest();

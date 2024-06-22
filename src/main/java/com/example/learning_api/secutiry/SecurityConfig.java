@@ -1,6 +1,5 @@
 package com.example.learning_api.secutiry;
 
-import com.example.learning_api.enums.RoleEnum;
 import com.example.learning_api.secutiry.custom.CustomLogoutHandler;
 import com.example.learning_api.secutiry.jwt.JwtAuthenticationFilter;
 import com.example.learning_api.service.common.AuthenticationSuccessHandlerImpl;
@@ -13,7 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -25,21 +23,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.client.registration.ClientRegistration;
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
-import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
-import org.springframework.security.oauth2.client.web.HttpSessionOAuth2AuthorizationRequestRepository;
-import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
-import org.springframework.security.oauth2.core.oidc.IdTokenClaimNames;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.access.ExceptionTranslationFilter;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 
 import java.util.Arrays;
+import java.util.Date;
 
 
 @Configuration
@@ -66,14 +56,14 @@ public class SecurityConfig {
                     configuration.setExposedHeaders(Arrays.asList("Set-Cookie"));
                     return configuration;
                 }))
-                .authorizeRequests(authorizeRequests -> authorizeRequests
-                        .requestMatchers("/login/oauth2/code/google", "/api/v1/auth/**").permitAll()
-                        .requestMatchers("/admin/**").hasAnyAuthority(RoleEnum.ADMIN.name()) // Added "ROLE_" prefix
-                        .requestMatchers("/api/v1/classroom/**",
-                                "/api/v1/course/**","/api/v1/section/**",
-                                "/api/v1/test/**")
-                        .hasAnyAuthority(RoleEnum.USER.name()) // Added "ROLE_" prefix
-                )
+//                .authorizeRequests(authorizeRequests -> authorizeRequests
+//                        .requestMatchers("/login/oauth2/code/google", "/api/v1/auth/**").permitAll()
+//                        .requestMatchers("/admin/**").hasAnyAuthority(RoleEnum.ADMIN.name()) // Added "ROLE_" prefix
+//                        .requestMatchers("/api/v1/classroom/**",
+//                                "/api/v1/course/**","/api/v1/section/**",
+//                                "/api/v1/test/**")
+//                        .hasAnyAuthority(RoleEnum.USER.name()) // Added "ROLE_" prefix
+//                )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authenticationProvider(authenticationProvider()).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .oauth2Login(oauth2 -> oauth2
@@ -84,7 +74,11 @@ public class SecurityConfig {
                         .successHandler(authenticationSuccessHandler)
                 )
                 .exceptionHandling(e -> e
-                        .accessDeniedHandler((request, response, accessDeniedException) -> response.setStatus(403))
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(HttpStatus.FORBIDDEN.value());
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"timestamp\": \"" + new Date() + "\", \"success\": false, \"message\": \"Access Denied!\"}");
+                        })
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
                 )
                 .logout(l -> l

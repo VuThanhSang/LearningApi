@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
@@ -27,6 +28,7 @@ public class TestController {
     private final ITestResultService testResultService;
 
     @PostMapping(path = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<String>> importTest(@ModelAttribute @Valid ImportTestRequest body) {
         try{
             testService.importTest(body);
@@ -66,6 +68,7 @@ public class TestController {
     }
 
     @PostMapping(path = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<CreateTestResponse>> createTest(@ModelAttribute @Valid CreateTestRequest body) {
         try{
             CreateTestResponse resDate = testService.createTest(body);
@@ -86,6 +89,7 @@ public class TestController {
 
     }
     @PatchMapping(path = "/{testId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<String>> updateTest(@RequestBody @Valid UpdateTestRequest body, @PathVariable String testId) {
         try{
             body.setId(testId);
@@ -107,6 +111,7 @@ public class TestController {
     }
 
     @DeleteMapping(path = "/{testId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<String>> deleteTest(@PathVariable String testId) {
         try{
             testService.deleteTest(testId);
@@ -150,6 +155,7 @@ public class TestController {
     }
 
     @GetMapping(path = "/in-progress/{studentId}")
+    @PreAuthorize("hasAnyAuthority('USER')")
     public ResponseEntity<ResponseAPI<GetTestInProgress>> getTestsInProgress (
             @PathVariable String studentId,
             @RequestParam(defaultValue = "1") int page,
@@ -174,6 +180,7 @@ public class TestController {
         }
     }
     @GetMapping(path = "/on-specific-day/{studentId}")
+    @PreAuthorize("hasAnyAuthority('STUDENT')")
     public ResponseEntity<ResponseAPI<GetTestInProgress>> getTestsOnSpecificDayByStudentId (
             @PathVariable String studentId,
             @RequestParam(defaultValue = "1") int page,
@@ -199,6 +206,7 @@ public class TestController {
     }
 
     @PostMapping(path = "/submit")
+    @PreAuthorize("hasAnyAuthority('STUDENT')")
     public ResponseEntity<ResponseAPI<TestSubmitResponse>> submitTest(@RequestBody @Valid TestSubmitRequest body) {
         try{
             TestSubmitResponse data = testService.submitTest(body);

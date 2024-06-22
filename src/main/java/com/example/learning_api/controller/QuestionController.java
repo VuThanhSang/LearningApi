@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
@@ -27,6 +28,7 @@ public class QuestionController {
     final IQuestionService questionService;
 
     @PostMapping(path = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<CreateQuestionResponse>> createQuestion(@ModelAttribute @Valid CreateQuestionRequest body) {
         try{
             CreateQuestionResponse resDate = questionService.createQuestion(body);
@@ -47,6 +49,7 @@ public class QuestionController {
 
     }
     @PatchMapping(path = "/{questionId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<String>> updateQuestion(@RequestBody @Valid UpdateQuestionRequest body, @PathVariable String questionId) {
         try{
             body.setId(questionId);
@@ -66,6 +69,7 @@ public class QuestionController {
         }
     }
     @DeleteMapping(path = "/{questionId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<String>> deleteQuestion(@PathVariable String questionId) {
         try{
             questionService.deleteQuestion(questionId);

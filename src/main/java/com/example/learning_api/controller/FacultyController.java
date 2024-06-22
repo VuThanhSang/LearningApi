@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import static com.example.learning_api.constant.RouterConstant.*;
@@ -24,6 +25,7 @@ public class FacultyController {
     private final IFacultyService facultyService;
 
     @PostMapping(path = "")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<ResponseAPI<String>> createFaculty(@RequestBody @Valid CreateFacultyRequest body) {
         try{
             facultyService.createFaculty(body);
@@ -42,6 +44,7 @@ public class FacultyController {
     }
 
     @PatchMapping(path = "/{facultyId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<ResponseAPI<String>> updateFaculty(@RequestBody @Valid UpdateFacultyRequest body, @PathVariable String facultyId) {
         try{
             body.setId(facultyId);
@@ -61,6 +64,7 @@ public class FacultyController {
     }
 
     @DeleteMapping(path = "/{facultyId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<ResponseAPI<String>> deleteFaculty(@PathVariable String facultyId) {
         try{
             facultyService.deleteFaculty(facultyId);
@@ -98,6 +102,7 @@ public class FacultyController {
     }
 
     @PostMapping(path = "/import", consumes = "multipart/form-data")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<ResponseAPI<String>> importFaculty(@ModelAttribute @Valid ImportFacultyRequest body) {
         try{
             facultyService.importFaculty(body);

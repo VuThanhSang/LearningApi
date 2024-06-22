@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
@@ -27,6 +28,7 @@ public class SectionController {
     private final ISectionService sectionService;
 
     @PostMapping(path = "")
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<CreateSectionResponse>> createSection(@RequestBody @Valid CreateSectionRequest body) {
         try{
             CreateSectionResponse resDate = sectionService.createSection(body);
@@ -47,6 +49,7 @@ public class SectionController {
 
     }
     @PatchMapping(path = "/{sectionId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<String>> updateSection(@RequestBody @Valid UpdateSectionRequest body, @PathVariable String sectionId) {
         try{
             body.setId(sectionId);
@@ -67,6 +70,7 @@ public class SectionController {
 
     }
     @DeleteMapping(path = "/{sectionId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<String>> deleteSection(@PathVariable String sectionId) {
         try{
             DeleteSectionRequest deleteSectionRequest = new DeleteSectionRequest();

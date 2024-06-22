@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
@@ -25,6 +26,7 @@ public class AnswerController {
     private final IAnswerService answerService;
 
     @PostMapping(path = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<CreateAnswerResponse>> createAnswer(@ModelAttribute @Valid CreateAnswerRequest body) {
         try{
             CreateAnswerResponse resDate = answerService.createAnswer(body);
@@ -45,6 +47,7 @@ public class AnswerController {
 
     }
     @PatchMapping(path = "/{answerId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<String>> updateAnswer(@RequestBody @Valid UpdateAnswerRequest body, @PathVariable String answerId) {
         try{
             body.setId(answerId);
@@ -64,6 +67,7 @@ public class AnswerController {
         }
     }
     @DeleteMapping(path = "/{answerId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<String>> deleteAnswer(@PathVariable String answerId) {
         try{
             answerService.deleteAnswer(answerId);

@@ -6,11 +6,8 @@ import com.example.learning_api.dto.request.classroom.ClassSessionRequest;
 import com.example.learning_api.dto.request.classroom.CreateClassRoomRequest;
 import com.example.learning_api.dto.request.classroom.ImportClassRoomRequest;
 import com.example.learning_api.dto.request.classroom.UpdateClassRoomRequest;
-import com.example.learning_api.dto.response.classroom.CreateClassRoomResponse;
-import com.example.learning_api.dto.response.classroom.GetClassRoomDetailResponse;
-import com.example.learning_api.dto.response.classroom.GetClassRoomsResponse;
+import com.example.learning_api.dto.response.classroom.*;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
-import com.example.learning_api.dto.response.classroom.GetScheduleResponse;
 import com.example.learning_api.dto.response.lesson.GetLessonDetailResponse;
 import com.example.learning_api.dto.response.section.GetSectionsResponse;
 import com.example.learning_api.entity.sql.database.*;
@@ -29,6 +26,7 @@ import org.bson.Document;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.stereotype.Service;
 
@@ -364,5 +362,22 @@ public class ClassRoomService implements IClassRoomService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
+
+    @Override
+    public GetClassRoomRecentResponse getRecentClasses(int page, int size, String studentId) {
+        try{
+            Pageable pageAble = PageRequest.of(page, size);
+            Slice<GetClassRoomRecentResponse.ClassRoomResponse> classRooms = studentEnrollmentsRepository.getRecentClasses(studentId, pageAble);
+            GetClassRoomRecentResponse resData = new GetClassRoomRecentResponse();
+            resData.setTotalPage(classRooms.getSize()/size);
+            resData.setTotalElements(classRooms.getNumberOfElements());
+            resData.setClassRooms(classRooms.getContent());
+            return resData;
+        }
+        catch (Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
 
 }

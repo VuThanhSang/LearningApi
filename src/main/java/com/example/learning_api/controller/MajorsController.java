@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
@@ -24,12 +25,13 @@ public class MajorsController {
     private final IMajorsService majorsService;
 
     @PostMapping(path = "")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<ResponseAPI<String>> create(@RequestBody @Valid MajorsEntity body) {
         try{
             majorsService.createMajor(body);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
                     .timestamp(new Date())
-                    .message("Change role successfully")
+                    .message("Create Majors successfully")
                     .build();
             return new ResponseEntity<>(res, StatusCode.OK);
         }
@@ -43,6 +45,7 @@ public class MajorsController {
     }
 
     @PatchMapping(path = "/{id}")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<ResponseAPI<String>> update(@PathVariable String id, @RequestBody @Valid MajorsEntity body) {
         try{
             body.setId(id);
@@ -63,6 +66,7 @@ public class MajorsController {
     }
 
     @DeleteMapping(path = "/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ResponseAPI<String>> delete(@PathVariable String id) {
         try{
             majorsService.deleteMajor(id);
