@@ -85,6 +85,7 @@ public class UserAuthService  implements IUserAuthService {
         LoginResponse.LoginResponseBuilder responseBuilder = LoginResponse.builder()
                 .accessToken(jwt)
                 .refreshToken(refreshToken)
+                .role(user.getRole().toString())
                 .status(user.getStatus()!= null ? user.getStatus().toString() : UserStatus.INACTIVE.toString());
 
         if (user.getRole() == RoleEnum.TEACHER) {

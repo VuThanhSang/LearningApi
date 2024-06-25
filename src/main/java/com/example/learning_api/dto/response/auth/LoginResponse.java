@@ -16,4 +16,5 @@ public class LoginResponse {
     private final StudentEntity student;
     private final TeacherEntity teacher;
     private final String status;
+    private final String role;
 }
