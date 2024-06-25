@@ -1,5 +1,6 @@
 package com.example.learning_api.dto.request.classroom;
 
+import com.example.learning_api.enums.ClassRoomStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -25,5 +26,10 @@ public class UpdateClassRoomRequest {
     @Schema(example = TEACHER_ID_EX)
     private String courseId;
     private String teacherId;
+    private String termId;
+    private String facultyId;
+    private Integer enrollmentCapacity;
+    private Integer credits;
+    private ClassRoomStatus status;
     private List<ClassSessionRequest> sessions;
 }

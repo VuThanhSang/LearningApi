@@ -89,10 +89,9 @@ public class UserAuthService  implements IUserAuthService {
 
         if (user.getRole() == RoleEnum.TEACHER) {
             TeacherEntity teacher = teacherRepository.findByUserId(user.getId());
-            if (teacher == null) {
-                throw new CustomException("Teacher not found");
+            if (teacher != null) {
+                responseBuilder.teacher(teacher);
             }
-            responseBuilder.teacher(teacher);
         } else if (user.getRole() == RoleEnum.USER) {
             StudentEntity student = studentRepository.findByUserId(user.getId());
             if (student != null) {

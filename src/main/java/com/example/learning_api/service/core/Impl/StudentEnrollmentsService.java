@@ -1,6 +1,7 @@
 package com.example.learning_api.service.core.Impl;
 
 import com.example.learning_api.dto.request.student_enrollments.EnrollStudentRequest;
+import com.example.learning_api.entity.sql.database.ClassRoomEntity;
 import com.example.learning_api.entity.sql.database.StudentEnrollmentsEntity;
 import com.example.learning_api.enums.StudentEnrollmentStatus;
 import com.example.learning_api.repository.database.*;
@@ -28,10 +29,14 @@ public class StudentEnrollmentsService implements IStudentEnrollmentsService {
              if (studentRepository.findById(body.getStudentId()).isEmpty()) {
                 throw new IllegalArgumentException("StudentId is not found");
             }
-
-            if (classroomRepository.findById(body.getClassroomId()).isEmpty()) {
+            ClassRoomEntity classRoomEntity = classroomRepository.findById(body.getClassroomId()).orElse(null);
+            if (classRoomEntity == null) {
                 throw new IllegalArgumentException("ClassroomId is not found");
             }
+            if (classRoomEntity.getEnrollmentCapacity() <= classRoomEntity.getCurrentEnrollment()) {
+                throw new IllegalArgumentException("Classroom is full");
+            }
+
             StudentEnrollmentsEntity studentEnrollmentsEntity = new StudentEnrollmentsEntity();
             studentEnrollmentsEntity.setStudentId(body.getStudentId());
             studentEnrollmentsEntity.setClassroomId(body.getClassroomId());
@@ -39,6 +44,9 @@ public class StudentEnrollmentsService implements IStudentEnrollmentsService {
             studentEnrollmentsEntity.setEnrolledAt(new Date());
             studentEnrollmentsEntity.setCreatedAt(new Date());
             studentEnrollmentsEntity.setUpdatedAt(new Date());
+            studentEnrollmentsEntity.setStatus(StudentEnrollmentStatus.IN_PROGRESS);
+            classRoomEntity.setCurrentEnrollment(classRoomEntity.getCurrentEnrollment() + 1);
+            classroomRepository.save(classRoomEntity);
             studentEnrollmentsRepository.save(studentEnrollmentsEntity);
 
         } catch (Exception e) {

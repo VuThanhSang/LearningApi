@@ -17,6 +17,7 @@ public class GetClassRoomRecentResponse {
         private String lastAccessedAt;
         private String courseId;
         private String termId;
+        private String facultyId;
         private String name;
         private String description;
     }

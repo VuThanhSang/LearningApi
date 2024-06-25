@@ -51,14 +51,13 @@ public class ClassRoomService implements IClassRoomService {
     private final LessonRepository lessonRepository;
     private final ScheduleRepository scheduleRepository;
     private final TermsRepository termRepository;
+    private final FacultyRepository facultyRepository;
     private final ExcelReader excelReader;
 
     @Override
     public CreateClassRoomResponse createClassRoom(CreateClassRoomRequest body) {
         try{
-            if (!ImageUtils.isValidImageFile(body.getImage())&&body.getImage()!=null) {
-                throw new CustomException(ErrorConstant.IMAGE_INVALID);
-            }
+
             if (body.getName()==null){
                 throw new IllegalArgumentException("Name is required");
             }
@@ -80,7 +79,18 @@ public class ClassRoomService implements IClassRoomService {
             if (termRepository.findById(body.getTermId()).isEmpty()){
                 throw new IllegalArgumentException("TermId is not found");
             }
+            if (body.getFacultyId()==null){
+                throw new IllegalArgumentException("FacultyId is required");
+            }
+            if (facultyRepository.findById(body.getFacultyId()).isEmpty()){
+                throw new IllegalArgumentException("FacultyId is not found");
+            }
+            if (body.getEnrollmentCapacity()==null){
+                throw new IllegalArgumentException("EnrollmentCapacity is required");
+            }
             ClassRoomEntity classRoomEntity = modelMapperService.mapClass(body, ClassRoomEntity.class);
+            classRoomEntity.setFacultyId(body.getFacultyId());
+            classRoomEntity.setCurrentEnrollment(0);
             classRoomEntity.setCourseId(body.getCourseId());
             classRoomEntity.setCreatedAt(new Date());
             classRoomEntity.setUpdatedAt(new Date());
@@ -122,6 +132,11 @@ public class ClassRoomService implements IClassRoomService {
             resData.setCourseId(classRoomEntity.getCourseId());
             resData.setTeacherId(classRoomEntity.getTeacherId());
             resData.setTermId(classRoomEntity.getTermId());
+            resData.setFacultyId(classRoomEntity.getFacultyId());
+            resData.setEnrollmentCapacity(classRoomEntity.getEnrollmentCapacity());
+            resData.setCurrentEnrollment(classRoomEntity.getCurrentEnrollment());
+            resData.setCredits(classRoomEntity.getCredits());
+            resData.setStatus(classRoomEntity.getStatus().toString());
             resData.setCreatedAt(classRoomEntity.getCreatedAt().toString());
             resData.setUpdatedAt(classRoomEntity.getUpdatedAt().toString());
             resData.setSchedules(schedules);
@@ -150,26 +165,15 @@ public class ClassRoomService implements IClassRoomService {
                 );
                 classroom.setImage(imageUploaded.getUrl());
             }
-            if(body.getName()!=null){
-                classroom.setName(body.getName());
-            }
-            if(body.getDescription()!=null){
-                classroom.setDescription(body.getDescription());
-            }
-            if(body.getTeacherId()!=null){
-                classroom.setTeacherId(body.getTeacherId());
-            }
-            if(body.getSessions()!=null){
-//                List<ClassRoomEntity.ClassSession> sessions = new ArrayList<>();
-//                for (ClassSessionRequest session : body.getSessions()){
-//                    ClassRoomEntity.ClassSession newSession = new ClassRoomEntity.ClassSession();
-//                    newSession.setDayOfWeek(session.getDayOfWeek());
-//                    newSession.setStartTime(session.getStartTime());
-//                    newSession.setEndTime(session.getEndTime());
-//                    sessions.add(newSession);
-//                }
-//                classroom.setSessions(sessions);
-            }
+            classroom.setName(body.getName());
+            classroom.setDescription(body.getDescription());
+            classroom.setCourseId(body.getCourseId());
+            classroom.setTeacherId(body.getTeacherId());
+            classroom.setTermId(body.getTermId());
+            classroom.setFacultyId(body.getFacultyId());
+            classroom.setEnrollmentCapacity(body.getEnrollmentCapacity());
+            classroom.setCredits(body.getCredits());
+            classroom.setStatus(body.getStatus());
             classRoomRepository.save(classroom);
         }
         catch (Exception e){

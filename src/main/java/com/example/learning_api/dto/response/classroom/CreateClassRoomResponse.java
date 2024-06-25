@@ -16,6 +16,11 @@ public class CreateClassRoomResponse {
     private String courseId;
     private String teacherId;
     private String termId;
+    private String facultyId;
+    private Integer enrollmentCapacity;
+    private Integer currentEnrollment;
+    private Integer credits;
+    private String status;
     private String createdAt;
     private String updatedAt;
     private List<ScheduleEntity> schedules;
