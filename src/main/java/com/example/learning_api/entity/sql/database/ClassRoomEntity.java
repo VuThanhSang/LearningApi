@@ -1,5 +1,6 @@
 package com.example.learning_api.entity.sql.database;
 
+import com.example.learning_api.enums.ClassRoomStatus;
 import jakarta.persistence.Id;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -20,6 +21,11 @@ public class ClassRoomEntity {
     private String description;
     private String image;
     private String courseId;
+    private String facultyId;
+    private Integer enrollmentCapacity;
+    private Integer currentEnrollment;
+    private ClassRoomStatus status;
+    private Integer credits;
     private String termId;
     private String teacherId;
     private Date createdAt;

@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import static com.example.learning_api.constant.RouterConstant.MEDIA_BASE_PATH;
@@ -21,6 +22,7 @@ import static com.example.learning_api.constant.RouterConstant.RESOURCE_BASE_PAT
 public class ResourceController {
     private final IResourceService resourceService;
     @PostMapping(path = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<String>> uploadResource(@ModelAttribute @Valid CreateResourceRequest body) {
         try{
             resourceService.createResource(body);
@@ -37,6 +39,7 @@ public class ResourceController {
         }
     }
     @PatchMapping(path = "/{resourceId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<String>> updateResource(@ModelAttribute @Valid UpdateResourceRequest body, @PathVariable String resourceId) {
         try{
             body.setId(resourceId);
@@ -55,6 +58,7 @@ public class ResourceController {
     }
 
     @DeleteMapping(path = "/{resourceId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<String>> deleteResource(@PathVariable String resourceId) {
         try{
             resourceService.deleteResource(resourceId);

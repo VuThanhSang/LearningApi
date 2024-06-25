@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
@@ -23,6 +24,7 @@ public class TermController {
     private final ITermsService termsService;
 
     @PostMapping(path = "")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<ResponseAPI<String>> create (@RequestBody @Valid CreateTermRequest body) {
         try{
             termsService.addTerm(body);
@@ -42,6 +44,7 @@ public class TermController {
     }
 
     @PatchMapping(path = "/{id}")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<ResponseAPI<String>> update (@RequestBody @Valid TermsEntity body, @PathVariable String id) {
         try{
             body.setId(id);
@@ -62,6 +65,7 @@ public class TermController {
     }
 
     @DeleteMapping(path = "/{id}")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<ResponseAPI<String>> delete (@PathVariable String id) {
         try{
             termsService.deleteTerm(id);

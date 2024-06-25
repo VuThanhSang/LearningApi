@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import static com.example.learning_api.constant.RouterConstant.*;
@@ -20,6 +21,7 @@ import static com.example.learning_api.constant.RouterConstant.*;
 public class MediaController {
     private final IMediaService mediaService;
     @PostMapping(path = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<String>> uploadMedia(@ModelAttribute @Valid CreateMediaRequest body) {
         try{
             mediaService.createMedia(body);
@@ -37,6 +39,7 @@ public class MediaController {
     }
 
     @PatchMapping(path = "/{mediaId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<String>> updateMedia(@ModelAttribute @Valid UpdateMediaRequest body, @PathVariable String mediaId) {
         try{
             body.setId(mediaId);
@@ -55,6 +58,7 @@ public class MediaController {
     }
 
     @DeleteMapping(path = "/{mediaId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<String>> deleteMedia(@PathVariable String mediaId) {
         try{
             mediaService.deleteMedia(mediaId);

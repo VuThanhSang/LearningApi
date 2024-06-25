@@ -6,10 +6,7 @@ import com.example.learning_api.dto.request.classroom.CreateClassRoomRequest;
 import com.example.learning_api.dto.request.classroom.ImportClassRoomRequest;
 import com.example.learning_api.dto.request.classroom.UpdateClassRoomRequest;
 import com.example.learning_api.dto.request.faculty.ImportFacultyRequest;
-import com.example.learning_api.dto.response.classroom.CreateClassRoomResponse;
-import com.example.learning_api.dto.response.classroom.GetClassRoomDetailResponse;
-import com.example.learning_api.dto.response.classroom.GetClassRoomsResponse;
-import com.example.learning_api.dto.response.classroom.GetScheduleResponse;
+import com.example.learning_api.dto.response.classroom.*;
 import com.example.learning_api.dto.response.section.GetSectionsResponse;
 import com.example.learning_api.model.ResponseAPI;
 import com.example.learning_api.service.common.JwtService;
@@ -19,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
@@ -34,6 +32,7 @@ public class ClassRoomController {
     private final IClassRoomService classRoomService;
     private final JwtService jwtService;
     @PostMapping(path = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<ResponseAPI<CreateClassRoomResponse>> createClassRoom(@ModelAttribute @Valid CreateClassRoomRequest body,@CookieValue(name = "refreshToken", required = false) String refreshToken) {
         try{
             CreateClassRoomResponse resDate = classRoomService.createClassRoom(body);
@@ -55,6 +54,7 @@ public class ClassRoomController {
     }
 
     @PatchMapping(path = "/{classroomId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<String>> updateClassRoom(@ModelAttribute @Valid UpdateClassRoomRequest body, @PathVariable String classroomId) {
         try{
             body.setId(classroomId);
@@ -97,6 +97,7 @@ public class ClassRoomController {
 
     }
     @DeleteMapping(path = "/{classroomId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<ResponseAPI<String>> deleteClassRoom(@PathVariable String classroomId) {
         try{
             classRoomService.deleteClassRoom(classroomId);
@@ -140,6 +141,7 @@ public class ClassRoomController {
 
 
     @GetMapping(path = "/schedule-day/{studentId}")
+    @PreAuthorize("hasAnyAuthority('USER')")
     public ResponseEntity<ResponseAPI<GetClassRoomsResponse>> getScheduleByDay(@PathVariable String studentId,
                                                                               @RequestParam(name="day",required = false,defaultValue = "") String day) {
         try{
@@ -162,6 +164,7 @@ public class ClassRoomController {
     }
 
     @GetMapping(path = "/schedule-week/{studentId}")
+    @PreAuthorize("hasAnyAuthority('USER')")
     public ResponseEntity<ResponseAPI<List<GetScheduleResponse>>> getScheduleByStudentId(@PathVariable String studentId) {
         try{
             List<GetScheduleResponse> data= classRoomService.getScheduleByStudentId(studentId);
@@ -203,7 +206,8 @@ public class ClassRoomController {
 
     }
     @PostMapping(path = "/import", consumes = "multipart/form-data")
-    public ResponseEntity<ResponseAPI<String>> importFaculty(@ModelAttribute @Valid ImportClassRoomRequest body) {
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    public ResponseEntity<ResponseAPI<String>> importClass(@ModelAttribute @Valid ImportClassRoomRequest body) {
         try{
             classRoomService.importClassRoom(body);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
@@ -218,6 +222,30 @@ public class ClassRoomController {
                     .build();
             return ResponseEntity.badRequest().body(res);
         }
+    }
+
+    @GetMapping(path = "/recent")
+    @PreAuthorize("hasAnyAuthority('USER')")
+    public ResponseEntity<ResponseAPI<GetClassRoomRecentResponse>> getRecentClassRooms(@RequestParam(name="page",required = false,defaultValue = "1") int page,
+                                                                                       @RequestParam(name="size",required = false,defaultValue = "10") int size,
+                                                                                       @RequestParam(name="studentId",required = true) String studentId) {
+        try{
+            GetClassRoomRecentResponse resData = classRoomService.getRecentClasses( page-1, size,studentId);
+            ResponseAPI<GetClassRoomRecentResponse> res = ResponseAPI.<GetClassRoomRecentResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get recent class room successfully")
+                    .data(resData)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetClassRoomRecentResponse> res = ResponseAPI.<GetClassRoomRecentResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
     }
 
 

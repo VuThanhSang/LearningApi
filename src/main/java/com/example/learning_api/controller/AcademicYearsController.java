@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
@@ -24,6 +25,7 @@ public class AcademicYearsController {
     private final IAcademicYearsService academicYearsService;
 
     @PostMapping(path = "")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<ResponseAPI<String>> create(@RequestBody @Valid AcademicYearsEntity body) {
         try{
             academicYearsService.createAcademicYear(body);
@@ -42,6 +44,7 @@ public class AcademicYearsController {
         }
     }
     @PatchMapping(path = "/{id}")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<ResponseAPI<String>> update(@PathVariable String id, @RequestBody @Valid AcademicYearsEntity body) {
         try{
             body.setId(id);
@@ -62,6 +65,7 @@ public class AcademicYearsController {
     }
 
     @DeleteMapping(path = "/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ResponseAPI<String>> delete(@PathVariable String id) {
         try{
             academicYearsService.deleteAcademicYear(id);

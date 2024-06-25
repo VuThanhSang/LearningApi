@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
@@ -23,6 +24,7 @@ public class AdminController {
     private final IAdminService adminService;
 
     @PostMapping(path = "/change-role")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<ResponseAPI<String>> changeRole(@RequestBody @Valid ChangeRoleRequest body) {
         try{
             adminService.changeRole(body);
@@ -42,6 +44,7 @@ public class AdminController {
     }
 
     @DeleteMapping(path = "/delete-account")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<ResponseAPI<String>> deleteAccount(@RequestBody @Valid String userId ) {
         try{
             adminService.deleteAccount(userId);
@@ -61,6 +64,7 @@ public class AdminController {
     }
 
     @GetMapping(path = "/dashboard")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<ResponseAPI<GetAdminDashboardResponse>> getAdminDashboard() {
         try{
             GetAdminDashboardResponse data = adminService.getAdminDashboard();
