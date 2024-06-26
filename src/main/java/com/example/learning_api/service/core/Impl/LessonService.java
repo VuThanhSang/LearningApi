@@ -12,7 +12,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -81,6 +83,22 @@ public class LessonService implements ILessonService {
                 throw new IllegalArgumentException("Lesson not found");
             }
             return getLessonDetailResponse;
+        }
+        catch (Exception e){
+            log.error(e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public List<GetLessonDetailResponse> getLessonBySectionId(String sectionId) {
+        try{
+            List<LessonEntity> lessonEntities = lessonRepository.findBySectionId(sectionId);
+            List<GetLessonDetailResponse> getLessonDetailResponses = new ArrayList<>();
+            for (LessonEntity lessonEntity: lessonEntities){
+                getLessonDetailResponses.add(lessonRepository.getLessonWithResourcesAndMediaAndSubstances(lessonEntity.getId()));
+            }
+            return getLessonDetailResponses;
         }
         catch (Exception e){
             log.error(e.getMessage());

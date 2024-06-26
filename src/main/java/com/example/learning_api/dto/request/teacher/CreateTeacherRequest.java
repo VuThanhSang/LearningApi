@@ -15,5 +15,11 @@ public class CreateTeacherRequest {
     private String userId;
     private String bio;
     private String qualifications;
+    private String dateOfBirth;
+    private String gender;
+    private String phone;
+    private String address;
+    private String experience;
+    private String status;
 
 }

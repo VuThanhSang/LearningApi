@@ -115,4 +115,29 @@ public class SectionController {
         }
 
     }
+
+    @GetMapping(path = "/classroom/{classroomId}")
+    public ResponseEntity<ResponseAPI<GetSectionsResponse>> getSectionsByClassRoomId(
+            @PathVariable String classroomId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        try{
+            GetSectionsResponse resData = sectionService.getSectionsByClassRoomId(classroomId, page-1, size);
+            ResponseAPI<GetSectionsResponse> res = ResponseAPI.<GetSectionsResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get sections successfully")
+                    .data(resData)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetSectionsResponse> res = ResponseAPI.<GetSectionsResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
 }

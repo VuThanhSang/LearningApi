@@ -20,6 +20,7 @@ public class StudentEntity {
     private UserEntity user;
     private String gender;
     private String address;
+    private String dateOfBirth;
     private String phone;
     private String schoolYear;
     private String academicYearId;

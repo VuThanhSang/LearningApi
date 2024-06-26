@@ -4,8 +4,11 @@ import com.example.learning_api.dto.request.teacher.CreateTeacherRequest;
 import com.example.learning_api.dto.request.teacher.UpdateTeacherRequest;
 import com.example.learning_api.dto.response.teacher.CreateTeacherResponse;
 import com.example.learning_api.dto.response.teacher.GetTeachersResponse;
+import com.example.learning_api.entity.sql.database.SubjectSpecializationEntity;
 import com.example.learning_api.entity.sql.database.TeacherEntity;
 import com.example.learning_api.entity.sql.database.UserEntity;
+import com.example.learning_api.repository.database.MajorsRepository;
+import com.example.learning_api.repository.database.SubjectSpecializationRepository;
 import com.example.learning_api.repository.database.TeacherRepository;
 import com.example.learning_api.repository.database.UserRepository;
 import com.example.learning_api.service.common.ModelMapperService;
@@ -27,6 +30,8 @@ public class TeacherService implements ITeacherService {
     private final ModelMapperService modelMapperService;
     private final TeacherRepository teacherRepository;
     private final UserRepository userRepository;
+    private final SubjectSpecializationRepository subjectSpecializationRepository;
+    private final MajorsRepository majorsRepository;
     @Override
     public CreateTeacherResponse createTeacher(CreateTeacherRequest body) {
         try{
@@ -98,6 +103,30 @@ public class TeacherService implements ITeacherService {
             resData.setTotalElements(teacherEntities.getTotalElements());
             resData.setTotalPage(teacherEntities.getTotalPages());
             return resData;
+        }
+        catch (Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void addSubjectSpecialization(String teacherId, String majorId) {
+        try{
+            TeacherEntity teacherEntity = teacherRepository.findById(teacherId)
+                    .orElseThrow(() -> new IllegalArgumentException("Teacher not found"));
+            if (teacherEntity==null){
+                throw new IllegalArgumentException("Teacher not found");
+            }
+            if (majorId==null){
+                throw new IllegalArgumentException("MajorId is required");
+            }
+            if (majorsRepository.findById(majorId)==null){
+                throw new IllegalArgumentException("MajorId is not found");
+            }
+            SubjectSpecializationEntity subjectSpecializationEntity = new SubjectSpecializationEntity();
+            subjectSpecializationEntity.setTeacherId(teacherId);
+            subjectSpecializationEntity.setMajorsId(majorId);
+            subjectSpecializationRepository.save(subjectSpecializationEntity);
         }
         catch (Exception e){
             throw new IllegalArgumentException(e.getMessage());

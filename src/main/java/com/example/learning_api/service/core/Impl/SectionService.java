@@ -17,6 +17,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -40,6 +41,8 @@ public class SectionService implements ISectionService {
             }
             SectionEntity sectionEntity = modelMapperService.mapClass(body, SectionEntity.class);
             CreateSectionResponse resData = new CreateSectionResponse();
+            sectionEntity.setCreatedAt(new Date());
+            sectionEntity.setUpdatedAt(new Date());
             sectionRepository.save(sectionEntity);
             resData.setName(sectionEntity.getName());
             resData.setDescription(sectionEntity.getDescription());
@@ -88,6 +91,18 @@ public class SectionService implements ISectionService {
     public GetSectionsResponse getSections(int page, int size, String search) {
         Pageable pageAble = PageRequest.of(page, size);
         Page<SectionEntity> sectionEntities = sectionRepository.findByClassRoomId(search, pageAble);
+        List<GetSectionsResponse.SectionResponse> sectionResponses = modelMapperService.mapList(sectionEntities.getContent(), GetSectionsResponse.SectionResponse.class);
+        GetSectionsResponse resData = new GetSectionsResponse();
+        resData.setTotalPage(sectionEntities.getTotalPages());
+        resData.setTotalElements(sectionEntities.getTotalElements());
+        resData.setSections(sectionResponses);
+        return resData;
+    }
+
+    @Override
+    public GetSectionsResponse getSectionsByClassRoomId(String classRoomId, int page, int size) {
+        Pageable pageAble = PageRequest.of(page, size);
+        Page<SectionEntity> sectionEntities = sectionRepository.findByClassRoomId(classRoomId, pageAble);
         List<GetSectionsResponse.SectionResponse> sectionResponses = modelMapperService.mapList(sectionEntities.getContent(), GetSectionsResponse.SectionResponse.class);
         GetSectionsResponse resData = new GetSectionsResponse();
         resData.setTotalPage(sectionEntities.getTotalPages());

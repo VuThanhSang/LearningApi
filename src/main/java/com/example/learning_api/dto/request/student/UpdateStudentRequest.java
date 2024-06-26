@@ -15,4 +15,5 @@ public class UpdateStudentRequest {
     private String phone;
     private String academicYearId;
     private String majorId;
+    private String dateOfBirth;
 }
