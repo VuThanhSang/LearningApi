@@ -10,4 +10,5 @@ public interface ITeacherService {
     void updateTeacher( UpdateTeacherRequest body);
     void deleteTeacher(String id);
     GetTeachersResponse getTeachers(int page, int size, String search);
+    void addSubjectSpecialization(String teacherId, String majorId);
 }

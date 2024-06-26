@@ -11,4 +11,10 @@ public class UpdateTeacherRequest {
     private String id;
     private String bio;
     private String qualifications;
+    private String dateOfBirth;
+    private String gender;
+    private String phone;
+    private String address;
+    private String experience;
+    private String status;
 }

@@ -14,6 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
+import java.util.List;
 
 import static com.example.learning_api.constant.RouterConstant.*;
 
@@ -98,6 +99,26 @@ public class LessonController {
         }
         catch (Exception e){
             ResponseAPI<GetLessonDetailResponse> res = ResponseAPI.<GetLessonDetailResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping(path = "/section/{sectionId}")
+    public ResponseEntity<ResponseAPI<List<GetLessonDetailResponse>>> getLessonBySectionId(@PathVariable String sectionId) {
+        try{
+            List<GetLessonDetailResponse> data= lessonService.getLessonBySectionId(sectionId);
+            ResponseAPI<List<GetLessonDetailResponse>> res = ResponseAPI.<List<GetLessonDetailResponse>>builder()
+                    .timestamp(new Date())
+                    .data(data)
+                    .message("Get lesson successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<List<GetLessonDetailResponse>> res = ResponseAPI.<List<GetLessonDetailResponse>>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();

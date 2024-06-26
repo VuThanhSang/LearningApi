@@ -108,4 +108,24 @@ public class TeacherController {
 
     }
 
+    @PostMapping(path = "/{teacherId}/subject-specialization/{majorId}")
+    public ResponseEntity<ResponseAPI<String>> addSubjectSpecialization(@PathVariable String teacherId, @PathVariable String majorId) {
+        try{
+            teacherService.addSubjectSpecialization(teacherId, majorId);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message("Add subject specialization successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.CREATED);
+        }
+        catch (Exception e){
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
+
 }

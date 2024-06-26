@@ -15,6 +15,7 @@ public class CreateStudentRequest {
     private String address;
     private String phone;
     private String academicYearId;
+    private String dateOfBirth;
     private String majorId;
 
 }

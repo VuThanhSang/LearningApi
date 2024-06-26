@@ -15,11 +15,23 @@ public class GetStudentsResponse {
         private String id;
         private String userId;
         private String gradeLevel;
+        private String gender;
+        private String address;
+        private String phone;
+        private String academicYearId;
+        private String dateOfBirth;
+        private String majorId;
         public static StudentResponse formStudentEntity(StudentEntity studentEntity){
             StudentResponse studentResponse = new StudentResponse();
             studentResponse.setId(studentEntity.getId());
             studentResponse.setUserId(studentEntity.getUserId());
             studentResponse.setGradeLevel(studentEntity.getGradeLevel());
+            studentResponse.setGender(studentEntity.getGender());
+            studentResponse.setAddress(studentEntity.getAddress());
+            studentResponse.setPhone(studentEntity.getPhone());
+            studentResponse.setAcademicYearId(studentEntity.getAcademicYearId());
+            studentResponse.setDateOfBirth(studentEntity.getDateOfBirth());
+            studentResponse.setMajorId(studentEntity.getMajorId());
             return studentResponse;
         }
     }
