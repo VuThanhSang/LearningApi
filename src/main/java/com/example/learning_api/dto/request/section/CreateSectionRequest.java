@@ -20,4 +20,5 @@ public class CreateSectionRequest {
     @Schema(example = ID_EX)
     @NotBlank
     private String classRoomId;
+    private String status;
 }

@@ -29,6 +29,7 @@ public class RouterConstant {
     public static final String MAJORS_BASE_PATH = "/api/v1/majors";
     public static final String TERMS_BASE_PATH = "/api/v1/terms";
     public static final String RECENT_CLASS_BASE_PATH = "/api/v1/recent-class";
+    public static final String DEADLINE_BASE_PATH = "/api/v1/deadline";
     //authentication
     public static final String POST_USER_AUTH_REGISTER_SUB_PATH = "/register";
     public static final String POST_USER_AUTH_LOGIN_SUB_PATH = "/login";

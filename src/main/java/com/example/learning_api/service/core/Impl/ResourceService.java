@@ -8,6 +8,7 @@ import com.example.learning_api.constant.ErrorConstant;
 import com.example.learning_api.dto.request.resource.CreateResourceRequest;
 import com.example.learning_api.dto.request.resource.UpdateResourceRequest;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
+import com.example.learning_api.dto.response.lesson.GetResourceResponse;
 import com.example.learning_api.entity.sql.database.ResourceEntity;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.LessonRepository;
@@ -19,9 +20,14 @@ import com.example.learning_api.utils.ImageUtils;
 import com.example.learning_api.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -104,6 +110,40 @@ public class ResourceService implements IResourceService {
             }
             resourceEntity.setUpdatedAt(new Date());
             resourceRepository.save(resourceEntity);
+        }
+        catch (Exception e){
+            log.error(e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
+        }
+
+    }
+
+    @Override
+    public ResourceEntity getResource(String resourceId) {
+        try{
+            return resourceRepository.findById(resourceId).orElseThrow(()->new IllegalArgumentException("Id is not found"));
+        }
+        catch (Exception e){
+            log.error(e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public GetResourceResponse getResourceByLessonId(String lessonId, Integer page, Integer size) {
+        try{
+            Pageable pageAble = PageRequest.of(page, size);
+            Page<ResourceEntity> resourceEntities = resourceRepository.findByLessonId(lessonId, pageAble);
+            GetResourceResponse response = new GetResourceResponse();
+            List<GetResourceResponse.ResourceResponse> resourceResponses = new ArrayList<>();
+            for (ResourceEntity resourceEntity: resourceEntities){
+                GetResourceResponse.ResourceResponse resourceResponse = modelMapperService.mapClass(resourceEntity, GetResourceResponse.ResourceResponse.class);
+                resourceResponses.add(resourceResponse);
+            }
+            response.setResources(resourceResponses);
+            response.setTotalPage(resourceEntities.getTotalPages());
+            response.setTotalElements(resourceEntities.getTotalElements());
+            return response;
         }
         catch (Exception e){
             log.error(e.getMessage());
