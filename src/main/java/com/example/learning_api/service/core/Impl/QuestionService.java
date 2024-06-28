@@ -44,9 +44,6 @@ public class QuestionService implements IQuestionService {
         try{
             TestEntity testEntity = testRepository.findById(body.getTestId())
                     .orElseThrow(() -> new IllegalArgumentException("Test not found"));
-            if (!ImageUtils.isValidImageFile(body.getSource())&&body.getSource()!=null) {
-                throw new CustomException(ErrorConstant.IMAGE_INVALID);
-            }
             if (body.getTestId()==null){
                 throw new IllegalArgumentException("TestId is required");
 

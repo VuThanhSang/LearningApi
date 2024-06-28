@@ -36,9 +36,6 @@ public class AnswerService implements IAnswerService {
         try{
             QuestionEntity questionEntity = questionRepository.findById(body.getQuestionId())
                     .orElseThrow(() -> new IllegalArgumentException("Question not found"));
-            if (!ImageUtils.isValidImageFile(body.getSource())&&body.getSource()!=null) {
-                throw new CustomException(ErrorConstant.IMAGE_INVALID);
-            }
             if (body.getQuestionId()==null){
                 throw new IllegalArgumentException("QuestionId is required");
 

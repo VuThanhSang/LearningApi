@@ -9,5 +9,4 @@ public enum QuestionType {
     MATCHING,
     ORDERING,
     FILL_IN_THE_BLANK
-
 }
