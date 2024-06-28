@@ -8,5 +8,6 @@ import lombok.Data;
 public class CreateSubstanceRequest {
     @NotBlank
     private String lessonId;
+    private String name;
     private String content;
 }

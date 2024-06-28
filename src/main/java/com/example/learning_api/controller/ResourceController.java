@@ -2,6 +2,8 @@ package com.example.learning_api.controller;
 
 import com.example.learning_api.dto.request.resource.CreateResourceRequest;
 import com.example.learning_api.dto.request.resource.UpdateResourceRequest;
+import com.example.learning_api.dto.response.lesson.GetResourceResponse;
+import com.example.learning_api.entity.sql.database.ResourceEntity;
 import com.example.learning_api.model.ResponseAPI;
 import com.example.learning_api.service.core.IResourceService;
 import jakarta.validation.Valid;
@@ -74,5 +76,45 @@ public class ResourceController {
             return ResponseEntity.badRequest().body(res);
         }
     }
+
+    @GetMapping(path = "/{resourceId}")
+    public ResponseEntity<ResponseAPI<ResourceEntity>> getResource(@PathVariable String resourceId) {
+        try{
+            ResourceEntity data = resourceService.getResource(resourceId);
+            ResponseAPI<ResourceEntity> res = ResponseAPI.<ResourceEntity>builder()
+                    .message("Get resource successfully")
+                    .data(data)
+                    .build();
+            return ResponseEntity.ok(res);
+        }
+        catch (Exception e){
+            ResponseAPI<ResourceEntity> res = ResponseAPI.<ResourceEntity>builder()
+                    .message(e.getMessage())
+                    .build();
+            return ResponseEntity.badRequest().body(res);
+        }
+    }
+
+      @GetMapping(path = "/lesson/{lessonId}")
+    public ResponseEntity<ResponseAPI<GetResourceResponse>> getResourceByLessonId(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @PathVariable String lessonId)
+      {
+        try{
+            GetResourceResponse data= resourceService.getResourceByLessonId(lessonId, page-1, size);
+            ResponseAPI<GetResourceResponse> res = ResponseAPI.<GetResourceResponse>builder()
+                    .message("Get resource by lessonId successfully")
+                    .data(data)
+                    .build();
+            return ResponseEntity.ok(res);
+        }
+        catch (Exception e){
+            ResponseAPI<GetResourceResponse> res = ResponseAPI.<GetResourceResponse>builder()
+                    .message(e.getMessage())
+                    .build();
+            return ResponseEntity.badRequest().body(res);
+        }
+      }
 
 }

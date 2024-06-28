@@ -8,4 +8,6 @@ public class UpdateSubstanceRequest {
     @NotBlank
     private String id;
     private String content;
+    private String name;
+
 }

@@ -18,4 +18,6 @@ public class ParticipantEntity {
     private Date joinTime;
     private Date leaveTime;
     private String role; // host, attendee
+    private Date createdAt;
+    private Date updatedAt;
 }

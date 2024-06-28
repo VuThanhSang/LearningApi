@@ -10,5 +10,6 @@ public class CreateLessonRequest {
     @NotBlank
     private String name;
     private String description;
+    private String status;
 
 }

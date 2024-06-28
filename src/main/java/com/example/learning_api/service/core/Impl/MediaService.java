@@ -4,6 +4,7 @@ import com.example.learning_api.constant.CloudinaryConstant;
 import com.example.learning_api.dto.request.media.CreateMediaRequest;
 import com.example.learning_api.dto.request.media.UpdateMediaRequest;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
+import com.example.learning_api.dto.response.lesson.GetMediaResponse;
 import com.example.learning_api.entity.sql.database.MediaEntity;
 import com.example.learning_api.repository.database.LessonRepository;
 import com.example.learning_api.repository.database.MediaRepository;
@@ -13,9 +14,14 @@ import com.example.learning_api.service.core.IMediaService;
 import com.example.learning_api.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -105,5 +111,40 @@ public class MediaService implements IMediaService {
             throw new IllegalArgumentException(e.getMessage());
         }
 
+    }
+
+    @Override
+    public MediaEntity getMedia(String mediaId) {
+        try{
+            return mediaRepository.findById(mediaId).orElseThrow(()->new IllegalArgumentException("Id is not found"));
+        }
+        catch (Exception e) {
+            log.error("Error in getMedia: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public GetMediaResponse getMediaByLessonId(String lessonId, Integer page, Integer size) {
+       try {
+              Pageable pageAble = PageRequest.of(page, size);
+              Page<MediaEntity> mediaEntities = mediaRepository.findByLessonId(lessonId, pageAble);
+              GetMediaResponse getMediaResponse = new GetMediaResponse();
+              List<GetMediaResponse.MediaResponse> mediaResponses = new ArrayList<>();
+                for (MediaEntity mediaEntity : mediaEntities) {
+                    GetMediaResponse.MediaResponse mediaResponse = modelMapperService.mapClass(mediaEntity, GetMediaResponse.MediaResponse.class);
+                    mediaResponses.add(mediaResponse);
+                }
+                getMediaResponse.setMedia(mediaResponses);
+                getMediaResponse.setTotalPage(mediaEntities.getTotalPages());
+                getMediaResponse.setTotalElements(mediaEntities.getTotalElements());
+
+                return getMediaResponse;
+
+       }
+         catch (Exception e) {
+              log.error("Error in getMediaByLessonId: ", e);
+              throw new IllegalArgumentException(e.getMessage());
+         }
     }
 }

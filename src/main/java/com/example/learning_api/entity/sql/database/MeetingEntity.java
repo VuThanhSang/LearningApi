@@ -13,7 +13,7 @@ import java.util.Date;
 public class MeetingEntity {
     @Id
     private String id;
-    private String hostId;
+    private String teacherId;
     private String title;
     private String description;
     private Date startTime;
