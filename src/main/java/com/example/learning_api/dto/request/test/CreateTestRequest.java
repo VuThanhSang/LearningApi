@@ -15,7 +15,7 @@ public class CreateTestRequest {
     private String name;
     private String description;
     @NotNull
-    private String courseId;
+    private String classroomId;
     @NotBlank
     private String createdBy;
     @NotBlank
@@ -26,4 +26,6 @@ public class CreateTestRequest {
     private String endTime;
     @NotBlank
     private MultipartFile source;
+    @NotBlank
+    private String showResultType;
 }

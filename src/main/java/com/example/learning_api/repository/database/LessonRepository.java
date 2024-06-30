@@ -15,7 +15,8 @@ public interface LessonRepository extends MongoRepository<LessonEntity, String>{
             "{ '$addFields': { '_idString': { '$toString': '$_id' } } }",
             "{ '$lookup': { 'from': 'resources', 'localField': '_idString', 'foreignField': 'lessonId', 'as': 'resources' } }",
             "{ '$lookup': { 'from': 'media', 'localField': '_idString', 'foreignField': 'lessonId', 'as': 'media' } }",
-            "{ '$lookup': { 'from': 'substances', 'localField': '_idString', 'foreignField': 'lessonId', 'as': 'substances' } }"
+            "{ '$lookup': { 'from': 'substances', 'localField': '_idString', 'foreignField': 'lessonId', 'as': 'substances' } }",
+            "{ '$lookup': { 'from': 'deadlines', 'localField': '_idString', 'foreignField': 'lessonId', 'as': 'deadlines' } }",
     })
     GetLessonDetailResponse getLessonWithResourcesAndMediaAndSubstances(String id);
     List<LessonEntity> findBySectionId(String sectionId);

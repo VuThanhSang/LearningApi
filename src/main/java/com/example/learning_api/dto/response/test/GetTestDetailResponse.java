@@ -13,5 +13,10 @@ public class GetTestDetailResponse {
     private String source;
     private String id;
     private int duration;
+    private String startTime;
+    private String endTime;
+    private String classroomId;
+    private String createdBy;
+    private String showResultType;
     private List<GetQuestionsResponse.QuestionResponse> questions;
 }

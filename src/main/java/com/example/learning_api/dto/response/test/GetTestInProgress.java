@@ -17,25 +17,27 @@ public class GetTestInProgress {
         private String name;
         private String description;
         private int duration;
-        private List<QuestionEntity> questions;
+        private String classroomId;
         private String startTime;
         private String endTime;
+        private String showResultType;
         private String createdBy;
         private String createdAt;
         private String updatedAt;
 
-        public static GetTestsResponse.TestResponse fromTestEntity(TestEntity testEntity){
-            GetTestsResponse.TestResponse testResponse = new GetTestsResponse.TestResponse();
+        public static GetTestInProgress.TestResponse fromTestEntity(TestEntity testEntity){
+            GetTestInProgress.TestResponse testResponse = new GetTestInProgress.TestResponse();
             testResponse.setId(testEntity.getId());
             testResponse.setName(testEntity.getName());
             testResponse.setDescription(testEntity.getDescription());
-            testResponse.setQuestions(testEntity.getQuestions());
             testResponse.setDuration(testEntity.getDuration());
             testResponse.setCreatedBy(testEntity.getCreatedBy());
             testResponse.setCreatedAt(testEntity.getCreatedAt().toString());
             testResponse.setUpdatedAt(testEntity.getUpdatedAt().toString());
             testResponse.setStartTime(testEntity.getStartTime().toString());
             testResponse.setEndTime(testEntity.getEndTime().toString());
+            testResponse.setClassroomId(testEntity.getClassroomId());
+            testResponse.setShowResultType(testEntity.getShowResultType().toString());
             return testResponse;
         }
     }

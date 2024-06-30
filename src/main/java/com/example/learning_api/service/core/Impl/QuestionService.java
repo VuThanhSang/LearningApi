@@ -11,6 +11,7 @@ import com.example.learning_api.entity.sql.database.QuestionEntity;
 import com.example.learning_api.entity.sql.database.TestEntity;
 import com.example.learning_api.enums.QuestionType;
 import com.example.learning_api.model.CustomException;
+import com.example.learning_api.repository.database.AnswerRepository;
 import com.example.learning_api.repository.database.QuestionRepository;
 import com.example.learning_api.repository.database.TestRepository;
 import com.example.learning_api.service.common.CloudinaryService;
@@ -38,7 +39,7 @@ public class QuestionService implements IQuestionService {
     private final QuestionRepository questionRepository;
     private final TestRepository testRepository;
     private final CloudinaryService cloudinaryService;
-
+    private final AnswerRepository answerRepository;
     @Override
     public CreateQuestionResponse createQuestion(CreateQuestionRequest body) {
         try{
@@ -120,6 +121,19 @@ public class QuestionService implements IQuestionService {
             throw new IllegalArgumentException(e.getMessage());
         }
 
+    }
+
+    @Override
+    public void deleteQuestions(String[] ids) {
+        try{
+            for (String id : ids){
+                questionRepository.deleteById(id);
+                answerRepository.deleteByQuestionId(id);
+            }
+        }
+        catch (Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
     }
 
     @Override
