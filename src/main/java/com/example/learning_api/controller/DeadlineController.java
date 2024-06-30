@@ -5,8 +5,10 @@ import com.example.learning_api.dto.request.deadline.CreateDeadlineRequest;
 import com.example.learning_api.dto.request.deadline.CreateDeadlineSubmissionsRequest;
 import com.example.learning_api.dto.request.deadline.UpdateDeadlineRequest;
 import com.example.learning_api.dto.request.deadline.UpdateDeadlineSubmissionsRequest;
+import com.example.learning_api.dto.response.classroom.ClassroomDeadlineResponse;
 import com.example.learning_api.dto.response.deadline.GetDeadlineSubmissionsResponse;
 import com.example.learning_api.dto.response.deadline.GetDeadlinesResponse;
+import com.example.learning_api.dto.response.deadline.UpcomingDeadlinesResponse;
 import com.example.learning_api.entity.sql.database.DeadlineEntity;
 import com.example.learning_api.entity.sql.database.DeadlineSubmissionsEntity;
 import com.example.learning_api.model.ResponseAPI;
@@ -21,6 +23,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
+import java.util.List;
 
 import static com.example.learning_api.constant.RouterConstant.*;
 
@@ -141,6 +144,49 @@ public class DeadlineController {
 
     }
 
+    @GetMapping(path = "/upcoming/{studentId}")
+    public ResponseEntity<ResponseAPI<List<UpcomingDeadlinesResponse>>> getUpcomingDeadlinesByStudentId(
+            @PathVariable String studentId,
+            @RequestParam(defaultValue = "") String date)  {
+        try{
+            List<UpcomingDeadlinesResponse> data =  deadlineService.getUpcomingDeadlineByStudentId(studentId, date);
+            ResponseAPI<List<UpcomingDeadlinesResponse>> res = ResponseAPI.<List<UpcomingDeadlinesResponse>>builder()
+                    .timestamp(new Date())
+                    .message("Get upcoming deadlines successfully")
+                    .data(data)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<List<UpcomingDeadlinesResponse>> res = ResponseAPI.<List<UpcomingDeadlinesResponse>>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
+
+    @GetMapping(path="/classroom/{classroomId}")
+    public ResponseEntity<ResponseAPI<List<ClassroomDeadlineResponse>>> getClassroomDeadlinesByClassroomId(@PathVariable String classroomId){
+        try{
+            List<ClassroomDeadlineResponse> data = deadlineService.getClassroomDeadlinesByClassroomId(classroomId);
+            ResponseAPI<List<ClassroomDeadlineResponse>> res = ResponseAPI.<List<ClassroomDeadlineResponse>>builder()
+                    .timestamp(new Date())
+                    .message("Get classroom deadlines successfully")
+                    .data(data)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<List<ClassroomDeadlineResponse>> res = ResponseAPI.<List<ClassroomDeadlineResponse>>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
     @PostMapping(path = "/{deadlineId}/submissions", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyAuthority('USER')")
     public ResponseEntity<ResponseAPI<String>> createDeadlineSubmissions(@ModelAttribute @Valid CreateDeadlineSubmissionsRequest body){
@@ -247,4 +293,5 @@ public class DeadlineController {
         }
 
     }
+
 }

@@ -4,12 +4,12 @@ import com.example.learning_api.constant.CloudinaryConstant;
 import com.example.learning_api.dto.request.deadline.CreateDeadlineRequest;
 import com.example.learning_api.dto.request.deadline.UpdateDeadlineRequest;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
+import com.example.learning_api.dto.response.classroom.ClassroomDeadlineResponse;
 import com.example.learning_api.dto.response.deadline.GetDeadlinesResponse;
+import com.example.learning_api.dto.response.deadline.UpcomingDeadlinesResponse;
 import com.example.learning_api.entity.sql.database.DeadlineEntity;
 import com.example.learning_api.enums.DeadlineStatus;
-import com.example.learning_api.repository.database.ClassRoomRepository;
-import com.example.learning_api.repository.database.DeadlineRepository;
-import com.example.learning_api.repository.database.LessonRepository;
+import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
 import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.IDeadlineService;
@@ -33,6 +33,9 @@ public class DeadlineService implements IDeadlineService {
     private final LessonRepository lessonRepository;
     private final ModelMapperService modelMapperService;
     private final CloudinaryService cloudinaryService;
+    private final StudentEnrollmentsRepository studentEnrollmentsRepository;
+    private final StudentRepository studentRepository;
+    private final ClassRoomRepository classroomRepository;
 
     @Override
     public void createDeadline(CreateDeadlineRequest body) {
@@ -160,6 +163,36 @@ public class DeadlineService implements IDeadlineService {
         }
         catch (Exception e) {
             log.error("Error in getDeadlinesByClassroomId: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public List<UpcomingDeadlinesResponse> getUpcomingDeadlineByStudentId(String studentId, String date) {
+        try{
+            if (studentRepository.findById(studentId) == null){
+                throw new IllegalArgumentException("StudentId is not found");
+            }
+            List<UpcomingDeadlinesResponse> updateDeadlineRequest = studentEnrollmentsRepository.getUpcomingDeadlines(studentId, date);
+            return updateDeadlineRequest;
+        }
+        catch (Exception e) {
+            log.error("Error in convertToDeadlineRequest: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public List<ClassroomDeadlineResponse> getClassroomDeadlinesByClassroomId(String classroomId) {
+        try{
+            if (classroomRepository.findById(classroomId) == null){
+                throw new IllegalArgumentException("ClassroomId is not found");
+            }
+            List<ClassroomDeadlineResponse> classroomDeadlineResponses = classroomRepository.getDeadlinesForClassroom(classroomId);
+            return classroomDeadlineResponses;
+        }
+        catch (Exception e) {
+            log.error("Error in convertToDeadlineRequest: ", e);
             throw new IllegalArgumentException(e.getMessage());
         }
     }

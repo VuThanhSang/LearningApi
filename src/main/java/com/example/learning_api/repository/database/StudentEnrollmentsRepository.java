@@ -2,6 +2,7 @@ package com.example.learning_api.repository.database;
 
 import com.example.learning_api.dto.response.classroom.GetClassRoomRecentResponse;
 import com.example.learning_api.dto.response.classroom.GetScheduleResponse;
+import com.example.learning_api.dto.response.deadline.UpcomingDeadlinesResponse;
 import com.example.learning_api.entity.sql.database.ClassRoomEntity;
 import com.example.learning_api.entity.sql.database.StudentEnrollmentsEntity;
 import org.springframework.data.domain.Page;
@@ -12,6 +13,7 @@ import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
+import java.util.Date;
 import java.util.List;
 
 public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnrollmentsEntity, String> {
@@ -46,4 +48,17 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
             "{$sort: {lastAccessedAt: -1}}"
     })
     Slice<GetClassRoomRecentResponse.ClassRoomResponse> getRecentClasses(String studentId, Pageable pageable);
+    @Aggregation(pipeline = {
+            "{ $match: { studentId: ?0 } }",
+            "{ $lookup: { from: 'sections', localField: 'classroomId', foreignField: 'classRoomId', as: 'section' } }",
+            "{ $unwind: '$section' }",
+            "{ $lookup: { from: 'lessons', let: { sectionId: '$section._id' }, pipeline: [{ $match: { $expr: { $eq: ['$sectionId', { $toString: '$$sectionId' }] } } }], as: 'lessons' } }",
+            "{ $unwind: '$lessons' }",
+            "{ $lookup: { from: 'deadlines', let: { lessonId: '$lessons._id' }, pipeline: [{ $match: { $expr: { $and: [{ $eq: ['$lessonId', { $toString: '$$lessonId' }] }, { $eq: ['$status', 'UPCOMING'] }, { $gt: ['$dueDate', { $dateFromString: { dateString: ?1 } }] }] } } }], as: 'deadlines' } }",
+            "{ $unwind: '$deadlines' }",
+            "{ $project: { _id: '$deadlines._id', title: '$deadlines.title', description: '$deadlines.description', type: '$deadlines.type', status: '$deadlines.status', attachment: '$deadlines.attachment', dueDate: '$deadlines.dueDate', lessonName: '$lessons.name', lessonDescription: '$lessons.description', sectionName: '$section.name', sectionDescription: '$section.description' } }"
+    })
+    List<UpcomingDeadlinesResponse> getUpcomingDeadlines(String studentId, String compareDate);
+
+
 }

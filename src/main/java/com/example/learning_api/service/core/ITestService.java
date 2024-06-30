@@ -13,6 +13,7 @@ public interface ITestService {
     GetTestsResponse getTests(int page, int size,String search);
     void importTest(ImportTestRequest body);
     GetTestDetailResponse getTestDetail(String id);
+    GetTestsResponse getTestsByClassroomId(int page, int size,String classroomId);
     GetTestInProgress getTestInProgress(int page,int size,String studentId);
     GetTestInProgress getTestOnSpecificDayByStudentId(String studentId,String date,int page,int size);
     TestSubmitResponse submitTest( TestSubmitRequest body);

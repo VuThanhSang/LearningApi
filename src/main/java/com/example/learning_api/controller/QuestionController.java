@@ -110,4 +110,24 @@ public class QuestionController {
             return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
         }
     }
+
+    @DeleteMapping(path = "/delete")
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
+    public ResponseEntity<ResponseAPI<String>> deleteQuestions(@RequestBody String[] ids) {
+        try{
+            questionService.deleteQuestions(ids);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message("Delete questions successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
 }

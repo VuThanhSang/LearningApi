@@ -21,9 +21,12 @@ public class GetTestsResponse {
         private List<QuestionEntity> questions;
         private String startTime;
         private String endTime;
+        private String classroomId;
+        private String showResultType;
         private String createdBy;
         private String createdAt;
         private String updatedAt;
+
 
         public static TestResponse fromTestEntity(TestEntity testEntity){
             TestResponse testResponse = new TestResponse();
@@ -37,6 +40,9 @@ public class GetTestsResponse {
             testResponse.setUpdatedAt(testEntity.getUpdatedAt().toString());
             testResponse.setStartTime(testEntity.getStartTime().toString());
             testResponse.setEndTime(testEntity.getEndTime().toString());
+            testResponse.setClassroomId(testEntity.getClassroomId());
+            testResponse.setShowResultType(testEntity.getShowResultType().toString());
+
             return testResponse;
         }
     }

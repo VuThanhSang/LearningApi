@@ -1,5 +1,6 @@
 package com.example.learning_api.entity.sql.database;
 
+import com.example.learning_api.enums.TestShowResultType;
 import jakarta.persistence.Id;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,9 +19,10 @@ public class TestEntity {
     private String name;
     private String description;
     private int duration;
-    private String courseId;
+    private String classroomId;
     private String createdBy;
     private String source;
+    private TestShowResultType showResultType;
     private Date startTime;
     private Date endTime;
     private Date createdAt;

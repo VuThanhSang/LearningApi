@@ -11,6 +11,7 @@ import com.example.learning_api.dto.response.question.GetQuestionsResponse;
 import com.example.learning_api.dto.response.test.*;
 import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.ImportType;
+import com.example.learning_api.enums.TestShowResultType;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
@@ -44,7 +45,7 @@ public class TestService implements ITestService {
     private final TestRepository testRepository;
     private final TestResultRepository testResultRepository;
     private final UserRepository userRepository;
-    private final CourseRepository courseRepository;
+    private final ClassRoomRepository classRoomRepository;
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
     private final CloudinaryService cloudinaryService;
@@ -53,20 +54,18 @@ public class TestService implements ITestService {
         try{
             UserEntity userEntity = userRepository.findById(body.getCreatedBy())
                     .orElseThrow(() -> new IllegalArgumentException("User not found"));
-            if (!ImageUtils.isValidImageFile(body.getSource()) && body.getSource()!=null) {
-                throw new CustomException(ErrorConstant.IMAGE_INVALID);
-            }
+
             if (body.getCreatedBy()==null){
                 throw new IllegalArgumentException("UserId is required");
             }
             if (userEntity==null){
                 throw new IllegalArgumentException("UserId is not found");
             }
-            if (body.getCourseId() == null){
-                throw new IllegalArgumentException("CourseId is required");
+            if (body.getClassroomId() == null){
+                throw new IllegalArgumentException("ClassroomId is required");
             }
-            if (courseRepository.findById(body.getCourseId()).isEmpty()){
-                throw new IllegalArgumentException("CourseId is not found");
+            if (classRoomRepository.findById(body.getClassroomId()).isEmpty()){
+                throw new IllegalArgumentException("ClassroomId is not found");
             }
             if (body.getStartTime()==null){
                 throw new IllegalArgumentException("Start time is required");
@@ -77,6 +76,9 @@ public class TestService implements ITestService {
             CreateTestResponse resData = new CreateTestResponse();
             TestEntity testEntity = modelMapperService.mapClass(body, TestEntity.class);
             if(body.getSource()!=null){
+                if (!ImageUtils.isValidImageFile(body.getSource()) && body.getSource()!=null) {
+                    throw new CustomException(ErrorConstant.IMAGE_INVALID);
+                }
                 byte[] originalImage = new byte[0];
                 originalImage = body.getSource().getBytes();
                 byte[] newImage = ImageUtils.resizeImage(originalImage, 200, 200);
@@ -104,6 +106,10 @@ public class TestService implements ITestService {
             resData.setSource(testEntity.getSource());
             resData.setName(body.getName());
             resData.setUpdatedAt(testEntity.getUpdatedAt().toString());
+            resData.setStartTime(testEntity.getStartTime().toString());
+            resData.setEndTime(testEntity.getEndTime().toString());
+            resData.setClassroomId(body.getClassroomId());
+            resData.setShowResultType(body.getShowResultType());
             return resData;
 
         }
@@ -132,6 +138,34 @@ public class TestService implements ITestService {
             }
             if (body.getDuration()!=0){
                 testEntity.setDuration(body.getDuration());
+            }
+            if (body.getSource()!=null){
+                if (!ImageUtils.isValidImageFile(body.getSource())) {
+                    throw new CustomException(ErrorConstant.IMAGE_INVALID);
+                }
+                byte[] originalImage = new byte[0];
+                originalImage = body.getSource().getBytes();
+                byte[] newImage = ImageUtils.resizeImage(originalImage, 200, 200);
+                CloudinaryUploadResponse imageUploaded = cloudinaryService.uploadFileToFolder(
+                        CloudinaryConstant.CLASSROOM_PATH,
+                        StringUtils.generateFileName(body.getName(), "tests"),
+                        newImage,
+                        "image"
+                );
+                testEntity.setSource(imageUploaded.getUrl());
+            }
+            if (body.getStartTime()!=null){
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+                Date startdate = formatter.parse(body.getStartTime());
+                testEntity.setStartTime(startdate);
+            }
+            if (body.getEndTime()!=null){
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+                Date enddate = formatter.parse(body.getEndTime());
+                testEntity.setEndTime(enddate);
+            }
+            if (body.getShowResultType()!=null){
+                testEntity.setShowResultType(TestShowResultType.valueOf(body.getShowResultType()));
             }
             testRepository.save(testEntity);
         }
@@ -265,6 +299,10 @@ public class TestService implements ITestService {
             resData.setDescription(testEntity.getDescription());
             resData.setDuration(testEntity.getDuration());
             resData.setSource(testEntity.getSource());
+            resData.setStartTime(testEntity.getStartTime().toString());
+            resData.setEndTime(testEntity.getEndTime().toString());
+            resData.setShowResultType(testEntity.getShowResultType().toString());
+            resData.setClassroomId(testEntity.getClassroomId());
             List<GetQuestionsResponse.QuestionResponse> questionResponses = new ArrayList<>();
             List<QuestionEntity> questionEntities = questionRepository.findByTestId(id);
             for (QuestionEntity questionEntity : questionEntities){
@@ -286,6 +324,28 @@ public class TestService implements ITestService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
+
+    @Override
+    public GetTestsResponse getTestsByClassroomId(int page, int size, String classroomId) {
+        try{
+            Pageable pageAble = PageRequest.of(page, size);
+            Page<TestEntity> testEntities = testRepository.findByClassroomId(classroomId, pageAble);
+            GetTestsResponse resData = new GetTestsResponse();
+            List<GetTestsResponse.TestResponse> testResponses = new ArrayList<>();
+            for (TestEntity testEntity : testEntities){
+                GetTestsResponse.TestResponse testResponse = modelMapperService.mapClass(testEntity, GetTestsResponse.TestResponse.class);
+                testResponses.add(testResponse);
+            }
+            resData.setTests(testResponses);
+            resData.setTotalElements(testEntities.getTotalElements());
+            resData.setTotalPage(testEntities.getTotalPages());
+            return resData;
+        }
+        catch (Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
     @Override
     public GetTestInProgress getTestInProgress(int page,int size,String studentId) {
         try{

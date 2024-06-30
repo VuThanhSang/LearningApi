@@ -180,7 +180,7 @@ public class TestController {
         }
     }
     @GetMapping(path = "/on-specific-day/{studentId}")
-    @PreAuthorize("hasAnyAuthority('STUDENT')")
+    @PreAuthorize("hasAnyAuthority('USER')")
     public ResponseEntity<ResponseAPI<GetTestInProgress>> getTestsOnSpecificDayByStudentId (
             @PathVariable String studentId,
             @RequestParam(defaultValue = "1") int page,
@@ -206,7 +206,7 @@ public class TestController {
     }
 
     @PostMapping(path = "/submit")
-    @PreAuthorize("hasAnyAuthority('STUDENT')")
+    @PreAuthorize("hasAnyAuthority('USER')")
     public ResponseEntity<ResponseAPI<TestSubmitResponse>> submitTest(@RequestBody @Valid TestSubmitRequest body) {
         try{
             TestSubmitResponse data = testService.submitTest(body);
@@ -225,6 +225,30 @@ public class TestController {
             return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
         }
 
+    }
+
+    @GetMapping(path = "/classroom/{classroomId}")
+    public ResponseEntity<ResponseAPI<GetTestsResponse>> getTestsByClassroomId (
+            @PathVariable String classroomId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ){
+        try{
+            GetTestsResponse resData = testService.getTestsByClassroomId(page-1, size, classroomId);
+            ResponseAPI<GetTestsResponse> res = ResponseAPI.<GetTestsResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get tests by classroom id successfully")
+                    .data(resData)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetTestsResponse> res = ResponseAPI.<GetTestsResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
     }
 
     @PostMapping(path = "/result")
