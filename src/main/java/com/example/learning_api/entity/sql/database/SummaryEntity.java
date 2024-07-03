@@ -5,10 +5,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.Date;
+
 @Data
 @NoArgsConstructor
 @Document(collection = "grades")
-public class GradesEntity {
+public class SummaryEntity {
     @Id
     private String id;
     private String studentId;
@@ -19,4 +21,6 @@ public class GradesEntity {
     private int midTermGrade;
     private int finalExamGrade;
     private boolean isPassed;
+    private Date createdAt;
+    private Date updatedAt;
 }

@@ -312,5 +312,25 @@ public class TestController {
 
     }
 
+    @GetMapping(path = "/result/{studentId}/{testId}")
+    public ResponseEntity<ResponseAPI<TestResultResponse>> getTestResult(@PathVariable String studentId, @PathVariable String testId) {
+        try{
+            TestResultResponse resData = testService.getTestResult(studentId, testId);
+            ResponseAPI<TestResultResponse> res = ResponseAPI.<TestResultResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get test result successfully")
+                    .data(resData)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<TestResultResponse> res = ResponseAPI.<TestResultResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
 
 }

@@ -2,6 +2,7 @@ package com.example.learning_api.service.core.Impl;
 
 import com.example.learning_api.constant.CloudinaryConstant;
 import com.example.learning_api.constant.ErrorConstant;
+import com.example.learning_api.dto.common.QuestionAnswersDTO;
 import com.example.learning_api.dto.request.test.CreateTestRequest;
 import com.example.learning_api.dto.request.test.ImportTestRequest;
 import com.example.learning_api.dto.request.test.TestSubmitRequest;
@@ -49,6 +50,7 @@ public class TestService implements ITestService {
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
     private final CloudinaryService cloudinaryService;
+    private final StudentAnswersRepository studentAnswersRepository;
     @Override
     public CreateTestResponse createTest(CreateTestRequest body) {
         try{
@@ -415,6 +417,23 @@ public class TestService implements ITestService {
                 }
             }
             correctAnswers.add(correctAnswer);
+            if(body.getAnswers().size()>questions.indexOf(question))
+            {
+                for (Integer ans : body.getAnswers().get(questions.indexOf(question))) {
+                    StudentAnswersEntity studentAnswersEntity = new StudentAnswersEntity();
+                    studentAnswersEntity.setStudentId(body.getStudentId());
+                    studentAnswersEntity.setQuestionId(question.getId());
+                    studentAnswersEntity.setTestId(body.getTestId());
+                    studentAnswersEntity.setTestType("test");
+                    studentAnswersEntity.setAnswerId(answers.get(ans).getId());
+                    studentAnswersEntity.setCreatedAt(new Date());
+                    studentAnswersEntity.setUpdatedAt(new Date());
+                    studentAnswersEntity.setCorrect(answers.get(ans).isCorrect());
+                    studentAnswersRepository.save(studentAnswersEntity);
+
+                }
+            }
+
             if (correctCount == answerCorrectCount) {
                 result++;
             }
@@ -440,6 +459,34 @@ public class TestService implements ITestService {
         grade = Math.round(grade * 100.0) / 100.0;
         resData.setGrade(grade);
         return resData;
+    }
+
+    @Override
+    public TestResultResponse getTestResult(String studentId, String testId) {
+        try{
+            TestResultEntity testResultEntity = testResultRepository.findByStudentIdAndTestId(studentId, testId);
+            if (testResultEntity==null){
+                throw new IllegalArgumentException("TestResult not found");
+            }
+            TestEntity testEntity = testRepository.findById(testId)
+                    .orElseThrow(() -> new IllegalArgumentException("Test not found"));
+            if (testEntity==null){
+                throw new IllegalArgumentException("TestId is not found");
+            }
+            TestResultResponse resData = new TestResultResponse();
+            resData.setTestId(testResultEntity.getTestId());
+            resData.setTestType(testResultEntity.getTestType());
+            resData.setGrade(testResultEntity.getGrade());
+            resData.setPassed(testResultEntity.getGrade()>=5);
+            resData.setAttendedAt(testResultEntity.getAttendedAt().toString());
+            resData.setCreatedAt(testResultEntity.getCreatedAt().toString());
+            List<QuestionAnswersDTO> questionAnswersDTOS = studentAnswersRepository.getStudentAnswers(studentId, testId);
+            resData.setChoiceAnswers(questionAnswersDTOS);
+            return resData;
+        }
+        catch (Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
     }
 
 }

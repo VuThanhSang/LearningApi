@@ -17,4 +17,5 @@ public interface ITestService {
     GetTestInProgress getTestInProgress(int page,int size,String studentId);
     GetTestInProgress getTestOnSpecificDayByStudentId(String studentId,String date,int page,int size);
     TestSubmitResponse submitTest( TestSubmitRequest body);
+    TestResultResponse getTestResult(String studentId, String testId);
 }
