@@ -17,4 +17,5 @@ public class UpdateTestRequest {
     private String startTime;
     private String endTime;
     private String showResultType;
+    private String status;
 }

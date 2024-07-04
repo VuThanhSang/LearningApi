@@ -17,7 +17,7 @@ public class CreateTestRequest {
     @NotNull
     private String classroomId;
     @NotBlank
-    private String createdBy;
+    private String teacherId;
     @NotBlank
     private int duration;
     @NotBlank
@@ -28,4 +28,10 @@ public class CreateTestRequest {
     private MultipartFile source;
     @NotBlank
     private String showResultType;
+    @NotBlank
+    private String startAt;
+    @NotBlank
+    private String endAt;
+    @NotBlank
+    private String Status;
 }

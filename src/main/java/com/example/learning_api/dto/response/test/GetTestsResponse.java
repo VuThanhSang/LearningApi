@@ -23,7 +23,7 @@ public class GetTestsResponse {
         private String endTime;
         private String classroomId;
         private String showResultType;
-        private String createdBy;
+        private String teacherId;
         private String createdAt;
         private String updatedAt;
 
@@ -33,9 +33,8 @@ public class GetTestsResponse {
             testResponse.setId(testEntity.getId());
             testResponse.setName(testEntity.getName());
             testResponse.setDescription(testEntity.getDescription());
-            testResponse.setQuestions(testEntity.getQuestions());
             testResponse.setDuration(testEntity.getDuration());
-            testResponse.setCreatedBy(testEntity.getCreatedBy());
+            testResponse.setTeacherId(testEntity.getTeacherId());
             testResponse.setCreatedAt(testEntity.getCreatedAt().toString());
             testResponse.setUpdatedAt(testEntity.getUpdatedAt().toString());
             testResponse.setStartTime(testEntity.getStartTime().toString());
