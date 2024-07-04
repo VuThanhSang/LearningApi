@@ -13,6 +13,7 @@ import com.example.learning_api.dto.response.test.*;
 import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.ImportType;
 import com.example.learning_api.enums.TestShowResultType;
+import com.example.learning_api.enums.TestStatus;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
@@ -45,35 +46,29 @@ public class TestService implements ITestService {
     private final ModelMapperService modelMapperService;
     private final TestRepository testRepository;
     private final TestResultRepository testResultRepository;
-    private final UserRepository userRepository;
     private final ClassRoomRepository classRoomRepository;
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
     private final CloudinaryService cloudinaryService;
     private final StudentAnswersRepository studentAnswersRepository;
+    private final TeacherRepository teacherRepository;
     @Override
     public CreateTestResponse createTest(CreateTestRequest body) {
         try{
-            UserEntity userEntity = userRepository.findById(body.getCreatedBy())
-                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
+            TeacherEntity userEntity = teacherRepository.findById(body.getTeacherId())
+                    .orElseThrow(() -> new IllegalArgumentException("Teacher not found"));
 
-            if (body.getCreatedBy()==null){
-                throw new IllegalArgumentException("UserId is required");
+            if (body.getTeacherId()==null){
+                throw new IllegalArgumentException("TeacherID is required");
             }
             if (userEntity==null){
-                throw new IllegalArgumentException("UserId is not found");
+                throw new IllegalArgumentException("TeacherID is not found");
             }
             if (body.getClassroomId() == null){
                 throw new IllegalArgumentException("ClassroomId is required");
             }
             if (classRoomRepository.findById(body.getClassroomId()).isEmpty()){
                 throw new IllegalArgumentException("ClassroomId is not found");
-            }
-            if (body.getStartTime()==null){
-                throw new IllegalArgumentException("Start time is required");
-            }
-            if (body.getEndTime()==null){
-                throw new IllegalArgumentException("End time is required");
             }
             CreateTestResponse resData = new CreateTestResponse();
             TestEntity testEntity = modelMapperService.mapClass(body, TestEntity.class);
@@ -93,14 +88,10 @@ public class TestService implements ITestService {
                 testEntity.setSource(imageUploaded.getUrl());
             }
             testEntity.setCreatedAt(new Date());
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-            Date startdate = formatter.parse(body.getStartTime());
-            Date enddate = formatter.parse(body.getEndTime());
-            testEntity.setStartTime(startdate);
-            testEntity.setEndTime(enddate);
+
             testEntity.setUpdatedAt(new Date());
             testRepository.save(testEntity);
-            resData.setCreatedBy(body.getCreatedBy());
+            resData.setTeacherId(body.getTeacherId());
             resData.setCreatedAt(testEntity.getCreatedAt().toString());
             resData.setDescription(body.getDescription());
             resData.setDuration(body.getDuration());
@@ -108,10 +99,11 @@ public class TestService implements ITestService {
             resData.setSource(testEntity.getSource());
             resData.setName(body.getName());
             resData.setUpdatedAt(testEntity.getUpdatedAt().toString());
-            resData.setStartTime(testEntity.getStartTime().toString());
-            resData.setEndTime(testEntity.getEndTime().toString());
+            resData.setStartTime(testEntity.getStartTime());
+            resData.setEndTime(testEntity.getEndTime());
             resData.setClassroomId(body.getClassroomId());
             resData.setShowResultType(body.getShowResultType());
+            resData.setStatus(body.getStatus());
             return resData;
 
         }
@@ -157,18 +149,18 @@ public class TestService implements ITestService {
                 testEntity.setSource(imageUploaded.getUrl());
             }
             if (body.getStartTime()!=null){
-                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-                Date startdate = formatter.parse(body.getStartTime());
-                testEntity.setStartTime(startdate);
+                testEntity.setStartTime(body.getStartTime());
             }
             if (body.getEndTime()!=null){
-                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-                Date enddate = formatter.parse(body.getEndTime());
-                testEntity.setEndTime(enddate);
+                testEntity.setEndTime(body.getEndTime());
             }
             if (body.getShowResultType()!=null){
                 testEntity.setShowResultType(TestShowResultType.valueOf(body.getShowResultType()));
             }
+            if(body.getStatus()!=null){
+                testEntity.setStatus(TestStatus.valueOf(body.getStatus()));
+            }
+
             testRepository.save(testEntity);
         }
         catch (Exception e){
@@ -352,7 +344,8 @@ public class TestService implements ITestService {
     public GetTestInProgress getTestInProgress(int page,int size,String studentId) {
         try{
             Pageable pageAble = PageRequest.of(page, size);
-            Slice<TestEntity> testEntities = testRepository.findTestInProgressByStudentId(studentId, pageAble);
+            String currentTimestamp = String.valueOf(System.currentTimeMillis() / 1000);
+            Slice<TestEntity> testEntities = testRepository.findTestInProgressByStudentId(studentId,currentTimestamp, pageAble);
             GetTestInProgress resData = new GetTestInProgress();
             List<GetTestInProgress.TestResponse> testResponses = new ArrayList<>();
             for (TestEntity testEntity : testEntities){

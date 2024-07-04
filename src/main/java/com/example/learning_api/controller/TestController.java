@@ -88,9 +88,9 @@ public class TestController {
         }
 
     }
-    @PatchMapping(path = "/{testId}")
+    @PatchMapping(path = "/{testId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
-    public ResponseEntity<ResponseAPI<String>> updateTest(@RequestBody @Valid UpdateTestRequest body, @PathVariable String testId) {
+    public ResponseEntity<ResponseAPI<String>> updateTest(@ModelAttribute @Valid UpdateTestRequest body, @PathVariable String testId) {
         try{
             body.setId(testId);
             testService.updateTest(body);

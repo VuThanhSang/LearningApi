@@ -21,7 +21,7 @@ public class GetTestInProgress {
         private String startTime;
         private String endTime;
         private String showResultType;
-        private String createdBy;
+        private String teacherId;
         private String createdAt;
         private String updatedAt;
 
@@ -31,7 +31,7 @@ public class GetTestInProgress {
             testResponse.setName(testEntity.getName());
             testResponse.setDescription(testEntity.getDescription());
             testResponse.setDuration(testEntity.getDuration());
-            testResponse.setCreatedBy(testEntity.getCreatedBy());
+            testResponse.setTeacherId(testEntity.getTeacherId());
             testResponse.setCreatedAt(testEntity.getCreatedAt().toString());
             testResponse.setUpdatedAt(testEntity.getUpdatedAt().toString());
             testResponse.setStartTime(testEntity.getStartTime().toString());
