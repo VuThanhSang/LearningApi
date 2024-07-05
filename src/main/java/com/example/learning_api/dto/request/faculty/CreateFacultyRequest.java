@@ -9,6 +9,9 @@ public class CreateFacultyRequest {
     @NotBlank
     private String name;
     private String description;
+    private String status;
+    private String dean;
+
 
 
 }

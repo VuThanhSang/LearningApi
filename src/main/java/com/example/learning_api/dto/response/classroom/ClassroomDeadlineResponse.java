@@ -12,7 +12,8 @@ public class ClassroomDeadlineResponse {
     private String type;
     private String status;
     private String attachment;
-    private Date dueDate;
+    private String startDate;
+    private String endDate;
     private String lessonName;
     private String lessonDescription;
     private String sectionName;

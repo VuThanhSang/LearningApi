@@ -1,5 +1,6 @@
 package com.example.learning_api.entity.sql.database;
 
+import com.example.learning_api.enums.StudentStatus;
 import jakarta.persistence.Id;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,6 +26,7 @@ public class StudentEntity {
     private String schoolYear;
     private String academicYearId;
     private String majorId;
+    private StudentStatus status;
     private Date createdAt;
     private Date updatedAt;
     @DBRef

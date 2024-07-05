@@ -22,7 +22,8 @@ public class GetDeadlinesResponse {
         private DeadlineType type;
         private DeadlineStatus status;
         private String attachment;
-        private Date dueDate;
+        private String StartDate;
+        private String EndDate;
         private Date createdAt;
         private Date updatedAt;
         public static DeadlineResponse fromDeadlineEntity(DeadlineEntity deadlineEntity){
@@ -34,7 +35,8 @@ public class GetDeadlinesResponse {
             deadlineResponse.setType(deadlineEntity.getType());
             deadlineResponse.setStatus(deadlineEntity.getStatus());
             deadlineResponse.setAttachment(deadlineEntity.getAttachment());
-            deadlineResponse.setDueDate(deadlineEntity.getDueDate());
+            deadlineResponse.setStartDate(deadlineEntity.getStartDate());
+            deadlineResponse.setEndDate(deadlineEntity.getEndDate());
             deadlineResponse.setCreatedAt(deadlineEntity.getCreatedAt());
             deadlineResponse.setUpdatedAt(deadlineEntity.getUpdatedAt());
             return deadlineResponse;

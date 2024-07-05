@@ -1,6 +1,7 @@
 package com.example.learning_api.entity.sql.database;
 
 
+import com.example.learning_api.enums.QuestionStatus;
 import com.example.learning_api.enums.QuestionType;
 import jakarta.persistence.Id;
 import lombok.Data;
@@ -22,6 +23,7 @@ public class QuestionEntity {
     private String description;
     private String source;
     private QuestionType type;
+    private QuestionStatus status;
     private Date createdAt;
     private Date updatedAt;
     @DBRef

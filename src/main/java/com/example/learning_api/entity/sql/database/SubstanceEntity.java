@@ -1,5 +1,6 @@
 package com.example.learning_api.entity.sql.database;
 
+import com.example.learning_api.enums.SubstanceStatus;
 import jakarta.persistence.Id;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,6 +17,7 @@ public class SubstanceEntity {
     private String name;
     private String lessonId;
     private String content;
+    private SubstanceStatus status;
     private Date createdAt;
     private Date updatedAt;
 }

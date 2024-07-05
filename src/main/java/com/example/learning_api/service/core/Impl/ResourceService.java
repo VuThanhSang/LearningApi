@@ -58,6 +58,10 @@ public class ResourceService implements IResourceService {
                     fileBytes,
                     "raw"
             );
+            resourceEntity.setFileName(body.getFile().getOriginalFilename());
+            resourceEntity.setFileExtension(fileType);
+            resourceEntity.setFileSize(body.getFile().getSize() + " bytes");
+            resourceEntity.setFileType(body.getFile().getContentType());
             resourceEntity.setFilePath(response.getSecureUrl());
         }
         resourceEntity.setCreatedAt(new Date());
