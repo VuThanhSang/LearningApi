@@ -7,6 +7,7 @@ import com.example.learning_api.dto.request.faculty.UpdateFacultyRequest;
 import com.example.learning_api.dto.response.faculty.GetFacultiesResponse;
 import com.example.learning_api.entity.sql.database.FacultyEntity;
 import com.example.learning_api.entity.sql.database.MajorsEntity;
+import com.example.learning_api.enums.FacultyStatus;
 import com.example.learning_api.enums.ImportType;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.FacultyRepository;
@@ -40,9 +41,7 @@ public class FacultyService implements IFacultyService {
             if (createFacultyRequest.getName()==null){
                 throw new IllegalArgumentException("Name is required");
             }
-            if (createFacultyRequest.getDescription()==null){
-                throw new IllegalArgumentException("Description is required");
-            }
+
             FacultyEntity facultyEntity = modelMapperService.mapClass(createFacultyRequest, FacultyEntity.class);
             facultyEntity.setCreatedAt(new Date());
             facultyEntity.setUpdatedAt(new Date());
@@ -71,6 +70,13 @@ public class FacultyService implements IFacultyService {
             if (updateFacultyRequest.getDescription()!=null){
                 facultyEntity.setDescription(updateFacultyRequest.getDescription());
             }
+            if (updateFacultyRequest.getDean()!=null){
+                facultyEntity.setDean(updateFacultyRequest.getDean());
+            }
+            if (updateFacultyRequest.getStatus()!=null){
+                facultyEntity.setStatus(FacultyStatus.valueOf(updateFacultyRequest.getStatus()));
+            }
+
             facultyEntity.setUpdatedAt(new Date());
             facultyRepository.save(facultyEntity);
         }

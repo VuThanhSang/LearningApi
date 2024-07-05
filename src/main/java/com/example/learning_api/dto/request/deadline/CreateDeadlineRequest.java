@@ -17,5 +17,6 @@ public class CreateDeadlineRequest {
     @NotBlank
     private DeadlineType type;
     private MultipartFile file;
-    private String dueDate;
+    private String startDate;
+    private String endDate;
 }

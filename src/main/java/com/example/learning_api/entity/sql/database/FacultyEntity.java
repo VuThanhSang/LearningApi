@@ -1,5 +1,6 @@
 package com.example.learning_api.entity.sql.database;
 
+import com.example.learning_api.enums.FacultyStatus;
 import jakarta.persistence.Id;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,6 +17,7 @@ public class FacultyEntity {
     private String name;
     private String description;
     private String dean;
+    private FacultyStatus status;
     private Date createdAt;
     private Date updatedAt;
 }

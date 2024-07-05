@@ -17,6 +17,10 @@ public class ResourceEntity {
     private String name;
     private String description;
     private String filePath;
+    private String fileType;
+    private String fileExtension;
+    private String fileName;
+    private String FileSize;
     private Date createdAt;
     private Date updatedAt;
 }

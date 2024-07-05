@@ -54,9 +54,9 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
             "{ $unwind: '$section' }",
             "{ $lookup: { from: 'lessons', let: { sectionId: '$section._id' }, pipeline: [{ $match: { $expr: { $eq: ['$sectionId', { $toString: '$$sectionId' }] } } }], as: 'lessons' } }",
             "{ $unwind: '$lessons' }",
-            "{ $lookup: { from: 'deadlines', let: { lessonId: '$lessons._id' }, pipeline: [{ $match: { $expr: { $and: [{ $eq: ['$lessonId', { $toString: '$$lessonId' }] }, { $eq: ['$status', 'UPCOMING'] }, { $gt: ['$dueDate', { $dateFromString: { dateString: ?1 } }] }] } } }], as: 'deadlines' } }",
+            "{ $lookup: { from: 'deadlines', let: { lessonId: '$lessons._id' }, pipeline: [{ $match: { $expr: { $and: [{ $eq: ['$lessonId', { $toString: '$$lessonId' }] }, { $eq: ['$status', 'UPCOMING'] }, { $gt: [{ $toLong: '$endDate' }, { $toLong: ?1 }] }] } } }], as: 'deadlines' } }",
             "{ $unwind: '$deadlines' }",
-            "{ $project: { _id: '$deadlines._id', title: '$deadlines.title', description: '$deadlines.description', type: '$deadlines.type', status: '$deadlines.status', attachment: '$deadlines.attachment', dueDate: '$deadlines.dueDate', lessonName: '$lessons.name', lessonDescription: '$lessons.description', sectionName: '$section.name', sectionDescription: '$section.description' } }"
+            "{ $project: { _id: '$deadlines._id', title: '$deadlines.title', description: '$deadlines.description', type: '$deadlines.type', status: '$deadlines.status', attachment: '$deadlines.attachment', startDate: { $toLong: '$deadlines.startDate' }, endDate: { $toLong: '$deadlines.endDate' }, lessonName: '$lessons.name', lessonDescription: '$lessons.description', sectionName: '$section.name', sectionDescription: '$section.description' } }"
     })
     List<UpcomingDeadlinesResponse> getUpcomingDeadlines(String studentId, String compareDate);
 

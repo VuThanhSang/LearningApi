@@ -9,6 +9,7 @@ import com.example.learning_api.dto.response.deadline.GetDeadlinesResponse;
 import com.example.learning_api.dto.response.deadline.UpcomingDeadlinesResponse;
 import com.example.learning_api.entity.sql.database.DeadlineEntity;
 import com.example.learning_api.enums.DeadlineStatus;
+import com.example.learning_api.enums.DeadlineType;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
 import com.example.learning_api.service.common.ModelMapperService;
@@ -46,12 +47,8 @@ public class DeadlineService implements IDeadlineService {
             if (lessonRepository.findById(body.getLessonId()) == null){
                 throw new IllegalArgumentException("lessonId is not found");
             }
-            if (body.getDueDate()==null){
-                throw new IllegalArgumentException("DueDate is required");
-            }
-            if (body.getTitle()==null){
-                throw new IllegalArgumentException("Title is required");
-            }
+
+
             DeadlineEntity deadlineEntity = modelMapperService.mapClass(body, DeadlineEntity.class);
             if (body.getFile()!=null){
                 byte[] fileBytes = body.getFile().getBytes();
@@ -86,13 +83,18 @@ public class DeadlineService implements IDeadlineService {
             if (body.getDescription()!=null){
                 deadlineEntity.setDescription(body.getDescription());
             }
-            if (body.getDueDate()!=null){
-                deadlineEntity.setDueDate(body.getDueDate());
+            if (body.getStartDate()!=null){
+                deadlineEntity.setStartDate(body.getStartDate());
+            }
+            if (body.getEndDate()!=null){
+                deadlineEntity.setEndDate(body.getEndDate());
+            }
+            if (body.getType()!=null){
+                deadlineEntity.setType(DeadlineType.valueOf(body.getType()));
             }
             if (body.getStatus()!=null){
                 deadlineEntity.setStatus(DeadlineStatus.valueOf(body.getStatus()));
             }
-
 
             if (body.getFile()!=null){
                 byte[] fileBytes = body.getFile().getBytes();
