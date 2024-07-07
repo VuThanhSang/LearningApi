@@ -165,15 +165,45 @@ public class ClassRoomService implements IClassRoomService {
                 );
                 classroom.setImage(imageUploaded.getUrl());
             }
-            classroom.setName(body.getName());
-            classroom.setDescription(body.getDescription());
-            classroom.setCourseId(body.getCourseId());
-            classroom.setTeacherId(body.getTeacherId());
-            classroom.setTermId(body.getTermId());
-            classroom.setFacultyId(body.getFacultyId());
-            classroom.setEnrollmentCapacity(body.getEnrollmentCapacity());
-            classroom.setCredits(body.getCredits());
-            classroom.setStatus(body.getStatus());
+            if (body.getName()!=null){
+                classroom.setName(body.getName());
+            }
+            if (body.getDescription()!=null){
+                classroom.setDescription(body.getDescription());
+            }
+            if (body.getCourseId()!=null){
+                if (courseRepository.findById(body.getCourseId()).isEmpty()){
+                    throw new IllegalArgumentException("CourseId is not found");
+                }
+                classroom.setCourseId(body.getCourseId());
+            }
+            if (body.getTeacherId()!=null){
+                if (teacherRepository.findById(body.getTeacherId()).isEmpty()){
+                    throw new IllegalArgumentException("TeacherId is not found");
+                }
+                classroom.setTeacherId(body.getTeacherId());
+            }
+            if (body.getTermId()!=null){
+                if (termRepository.findById(body.getTermId()).isEmpty()){
+                    throw new IllegalArgumentException("TermId is not found");
+                }
+                classroom.setTermId(body.getTermId());
+            }
+            if (body.getFacultyId()!=null){
+                if (facultyRepository.findById(body.getFacultyId()).isEmpty()){
+                    throw new IllegalArgumentException("FacultyId is not found");
+                }
+                classroom.setFacultyId(body.getFacultyId());
+            }
+            if (body.getEnrollmentCapacity()!=null){
+                classroom.setEnrollmentCapacity(body.getEnrollmentCapacity());
+            }
+            if (body.getCredits()!=null){
+                classroom.setCredits(body.getCredits());
+            }
+            if (body.getStatus()!=null){
+                classroom.setStatus(body.getStatus());
+            }
             classRoomRepository.save(classroom);
         }
         catch (Exception e){
@@ -311,8 +341,6 @@ public class ClassRoomService implements IClassRoomService {
                     section.setId(sectionEntity.getId());
                     section.setName(sectionEntity.getName());
                     section.setDescription(sectionEntity.getDescription());
-//                    section.setCreatedAt(sectionEntity.getCreatedAt().toString());
-//                    section.setUpdatedAt(sectionEntity.getUpdatedAt().toString());
                     List<LessonEntity> lessons = lessonRepository.findBySectionId(sectionEntity.getId());
                     List<GetLessonDetailResponse> lessonDetails = new ArrayList<>();
                     for (LessonEntity lesson : lessons){

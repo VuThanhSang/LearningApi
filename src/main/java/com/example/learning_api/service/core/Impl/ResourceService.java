@@ -142,6 +142,12 @@ public class ResourceService implements IResourceService {
             List<GetResourceResponse.ResourceResponse> resourceResponses = new ArrayList<>();
             for (ResourceEntity resourceEntity: resourceEntities){
                 GetResourceResponse.ResourceResponse resourceResponse = modelMapperService.mapClass(resourceEntity, GetResourceResponse.ResourceResponse.class);
+                GetResourceResponse.FileResponse fileResponse = new GetResourceResponse.FileResponse();
+                fileResponse.setUrl(resourceEntity.getFilePath());
+                fileResponse.setFileType(resourceEntity.getFileType());
+                fileResponse.setFileName(resourceEntity.getFileName());
+                fileResponse.setFileSize(resourceEntity.getFileSize());
+                resourceResponse.setFile(fileResponse);
                 resourceResponses.add(resourceResponse);
             }
             response.setResources(resourceResponses);
