@@ -12,12 +12,23 @@ public class GetMediaResponse {
     private Integer totalPage;
     private Long totalElements;
     private List<MediaResponse> media;
+
+    @Data
+    public static class FileResponse {
+        private String url;
+        private String fileType;
+        private String fileName;
+        private String fileSize;
+
+    }
+
     @Data
     public static class MediaResponse {
         private String id;
         private String lessonId;
         private String filePath;
         private String description;
+        private FileResponse file;
         private String name;
         private Date createdAt;
         private Date updatedAt;
@@ -30,6 +41,12 @@ public class GetMediaResponse {
             mediaResponse.setDescription(mediaEntity.getDescription());
             mediaResponse.setCreatedAt(mediaEntity.getCreatedAt());
             mediaResponse.setUpdatedAt(mediaEntity.getUpdatedAt());
+            FileResponse fileResponse = new FileResponse();
+            fileResponse.setUrl(mediaEntity.getFilePath());
+            fileResponse.setFileType(mediaEntity.getFileType());
+            fileResponse.setFileName(mediaEntity.getFileName());
+            fileResponse.setFileSize(mediaEntity.getFileSize());
+            mediaResponse.setFile(fileResponse);
             return mediaResponse;
         }
     }

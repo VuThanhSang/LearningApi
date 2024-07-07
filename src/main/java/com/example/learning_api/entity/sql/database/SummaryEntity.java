@@ -9,12 +9,12 @@ import java.util.Date;
 
 @Data
 @NoArgsConstructor
-@Document(collection = "grades")
+@Document(collection = "summary")
 public class SummaryEntity {
     @Id
     private String id;
     private String studentId;
-    private String majorId;
+    private String academicYearId;
     private String termId;
     private String courseId;
     private int finalGrade;

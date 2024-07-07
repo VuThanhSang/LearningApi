@@ -2,6 +2,7 @@ package com.example.learning_api.dto.response.classroom;
 
 
 import com.example.learning_api.entity.sql.database.ClassRoomEntity;
+import com.example.learning_api.enums.ClassRoomStatus;
 import lombok.Data;
 
 import java.util.List;
@@ -19,6 +20,10 @@ public class GetClassRoomsResponse {
         private String teacherId;
         private String courseId;
         private String image;
+        private int enrollmentCapacity;
+        private int currentEnrollment;
+        private String status;
+        private int credit;
         private String createdAt;
         private String updatedAt;
         public static ClassRoomResponse formClassRoomEntity(ClassRoomEntity classRoomEntity){
@@ -31,6 +36,10 @@ public class GetClassRoomsResponse {
             classRoomResponse.setTeacherId(classRoomEntity.getTeacherId());
             classRoomResponse.setCourseId(classRoomEntity.getCourseId());
             classRoomResponse.setImage(classRoomEntity.getImage());
+            classRoomResponse.setEnrollmentCapacity(classRoomEntity.getEnrollmentCapacity());
+            classRoomResponse.setCurrentEnrollment(classRoomEntity.getCurrentEnrollment());
+            classRoomResponse.setStatus(classRoomEntity.getStatus().name());
+            classRoomResponse.setCredit(classRoomEntity.getCredits());
             return classRoomResponse;
         }
     }

@@ -8,8 +8,6 @@ public class CreateSummaryRequest {
     @NotNull
     private String studentId;
     @NotNull
-    private String majorId;
-    @NotNull
     private String termId;
     @NotNull
     private String courseId;
@@ -20,5 +18,5 @@ public class CreateSummaryRequest {
     @NotNull
     private int finalExamGrade;
     @NotNull
-    private boolean isPassed;
+    private int isPassed;
 }

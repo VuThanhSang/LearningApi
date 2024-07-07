@@ -51,6 +51,10 @@ public class MediaService implements IMediaService {
                         "video"
                 );
                 mediaEntity.setFilePath(fileUploaded.getUrl());
+                mediaEntity.setFileExtension(fileType);
+                mediaEntity.setFileName(body.getFile().getOriginalFilename());
+                mediaEntity.setFileSize(body.getFile().getSize() + " bytes");
+                mediaEntity.setFileType(body.getFile().getContentType());
             }
             mediaEntity.setCreatedAt(new Date());
             mediaEntity.setUpdatedAt(new Date());
@@ -133,7 +137,14 @@ public class MediaService implements IMediaService {
               List<GetMediaResponse.MediaResponse> mediaResponses = new ArrayList<>();
                 for (MediaEntity mediaEntity : mediaEntities) {
                     GetMediaResponse.MediaResponse mediaResponse = modelMapperService.mapClass(mediaEntity, GetMediaResponse.MediaResponse.class);
+                    GetMediaResponse.FileResponse fileResponse = new GetMediaResponse.FileResponse();
+                    fileResponse.setUrl(mediaEntity.getFilePath());
+                    fileResponse.setFileType(mediaEntity.getFileType());
+                    fileResponse.setFileName(mediaEntity.getFileName());
+                    fileResponse.setFileSize(mediaEntity.getFileSize());
+                    mediaResponse.setFile(fileResponse);
                     mediaResponses.add(mediaResponse);
+
                 }
                 getMediaResponse.setMedia(mediaResponses);
                 getMediaResponse.setTotalPage(mediaEntities.getTotalPages());
