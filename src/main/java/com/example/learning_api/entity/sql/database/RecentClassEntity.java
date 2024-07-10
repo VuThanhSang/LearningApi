@@ -15,5 +15,6 @@ public class RecentClassEntity {
     private String id;
     private String studentId;
     private String classroomId;
+    private String teacherId;
     private Date lastAccessedAt;
 }

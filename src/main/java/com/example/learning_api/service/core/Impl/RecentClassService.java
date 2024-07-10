@@ -4,11 +4,13 @@ import com.example.learning_api.entity.sql.database.RecentClassEntity;
 import com.example.learning_api.repository.database.ClassRoomRepository;
 import com.example.learning_api.repository.database.RecentClassRepository;
 import com.example.learning_api.repository.database.StudentRepository;
+import com.example.learning_api.repository.database.TeacherRepository;
 import com.example.learning_api.service.core.IRecentClassService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
 import java.util.Date;
 
 @Service
@@ -18,22 +20,32 @@ public class RecentClassService implements IRecentClassService {
     private final RecentClassRepository recentClassRepository;
     private final ClassRoomRepository classRoomRepository;
     private final StudentRepository studentRepository;
+    private final TeacherRepository teacherRepository;
 
     @Override
     public void createRecentClass(RecentClassEntity body) {
-        if (body.getClassroomId() == null) {
-            throw new IllegalArgumentException("ClassroomId is required");
+        try{
+
+           if (body.getClassroomId() == null) {
+                throw new IllegalArgumentException("ClassroomId is required");
+            }
+            if (classRoomRepository.findById(body.getClassroomId()).isEmpty()) {
+                throw new IllegalArgumentException("Classroom not found");
+            }
+
+            RecentClassEntity recentClassEntity = recentClassRepository.findByStudentIdAndClassroomId(body.getStudentId(), body.getClassroomId());
+            if (recentClassEntity != null) {
+                recentClassEntity.setLastAccessedAt(new Timestamp(System.currentTimeMillis()));
+                recentClassRepository.save(recentClassEntity);
+            }
+            else{
+                recentClassRepository.save(body);
+            }
         }
-        if (body.getStudentId() == null) {
-            throw new IllegalArgumentException("StudentId is required");
+        catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
         }
-        if (classRoomRepository.findById(body.getClassroomId()).isEmpty()) {
-            throw new IllegalArgumentException("Classroom not found");
-        }
-        if (studentRepository.findById(body.getStudentId()).isEmpty()) {
-            throw new IllegalArgumentException("Student not found");
-        }
-        recentClassRepository.save(body);
+
 
 
     }
