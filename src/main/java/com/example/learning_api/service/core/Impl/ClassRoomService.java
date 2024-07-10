@@ -53,6 +53,7 @@ public class ClassRoomService implements IClassRoomService {
     private final TermsRepository termRepository;
     private final FacultyRepository facultyRepository;
     private final ExcelReader excelReader;
+    private final RecentClassRepository recentClassRepository;
 
     @Override
     public CreateClassRoomResponse createClassRoom(CreateClassRoomRequest body) {
@@ -411,5 +412,28 @@ public class ClassRoomService implements IClassRoomService {
         }
     }
 
+    @Override
+    public GetClassRoomRecentResponse getRecentClassesByTeacherId(int page, int size, String teacherId) {
+        try {
+            int skip = page * size;
+            List<RecentClassDTO> classRooms = recentClassRepository.findRecentClassesByTeacherId(teacherId, skip, size);
+
+            long totalElements = recentClassRepository.countRecentClassesByTeacherId(teacherId);
+            int totalPages = (int) Math.ceil((double) totalElements / size);
+
+            GetClassRoomRecentResponse resData = new GetClassRoomRecentResponse();
+            resData.setTotalElements((int) totalElements);
+            resData.setTotalPage(totalPages);
+            List<GetClassRoomRecentResponse.ClassRoomResponse> data = new ArrayList<>();
+            for (RecentClassDTO classRoom : classRooms) {
+                GetClassRoomRecentResponse.ClassRoomResponse classRoomResponse = modelMapperService.mapClass(classRoom, GetClassRoomRecentResponse.ClassRoomResponse.class);
+                data.add(classRoomResponse);
+            }
+            resData.setClassRooms(data);
+            return resData;
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
 
 }

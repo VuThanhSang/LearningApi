@@ -21,7 +21,6 @@ public class RecentClassController {
     private final IRecentClassService recentClassService;
 
     @PostMapping(path = "")
-    @PreAuthorize("hasAnyAuthority('USER')")
     public ResponseEntity<ResponseAPI<String>> createRecentClass(@RequestBody RecentClassEntity body) {
         try {
             recentClassService.createRecentClass(body);

@@ -16,7 +16,7 @@ public class GetTestDetailResponse {
     private String startTime;
     private String endTime;
     private String classroomId;
-    private String createdBy;
+    private String teacherId;
     private String showResultType;
     private List<GetQuestionsResponse.QuestionResponse> questions;
 }

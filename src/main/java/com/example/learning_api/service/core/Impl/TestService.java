@@ -293,8 +293,11 @@ public class TestService implements ITestService {
             resData.setDescription(testEntity.getDescription());
             resData.setDuration(testEntity.getDuration());
             resData.setSource(testEntity.getSource());
-            resData.setStartTime(testEntity.getStartTime().toString());
-            resData.setEndTime(testEntity.getEndTime().toString());
+            resData.setTeacherId(testEntity.getTeacherId());
+            if (testEntity.getStartTime()!=null)
+                resData.setStartTime(testEntity.getStartTime().toString());
+            if (testEntity.getEndTime()!=null)
+                resData.setEndTime(testEntity.getEndTime().toString());
             resData.setShowResultType(testEntity.getShowResultType().toString());
             resData.setClassroomId(testEntity.getClassroomId());
             List<GetQuestionsResponse.QuestionResponse> questionResponses = new ArrayList<>();

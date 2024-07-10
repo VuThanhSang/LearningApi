@@ -19,4 +19,5 @@ public interface IClassRoomService {
     GetClassRoomDetailResponse getClassRoomDetail(String classroomId);
     void importClassRoom(ImportClassRoomRequest body);
     GetClassRoomRecentResponse getRecentClasses(int page,int size, String studentId);
+    GetClassRoomRecentResponse getRecentClassesByTeacherId(int page,int size, String teacherId);
 }
