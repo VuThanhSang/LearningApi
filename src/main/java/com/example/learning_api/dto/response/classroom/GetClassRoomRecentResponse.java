@@ -23,7 +23,7 @@ public class GetClassRoomRecentResponse {
         private String status;
         private int credits;
         private String termId;
-        private Date lastAccessedAt;
+        private String lastAccessedAt;
     }
 
 }

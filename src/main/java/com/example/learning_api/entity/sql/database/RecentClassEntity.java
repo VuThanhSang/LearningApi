@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.sql.Timestamp;
 import java.util.Date;
 
 @Data
@@ -16,5 +17,5 @@ public class RecentClassEntity {
     private String studentId;
     private String classroomId;
     private String teacherId;
-    private Date lastAccessedAt;
+    private String lastAccessedAt;
 }

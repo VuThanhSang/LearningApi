@@ -6,7 +6,7 @@ import java.util.Date;
 
 @Data
 public class RecentClassDTO {
-    private Date lastAccessedAt;
+    private String lastAccessedAt;
     private String facultyId;
     private int enrollmentCapacity;
     private int currentEnrollment;

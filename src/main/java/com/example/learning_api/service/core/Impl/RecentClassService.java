@@ -32,14 +32,15 @@ public class RecentClassService implements IRecentClassService {
             if (classRoomRepository.findById(body.getClassroomId()).isEmpty()) {
                 throw new IllegalArgumentException("Classroom not found");
             }
-
             RecentClassEntity recentClassEntity = recentClassRepository.findByStudentIdAndClassroomId(body.getStudentId(), body.getClassroomId());
-            if (recentClassEntity != null) {
-                recentClassEntity.setLastAccessedAt(new Timestamp(System.currentTimeMillis()));
-                recentClassRepository.save(recentClassEntity);
+            if (recentClassEntity == null)
+            {
+                body.setLastAccessedAt(String.valueOf(System.currentTimeMillis()));
+                recentClassRepository.save(body);
             }
             else{
-                recentClassRepository.save(body);
+                recentClassEntity.setLastAccessedAt(String.valueOf(System.currentTimeMillis()));
+                recentClassRepository.save(recentClassEntity);
             }
         }
         catch (Exception e) {
@@ -51,7 +52,7 @@ public class RecentClassService implements IRecentClassService {
     }
 
     @Override
-    public void updateRecentClass(String studentId, String classroomId, Date lastAccessedAt) {
+    public void updateRecentClass(String studentId, String classroomId, String lastAccessedAt) {
         RecentClassEntity recentClassEntity = recentClassRepository.findByStudentIdAndClassroomId(studentId, classroomId);
         if (recentClassEntity == null) {
             throw new IllegalArgumentException("Recent class not found");

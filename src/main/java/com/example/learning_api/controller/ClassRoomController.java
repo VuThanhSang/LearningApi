@@ -75,7 +75,8 @@ public class ClassRoomController {
 
     }
     @GetMapping(path = "")
-    public ResponseEntity<ResponseAPI<GetClassRoomsResponse>> getClassRoom(@RequestParam(name="name",required = false,defaultValue = "") String search,
+    public ResponseEntity<ResponseAPI<GetClassRoomsResponse>> getClassRoom(
+            @RequestParam(name="name",required = false,defaultValue = "") String search,
                                                             @RequestParam(name="page",required = false,defaultValue = "1") int page,
                                                             @RequestParam(name="size",required = false,defaultValue = "10") int size) {
         try{

@@ -66,8 +66,8 @@ public class QuestionService implements IQuestionService {
                 );
                 questionEntity.setSource(imageUploaded.getUrl());
             }
-            questionEntity.setCreatedAt(new Date());
-            questionEntity.setUpdatedAt(new Date());
+            questionEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+            questionEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             questionRepository.save(questionEntity);
             resData.setTestId(body.getTestId());
             resData.setCreatedAt(questionEntity.getCreatedAt().toString());
@@ -99,11 +99,21 @@ public class QuestionService implements IQuestionService {
                 questionEntity.setContent(body.getContent());
             if(body.getDescription()!=null)
                 questionEntity.setDescription(body.getDescription());
-            if(body.getSource()!=null)
-                questionEntity.setSource(body.getSource());
+            if (body.getSource()!=null){
+                byte[] originalImage = new byte[0];
+                originalImage = body.getSource().getBytes();
+                byte[] newImage = ImageUtils.resizeImage(originalImage, 200, 200);
+                CloudinaryUploadResponse imageUploaded = cloudinaryService.uploadFileToFolder(
+                        CloudinaryConstant.CLASSROOM_PATH,
+                        StringUtils.generateFileName(body.getContent(), "questions"),
+                        newImage,
+                        "image"
+                );
+                questionEntity.setSource(imageUploaded.getUrl());
+            }
             if(body.getType()!=null)
                 questionEntity.setType(QuestionType.valueOf(body.getType()));
-            questionEntity.setUpdatedAt(new Date());
+            questionEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             questionRepository.save(questionEntity);
         }
         catch (Exception e){

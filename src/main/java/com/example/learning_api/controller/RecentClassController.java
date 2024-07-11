@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.Timestamp;
 import java.util.Date;
 
 import static com.example.learning_api.constant.RouterConstant.*;
@@ -38,7 +39,7 @@ public class RecentClassController {
 
     @PatchMapping(path = "/{studentId}/{classroomId}")
     @PreAuthorize("hasAnyAuthority('USER')")
-    public ResponseEntity<ResponseAPI<String>> updateRecentClass(@PathVariable String studentId, @PathVariable String classroomId, @RequestBody Date lastAccessedAt) {
+    public ResponseEntity<ResponseAPI<String>> updateRecentClass(@PathVariable String studentId, @PathVariable String classroomId, @RequestBody String lastAccessedAt) {
         try {
             recentClassService.updateRecentClass(studentId, classroomId, lastAccessedAt);
             ResponseAPI<String> res = ResponseAPI.<String>builder()

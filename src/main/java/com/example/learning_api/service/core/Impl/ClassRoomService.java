@@ -93,8 +93,8 @@ public class ClassRoomService implements IClassRoomService {
             classRoomEntity.setFacultyId(body.getFacultyId());
             classRoomEntity.setCurrentEnrollment(0);
             classRoomEntity.setCourseId(body.getCourseId());
-            classRoomEntity.setCreatedAt(new Date());
-            classRoomEntity.setUpdatedAt(new Date());
+            classRoomEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+            classRoomEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             List<ScheduleEntity> schedules = new ArrayList<>();
 
             CreateClassRoomResponse resData = new CreateClassRoomResponse();
@@ -386,8 +386,8 @@ public class ClassRoomService implements IClassRoomService {
                     throw new IllegalArgumentException("TermId is not found");
                 }
                 classRoomEntity.setTermId(row.get(3));
-                classRoomEntity.setCreatedAt(new Date());
-                classRoomEntity.setUpdatedAt(new Date());
+                classRoomEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+                classRoomEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
                 classRoomRepository.save(classRoomEntity);
             }
         }

@@ -48,9 +48,9 @@ public class QuestionController {
         }
 
     }
-    @PatchMapping(path = "/{questionId}")
+    @PatchMapping(path = "/{questionId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
-    public ResponseEntity<ResponseAPI<String>> updateQuestion(@RequestBody @Valid UpdateQuestionRequest body, @PathVariable String questionId) {
+    public ResponseEntity<ResponseAPI<String>> updateQuestion(@ModelAttribute @Valid UpdateQuestionRequest body, @PathVariable String questionId) {
         try{
             body.setId(questionId);
             questionService.updateQuestion(body);
