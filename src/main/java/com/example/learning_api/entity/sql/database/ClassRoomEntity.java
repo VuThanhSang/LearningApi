@@ -28,8 +28,8 @@ public class ClassRoomEntity {
     private Integer credits;
     private String termId;
     private String teacherId;
-    private Date createdAt;
-    private Date updatedAt;
+    private String createdAt;
+    private String updatedAt;
     @DBRef
     private List<SectionEntity> sections;
 

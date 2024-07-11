@@ -2,6 +2,7 @@ package com.example.learning_api.dto.request.answer;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 @Data
 public class UpdateAnswerRequest {
@@ -9,5 +10,5 @@ public class UpdateAnswerRequest {
     private String id;
     private String content;
     private boolean isCorrect;
-    private String source;
+    private MultipartFile source;
 }

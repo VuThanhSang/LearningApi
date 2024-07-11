@@ -66,6 +66,7 @@ public class AnswerService implements IAnswerService {
             resData.setId(answerEntity.getId());
             resData.setCorrect(body.isCorrect());
             resData.setUpdatedAt(answerEntity.getUpdatedAt().toString());
+            resData.setSource(answerEntity.getSource());
             return resData;
 
         }
@@ -88,8 +89,18 @@ public class AnswerService implements IAnswerService {
               if(body.getContent()!=null)
                 answerEntity.setContent(body.getContent());
               answerEntity.setCorrect(body.isCorrect());
-              if(body.getSource()!=null)
-                answerEntity.setSource(body.getSource());
+              if (body.getSource()!=null){
+                byte[] originalImage = new byte[0];
+                originalImage = body.getSource().getBytes();
+                byte[] newImage = ImageUtils.resizeImage(originalImage, 200, 200);
+                CloudinaryUploadResponse imageUploaded = cloudinaryService.uploadFileToFolder(
+                        CloudinaryConstant.CLASSROOM_PATH,
+                        StringUtils.generateFileName(body.getContent(), "questions"),
+                        newImage,
+                        "image"
+                );
+                answerEntity.setSource(imageUploaded.getUrl());
+              }
               answerEntity.setUpdatedAt(new Date());
               answerRepository.save(answerEntity);
          }

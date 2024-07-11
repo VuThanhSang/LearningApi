@@ -250,8 +250,8 @@ public class TestService implements ITestService {
                 question.setContent(questionText);
                 question.setTestId(body.getTestId());
                 question.setSource("");
-                question.setCreatedAt(new Date());
-                question.setUpdatedAt(new Date());
+                question.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+                question.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
                 questionRepository.save(question);
                 String answerGroup = questionMatcher.group(3);
                 answerMatcher = answerPattern.matcher(answerGroup);

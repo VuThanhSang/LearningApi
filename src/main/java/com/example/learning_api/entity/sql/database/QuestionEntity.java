@@ -24,8 +24,8 @@ public class QuestionEntity {
     private String source;
     private QuestionType type;
     private QuestionStatus status;
-    private Date createdAt;
-    private Date updatedAt;
+    private String createdAt;
+    private String updatedAt;
     @DBRef
     private List<AnswerEntity> answers;
 }
