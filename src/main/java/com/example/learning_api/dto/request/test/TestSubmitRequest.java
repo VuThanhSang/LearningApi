@@ -9,9 +9,7 @@ import java.util.List;
 @Data
 public class TestSubmitRequest {
     @NotBlank
-    private String studentId;
-    @NotBlank
-    private String testId;
+    private String testResultId;
     @NotBlank
     private List<List<Integer>> answers;
 

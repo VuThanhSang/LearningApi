@@ -44,7 +44,7 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
             "{$unwind: '$classroom'}",
             "{$lookup: {from: 'recent_class', let: {classroomId: '$classroomId', studentId: '$studentId'}, pipeline: [{$match: {$expr: {$and: [{$eq: ['$classroomId', '$$classroomId']}, {$eq: ['$studentId', '$$studentId']}]}}}], as: 'recentAccess'}}",
             "{$unwind: {path: '$recentAccess', preserveNullAndEmptyArrays: true}}",
-            "{$project: {_id: '$classroom._id', name: '$classroom.name', description: '$classroom.description', courseId: '$classroom.courseId', termId: '$classroom.termId', teacherId: '$classroom.teacherId', createdAt: '$classroom.createdAt', updatedAt: '$classroom.updatedAt', enrolledAt: '$enrolledAt', lastAccessedAt: {$ifNull: ['$recentAccess.lastAccessedAt', null]}}}",
+            "{$project: {_id: '$classroom._id', name: '$classroom.name',image:'$classroom.image', description: '$classroom.description', courseId: '$classroom.courseId', termId: '$classroom.termId', teacherId: '$classroom.teacherId', createdAt: '$classroom.createdAt', updatedAt: '$classroom.updatedAt', enrolledAt: '$enrolledAt', lastAccessedAt: {$ifNull: ['$recentAccess.lastAccessedAt', null]}}}",
             "{$sort: {lastAccessedAt: -1}}"
     })
     Slice<GetClassRoomRecentResponse.ClassRoomResponse> getRecentClasses(String studentId, Pageable pageable);

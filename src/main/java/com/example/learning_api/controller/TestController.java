@@ -204,6 +204,27 @@ public class TestController {
             return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
         }
     }
+    @PostMapping(path = "/start")
+    @PreAuthorize("hasAnyAuthority('USER')")
+    public ResponseEntity<ResponseAPI<StartTestResponse>> startTest(@RequestBody @Valid CreateTestResultRequest body) {
+        try{
+            StartTestResponse data = testResultService.addTestResult(body);
+            ResponseAPI<StartTestResponse> res = ResponseAPI.<StartTestResponse>builder()
+                    .timestamp(new Date())
+                    .message("Start test successfully")
+                    .data(data)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.CREATED);
+        }
+        catch (Exception e){
+            ResponseAPI<StartTestResponse> res = ResponseAPI.<StartTestResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
 
     @PostMapping(path = "/submit")
     @PreAuthorize("hasAnyAuthority('USER')")

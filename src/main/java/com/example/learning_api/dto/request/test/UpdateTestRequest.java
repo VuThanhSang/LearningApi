@@ -13,6 +13,7 @@ public class UpdateTestRequest {
     private String name;
     private String description;
     private MultipartFile source;
+    private String image;
     private int duration;
     private String startTime;
     private String endTime;
