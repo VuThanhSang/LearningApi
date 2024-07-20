@@ -5,6 +5,7 @@ import com.example.learning_api.entity.sql.database.StudentAnswersEntity;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 
 import java.util.List;
 
@@ -12,6 +13,8 @@ public interface StudentAnswersRepository extends MongoRepository<StudentAnswers
     void deleteByQuestionId(String questionId);
     void deleteByTestId(String testId);
     void deleteByStudentId(String studentId);
+    @Query("{ studentId: ?0, questionId: ?1, testResultId: ?2 }")
+    StudentAnswersEntity findByStudentIdQuestionIdAndTestResultId(String studentId, String questionId, String testResultId);
     @Aggregation(pipeline = {
             "{ $addFields: { _answerId: { $cond: { if: { $ne: ['$answerId', null] }, then: { $toObjectId: '$answerId' }, else: null } } } }",
             "{ $match: { studentId: ?0, testId: ?1 } }",

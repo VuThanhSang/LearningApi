@@ -50,20 +50,12 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration configuration = new CorsConfiguration();
                     configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000/", "http://localhost:8080")); // Specify your ports here
-                    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"));
                     configuration.setAllowedHeaders(Arrays.asList("*"));
                     configuration.setAllowCredentials(true);
                     configuration.setExposedHeaders(Arrays.asList("Set-Cookie"));
                     return configuration;
                 }))
-//                .authorizeRequests(authorizeRequests -> authorizeRequests
-//                        .requestMatchers("/login/oauth2/code/google", "/api/v1/auth/**").permitAll()
-//                        .requestMatchers("/admin/**").hasAnyAuthority(RoleEnum.ADMIN.name()) // Added "ROLE_" prefix
-//                        .requestMatchers("/api/v1/classroom/**",
-//                                "/api/v1/course/**","/api/v1/section/**",
-//                                "/api/v1/test/**")
-//                        .hasAnyAuthority(RoleEnum.USER.name()) // Added "ROLE_" prefix
-//                )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authenticationProvider(authenticationProvider()).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .oauth2Login(oauth2 -> oauth2

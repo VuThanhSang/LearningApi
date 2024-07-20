@@ -52,6 +52,7 @@ public class TestService implements ITestService {
     private final CloudinaryService cloudinaryService;
     private final StudentAnswersRepository studentAnswersRepository;
     private final TeacherRepository teacherRepository;
+
     @Override
     public CreateTestResponse createTest(CreateTestRequest body) {
         try{
@@ -147,6 +148,9 @@ public class TestService implements ITestService {
                         "image"
                 );
                 testEntity.setSource(imageUploaded.getUrl());
+            }
+            if (body.getImage()!=null){
+                testEntity.setStartTime(body.getStartTime());
             }
             if (body.getStartTime()!=null){
                 testEntity.setStartTime(body.getStartTime());
@@ -347,7 +351,7 @@ public class TestService implements ITestService {
     public GetTestInProgress getTestInProgress(int page,int size,String studentId) {
         try{
             Pageable pageAble = PageRequest.of(page, size);
-            String currentTimestamp = String.valueOf(System.currentTimeMillis() / 1000);
+            String currentTimestamp = String.valueOf(System.currentTimeMillis() );
             Slice<TestEntity> testEntities = testRepository.findTestInProgressByStudentId(studentId,currentTimestamp, pageAble);
             GetTestInProgress resData = new GetTestInProgress();
             List<GetTestInProgress.TestResponse> testResponses = new ArrayList<>();
@@ -388,11 +392,16 @@ public class TestService implements ITestService {
 
     @Override
     public TestSubmitResponse submitTest( TestSubmitRequest body) {
-        TestResultEntity testResult = testResultRepository.findByStudentIdAndTestId(body.getStudentId(), body.getTestId());
-        if(testResult!=null){
-            throw new CustomException(ErrorConstant.TEST_SUBMITTED);
+
+        TestResultEntity testResultEntity = testResultRepository.findById(body.getTestResultId())
+                .orElseThrow(() -> new IllegalArgumentException("TestResult not found"));
+        if (testResultEntity==null){
+            throw new IllegalArgumentException("TestResultId is not found");
         }
-        GetTestDetailResponse testDetail = getTestDetail(body.getTestId());
+
+
+        GetTestDetailResponse testDetail = getTestDetail(testResultEntity.getTestId());
+        List<TestSubmitResponse.QuestionResponse> questionResponseArrayList = new ArrayList<>();
         List<GetQuestionsResponse.QuestionResponse> questions = testDetail.getQuestions();
         List<List<Integer>> correctAnswers = new ArrayList<>();
         int result = 0;
@@ -401,32 +410,47 @@ public class TestService implements ITestService {
             int answerCorrectCount = 0;
             List<GetQuestionsResponse.AnswerResponse> answers = question.getAnswers();
             List<Integer> correctAnswer = new ArrayList<>();
+            TestSubmitResponse.QuestionResponse questionResponse = new TestSubmitResponse.QuestionResponse();
+            questionResponse.setId(question.getId());
+            questionResponse.setContent(question.getContent());
+            questionResponse.setDescription(question.getDescription());
+            questionResponse.setSource(question.getSource());
+            questionResponse.setType(question.getType());
+            List<TestSubmitResponse.AnswerResponse> answerResponses = new ArrayList<>();
             for (GetQuestionsResponse.AnswerResponse answer : answers) {
+                TestSubmitResponse.AnswerResponse answerResponse = new TestSubmitResponse.AnswerResponse();
+                answerResponse.setId(answer.getId());
+                answerResponse.setContent(answer.getContent());
+                answerResponse.setCorrect(answer.isCorrect());
+                answerResponse.setSource(answer.getSource());
+                answerResponse.setQuestionId(answer.getQuestionId());
+                if (body.getAnswers().get(questions.indexOf(question)).contains(answers.indexOf(answer))) {
+                    answerResponse.setSelected(true);
+                }
                 if (answer.isCorrect()) {
                     correctCount++;
                     correctAnswer.add(answers.indexOf(answer));
+                    answerResponse.setCorrect(true);
                     if (body.getAnswers().size() > questions.indexOf(question)){
                         if (body.getAnswers().get(questions.indexOf(question)).contains(answers.indexOf(answer))) {
                             answerCorrectCount++;
                         }
                     }
                 }
+                answerResponses.add(answerResponse);
             }
+            questionResponse.setAnswers(answerResponses);
+            questionResponseArrayList.add(questionResponse);
             correctAnswers.add(correctAnswer);
             if(body.getAnswers().size()>questions.indexOf(question))
             {
                 for (Integer ans : body.getAnswers().get(questions.indexOf(question))) {
-                    StudentAnswersEntity studentAnswersEntity = new StudentAnswersEntity();
-                    studentAnswersEntity.setStudentId(body.getStudentId());
-                    studentAnswersEntity.setQuestionId(question.getId());
-                    studentAnswersEntity.setTestId(body.getTestId());
-                    studentAnswersEntity.setTestType("test");
+                    StudentAnswersEntity studentAnswersEntity = studentAnswersRepository.findByStudentIdQuestionIdAndTestResultId(testResultEntity.getStudentId(), question.getId(), testResultEntity.getId());
                     studentAnswersEntity.setAnswerId(answers.get(ans).getId());
-                    studentAnswersEntity.setCreatedAt(new Date());
-                    studentAnswersEntity.setUpdatedAt(new Date());
+                    studentAnswersEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+                    studentAnswersEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
                     studentAnswersEntity.setCorrect(answers.get(ans).isCorrect());
                     studentAnswersRepository.save(studentAnswersEntity);
-
                 }
             }
 
@@ -434,26 +458,25 @@ public class TestService implements ITestService {
                 result++;
             }
         }
-        TestResultEntity testResultEntity = new TestResultEntity();
-        testResultEntity.setTestId(body.getTestId());
-        testResultEntity.setStudentId(body.getStudentId());
-        testResultEntity.setGrade(result);
-        testResultEntity.setTestType("test");
-        testResultEntity.setAttendedAt(new Date());
-        testResultEntity.setCreatedAt(new Date());
-        testResultEntity.setUpdatedAt(new Date());
-        testResultRepository.save(testResultEntity);
+
+        testResultEntity.setAttendedAt(String.valueOf(System.currentTimeMillis()));
+        testResultEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+        testResultEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
         TestSubmitResponse resData = new TestSubmitResponse();
         resData.setTestType("test");
-        resData.setStudentId(body.getStudentId());
-        resData.setTestId(body.getTestId());
+        resData.setStudentId(testResultEntity.getStudentId());
+        resData.setTestId(testResultEntity.getTestId());
         resData.setAttendedAt(testResultEntity.getAttendedAt());
         resData.setTotalCorrectAnswers(result);
         resData.setTotalQuestions(questions.size());
-        resData.setAnswers(correctAnswers);
+        resData.setQuestions(questionResponseArrayList);
         double grade = (double) result / questions.size() * 10;
         grade = Math.round(grade * 100.0) / 100.0;
         resData.setGrade(grade);
+        resData.setPassed(grade >= 4);
+        testResultEntity.setGrade(grade);
+        testResultRepository.save(testResultEntity);
+
         return resData;
     }
 
@@ -471,7 +494,6 @@ public class TestService implements ITestService {
             }
             TestResultResponse resData = new TestResultResponse();
             resData.setTestId(testResultEntity.getTestId());
-            resData.setTestType(testResultEntity.getTestType());
             resData.setGrade(testResultEntity.getGrade());
             resData.setPassed(testResultEntity.getGrade()>=5);
             resData.setAttendedAt(testResultEntity.getAttendedAt().toString());

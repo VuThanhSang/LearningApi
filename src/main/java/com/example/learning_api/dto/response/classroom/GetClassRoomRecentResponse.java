@@ -12,12 +12,11 @@ public class GetClassRoomRecentResponse {
     private List<ClassRoomResponse> classRooms;
     @Data
     public static class ClassRoomResponse {
-        private String classId;
-        private String className;
+        private String _id;
+        private String name;
         private String description;
         private String image;
         private String courseId;
-        private String facultyId;
         private int enrollmentCapacity;
         private int currentEnrollment;
         private String status;

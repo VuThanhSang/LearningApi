@@ -154,7 +154,7 @@ public class ClassRoomService implements IClassRoomService {
         try {
             ClassRoomEntity classroom = classRoomRepository.findById(body.getId())
                     .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
-            if(body.getImage()!=null){
+            if(body.getSource()!=null){
                 byte[] originalImage = new byte[0];
                 originalImage = body.getImage().getBytes();
                 byte[] newImage = ImageUtils.resizeImage(originalImage, 200, 200);
@@ -165,6 +165,9 @@ public class ClassRoomService implements IClassRoomService {
                         "image"
                 );
                 classroom.setImage(imageUploaded.getUrl());
+            }
+            if (body.getImage()!=null){
+                classroom.setImage(body.getImage());
             }
             if (body.getName()!=null){
                 classroom.setName(body.getName());

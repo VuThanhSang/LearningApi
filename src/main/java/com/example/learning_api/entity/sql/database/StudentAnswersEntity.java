@@ -14,9 +14,9 @@ public class StudentAnswersEntity {
     private String studentId;
     private String questionId;
     private String answerId;
-    private String testId;
+    private String testResultId;
     private String testType;
     private boolean isCorrect;
-    private Date createdAt;
-    private Date updatedAt;
+    private String createdAt;
+    private String updatedAt;
 }
