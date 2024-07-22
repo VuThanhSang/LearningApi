@@ -11,10 +11,9 @@ import java.util.List;
 
 public interface StudentAnswersRepository extends MongoRepository<StudentAnswersEntity, String> {
     void deleteByQuestionId(String questionId);
-    void deleteByTestId(String testId);
     void deleteByStudentId(String studentId);
-    @Query("{ studentId: ?0, questionId: ?1, testResultId: ?2 }")
-    StudentAnswersEntity findByStudentIdQuestionIdAndTestResultId(String studentId, String questionId, String testResultId);
+    @Query("{ studentId: ?0, testResultId: ?1, questionId: ?2 , answerId: ?3}")
+    StudentAnswersEntity findByStudentIdAndTestResultIdAndQuestionIdAndAnswerId(String studentId, String testResultId, String questionId, String answerId);
     @Aggregation(pipeline = {
             "{ $addFields: { _answerId: { $cond: { if: { $ne: ['$answerId', null] }, then: { $toObjectId: '$answerId' }, else: null } } } }",
             "{ $match: { studentId: ?0, testId: ?1 } }",
@@ -22,5 +21,8 @@ public interface StudentAnswersRepository extends MongoRepository<StudentAnswers
             "{ $group: { _id: '$questionId', answers: { $push: { answerId: '$_answerId', content: { $arrayElemAt: ['$answerDetails.content', 0] } } } } }",
             "{ $project: { _id: 0, questionId: { $toString: '$_id' }, answers: 1 } }"
     })
-    List<QuestionAnswersDTO> getStudentAnswers(String studentId, String testId);
+    List<QuestionAnswersDTO> getStudentAnswers(String studentId, String testResultId);
+
+    @Query("{ studentId: ?0, testResultId: ?1 }")
+    List<StudentAnswersEntity> findByStudentIdAndTestResultId(String studentId, String testResultId);
 }
