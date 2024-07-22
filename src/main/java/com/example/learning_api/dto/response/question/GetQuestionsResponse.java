@@ -40,6 +40,7 @@ public class GetQuestionsResponse {
         private boolean isCorrect;
         private String questionId;
         private String source;
+        private boolean isSelected;
         private String createdAt;
         private String updatedAt;
         public static AnswerResponse formAnswerEntity(CreateAnswerResponse answerEntity){

@@ -1,6 +1,7 @@
 package com.example.learning_api.dto.response.test;
 
 import com.example.learning_api.dto.common.QuestionAnswersDTO;
+import com.example.learning_api.dto.response.question.GetQuestionsResponse;
 import lombok.Data;
 
 import java.util.List;
@@ -13,6 +14,6 @@ public class TestResultResponse {
     private boolean isPassed;
     private String attendedAt;
     private String createdAt;
-    private List<QuestionAnswersDTO> choiceAnswers;
+    private List<GetQuestionsResponse.QuestionResponse> questions;
 
 }

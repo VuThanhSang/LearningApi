@@ -11,7 +11,11 @@ public class TestSubmitRequest {
     @NotBlank
     private String testResultId;
     @NotBlank
-    private List<List<Integer>> answers;
-
+    private List<QuestionAndAnswer> questionAndAnswers;
+    @Data
+    public static class QuestionAndAnswer {
+        private String questionId;
+        private List<String> answers;
+    }
 
 }

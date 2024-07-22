@@ -23,6 +23,7 @@ import com.example.learning_api.utils.ImageUtils;
 import com.example.learning_api.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
@@ -32,12 +33,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Slice;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -212,119 +215,182 @@ public class TestService implements ITestService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
-
     @Override
     public void importTest(ImportTestRequest body) {
         try {
-            String fileContent;
-            if (body.getType()== ImportType.FILE){
-                String fileName = body.getFile().getOriginalFilename();
-                String fileExtension = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
-
-
-                if (fileExtension.equals("pdf")) {
-                    PDDocument document = PDDocument.load(body.getFile().getInputStream());
-                    PDFTextStripper stripper = new PDFTextStripper();
-                    fileContent = stripper.getText(document);
-                } else if (fileExtension.equals("docx")) {
-                    XWPFDocument document = new XWPFDocument(body.getFile().getInputStream());
-                    StringBuilder content = new StringBuilder();
-                    List<XWPFParagraph> paragraphs = document.getParagraphs();
-                    for (XWPFParagraph paragraph : paragraphs) {
-                        content.append(paragraph.getText()).append("\n");
-                    }
-                    fileContent = content.toString();
-                } else {
-                    throw new CustomException(ErrorConstant.FILE_INVALID);
-                }
-            }
-            else{
-                fileContent = body.getText();
-            }
-
-            Pattern questionPattern = Pattern.compile("Câu\\s+(\\d+)\\s*:\\s*([^\\n]+)\\n([\\s\\S]+?)(?=\\nCâu\\s+\\d+\\s*:|$)");
-            Pattern answerPattern = Pattern.compile("\\b([A-D])\\.\\s*(.+?)(\\*?)(?=(?:\\n[A-D]\\.|$))", Pattern.DOTALL);
-            Matcher questionMatcher = questionPattern.matcher(fileContent);
-            Matcher answerMatcher;
-            List<QuestionEntity> questions = new ArrayList<>();
-            while (questionMatcher.find()) {
-                String questionNumber = questionMatcher.group(1);
-                String questionText = questionMatcher.group(2).trim();
-                QuestionEntity question = new QuestionEntity();
-                question.setContent(questionText);
-                question.setTestId(body.getTestId());
-                question.setSource("");
-                question.setCreatedAt(String.valueOf(System.currentTimeMillis()));
-                question.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
-                questionRepository.save(question);
-                String answerGroup = questionMatcher.group(3);
-                answerMatcher = answerPattern.matcher(answerGroup);
-
-                while (answerMatcher.find()) {
-                    String answerChoice = answerMatcher.group(1);
-                    String answerText = answerMatcher.group(2).trim();
-                    String isCorrect = answerMatcher.group(3);
-
-                    AnswerEntity answer = new AnswerEntity();
-                    answer.setContent(answerText);
-                    answer.setQuestionId(question.getId());
-                    answer.setSource("");
-                    answer.setCreatedAt(new Date());
-                    answer.setUpdatedAt(new Date());
-                    answer.setCorrect(!isCorrect.isEmpty());
-                    answerRepository.save(answer);
-                }
-
-
-            }
-
+            String fileContent = extractFileContent(body);
+            List<QuestionEntity> questions = parseQuestions(fileContent, body.getTestId());
+            saveQuestions(questions);
+        } catch (IOException e) {
+            throw new CustomException(ErrorConstant.FILE_PROCESSING_ERROR, e.toString());
         } catch (Exception e) {
-            throw new IllegalArgumentException(e.getMessage());
+            throw new CustomException(ErrorConstant.IMPORT_TEST_ERROR, e.getMessage());
         }
     }
+
+    private String extractFileContent(ImportTestRequest body) throws IOException {
+        if (body.getType() == ImportType.FILE) {
+            return extractContentFromFile(body.getFile());
+        } else {
+            return body.getText();
+        }
+    }
+
+    private String extractContentFromFile(MultipartFile file) throws IOException {
+        String fileName = file.getOriginalFilename();
+        String fileExtension = getFileExtension(fileName);
+
+        switch (fileExtension) {
+            case "pdf":
+                return extractContentFromPdf(file);
+            case "docx":
+                return extractContentFromDocx(file);
+            default:
+                throw new CustomException(ErrorConstant.FILE_INVALID);
+        }
+    }
+
+    private String getFileExtension(String fileName) {
+        return Optional.ofNullable(fileName)
+                .filter(f -> f.contains("."))
+                .map(f -> f.substring(fileName.lastIndexOf(".") + 1).toLowerCase())
+                .orElseThrow(() -> new CustomException(ErrorConstant.FILE_INVALID));
+    }
+
+    private String extractContentFromPdf(MultipartFile file) throws IOException {
+        try (PDDocument document = PDDocument.load(file.getInputStream())) {
+            PDFTextStripper stripper = new PDFTextStripper();
+            return stripper.getText(document);
+        }
+    }
+
+    private String extractContentFromDocx(MultipartFile file) throws IOException {
+        try (XWPFDocument document = new XWPFDocument(file.getInputStream())) {
+            return document.getParagraphs().stream()
+                    .map(XWPFParagraph::getText)
+                    .collect(Collectors.joining("\n"));
+        }
+    }
+
+    private List<QuestionEntity> parseQuestions(String fileContent, String testId) {
+        Pattern questionPattern = Pattern.compile("Câu\\s+(\\d+)\\s*:\\s*([^\\n]+)\\n([\\s\\S]+?)(?=\\nCâu\\s+\\d+\\s*:|$)");
+        Matcher questionMatcher = questionPattern.matcher(fileContent);
+        List<QuestionEntity> questions = new ArrayList<>();
+
+        while (questionMatcher.find()) {
+            String questionText = questionMatcher.group(2).trim();
+            String answerGroup = questionMatcher.group(3);
+
+            QuestionEntity question = createQuestion(questionText, testId);
+            List<AnswerEntity> answers = parseAnswers(answerGroup, question.getId());
+            question.setAnswers(answers);
+            questions.add(question);
+        }
+
+        return questions;
+    }
+
+    private QuestionEntity createQuestion(String questionText, String testId) {
+        QuestionEntity question = new QuestionEntity();
+        question.setContent(questionText);
+        question.setTestId(testId);
+        question.setSource("");
+        question.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+        question.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+        return question;
+    }
+
+    private List<AnswerEntity> parseAnswers(String answerGroup, String questionId) {
+        Pattern answerPattern = Pattern.compile("\\b([A-D])\\.\\s*(.+?)(\\*?)(?=(?:\\n[A-D]\\.|$))", Pattern.DOTALL);
+        Matcher answerMatcher = answerPattern.matcher(answerGroup);
+        List<AnswerEntity> answers = new ArrayList<>();
+
+        while (answerMatcher.find()) {
+            String answerText = answerMatcher.group(2).trim();
+            boolean isCorrect = !answerMatcher.group(3).isEmpty();
+
+            AnswerEntity answer = createAnswer(answerText, questionId, isCorrect);
+            answers.add(answer);
+        }
+
+        return answers;
+    }
+
+    private AnswerEntity createAnswer(String answerText, String questionId, boolean isCorrect) {
+        AnswerEntity answer = new AnswerEntity();
+        answer.setContent(answerText);
+        answer.setQuestionId(questionId);
+        answer.setSource("");
+        answer.setCreatedAt(new Date());
+        answer.setUpdatedAt(new Date());
+        answer.setCorrect(isCorrect);
+        return answer;
+    }
+
+    private void saveQuestions(List<QuestionEntity> questions) {
+        for (QuestionEntity question : questions) {
+            questionRepository.save(question);
+            for (AnswerEntity answer : question.getAnswers()) {
+                answerRepository.save(answer);
+            }
+        }
+    }
+
+
 
     @Override
     public GetTestDetailResponse getTestDetail(String id) {
-        try{
-            TestEntity testEntity = testRepository.findById(id)
-                    .orElseThrow(() -> new IllegalArgumentException("Test not found"));
-            if (testEntity==null){
-                throw new IllegalArgumentException("TestId is not found");
-            }
-            GetTestDetailResponse resData = new GetTestDetailResponse();
-            resData.setId(testEntity.getId());
-            resData.setName(testEntity.getName());
-            resData.setDescription(testEntity.getDescription());
-            resData.setDuration(testEntity.getDuration());
-            resData.setSource(testEntity.getSource());
-            resData.setTeacherId(testEntity.getTeacherId());
-            if (testEntity.getStartTime()!=null)
-                resData.setStartTime(testEntity.getStartTime().toString());
-            if (testEntity.getEndTime()!=null)
-                resData.setEndTime(testEntity.getEndTime().toString());
-            resData.setShowResultType(testEntity.getShowResultType().toString());
-            resData.setClassroomId(testEntity.getClassroomId());
-            List<GetQuestionsResponse.QuestionResponse> questionResponses = new ArrayList<>();
-            List<QuestionEntity> questionEntities = questionRepository.findByTestId(id);
-            for (QuestionEntity questionEntity : questionEntities){
-                GetQuestionsResponse.QuestionResponse questionResponse = modelMapperService.mapClass(questionEntity, GetQuestionsResponse.QuestionResponse.class);
-                List<AnswerEntity> answerEntities = answerRepository.findByQuestionId(questionEntity.getId());
-                List<GetQuestionsResponse.AnswerResponse> answerResponses = new ArrayList<>();
-                for (AnswerEntity answerEntity : answerEntities){
-                    GetQuestionsResponse.AnswerResponse answerResponse = modelMapperService.mapClass(answerEntity, GetQuestionsResponse.AnswerResponse.class);
-                    answerResponses.add(answerResponse);
-                }
-                questionResponse.setAnswers(answerResponses);
-                questionResponses.add(questionResponse);
-            }
-            resData.setQuestions(questionResponses);
-            resData.setTotalQuestions(questionResponses.size());
-            return resData;
-        }
-        catch (Exception e){
-            throw new IllegalArgumentException(e.getMessage());
-        }
+        TestEntity testEntity = getTestEntityById(id);
+        GetTestDetailResponse response = mapTestEntityToResponse(testEntity);
+        List<GetQuestionsResponse.QuestionResponse> questionResponses = getQuestionResponses(id);
+        response.setQuestions(questionResponses);
+        response.setTotalQuestions(questionResponses.size());
+        return response;
     }
+
+    private TestEntity getTestEntityById(String id) {
+        return testRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Test not found with id: " + id));
+    }
+
+    private GetTestDetailResponse mapTestEntityToResponse(TestEntity testEntity) {
+        GetTestDetailResponse response = new GetTestDetailResponse();
+        response.setId(testEntity.getId());
+        response.setName(testEntity.getName());
+        response.setDescription(testEntity.getDescription());
+        response.setDuration(testEntity.getDuration());
+        response.setSource(testEntity.getSource());
+        response.setTeacherId(testEntity.getTeacherId());
+        response.setStartTime(Optional.ofNullable(testEntity.getStartTime()).map(Object::toString).orElse(null));
+        response.setEndTime(Optional.ofNullable(testEntity.getEndTime()).map(Object::toString).orElse(null));
+        response.setShowResultType(testEntity.getShowResultType().toString());
+        response.setClassroomId(testEntity.getClassroomId());
+        return response;
+    }
+
+    private List<GetQuestionsResponse.QuestionResponse> getQuestionResponses(String testId) {
+        List<QuestionEntity> questionEntities = questionRepository.findByTestId(testId);
+        return questionEntities.stream()
+                .map(this::mapQuestionEntityToResponse)
+                .collect(Collectors.toList());
+    }
+
+    private GetQuestionsResponse.QuestionResponse mapQuestionEntityToResponse(QuestionEntity questionEntity) {
+        GetQuestionsResponse.QuestionResponse questionResponse = modelMapperService.mapClass(questionEntity, GetQuestionsResponse.QuestionResponse.class);
+        List<GetQuestionsResponse.AnswerResponse> answerResponses = getAnswerResponses(questionEntity.getId());
+        questionResponse.setAnswers(answerResponses);
+        return questionResponse;
+    }
+
+    private List<GetQuestionsResponse.AnswerResponse> getAnswerResponses(String questionId) {
+        List<AnswerEntity> answerEntities = answerRepository.findByQuestionId(questionId);
+        return answerEntities.stream()
+                .map(answerEntity -> modelMapperService.mapClass(answerEntity, GetQuestionsResponse.AnswerResponse.class))
+                .collect(Collectors.toList());
+    }
+
+
+
 
     @Override
     public GetTestsResponse getTestsByClassroomId(int page, int size, String classroomId) {
@@ -391,96 +457,6 @@ public class TestService implements ITestService {
     }
 
     @Override
-    public TestSubmitResponse submitTest( TestSubmitRequest body) {
-
-        TestResultEntity testResultEntity = testResultRepository.findById(body.getTestResultId())
-                .orElseThrow(() -> new IllegalArgumentException("TestResult not found"));
-        if (testResultEntity==null){
-            throw new IllegalArgumentException("TestResultId is not found");
-        }
-
-
-        GetTestDetailResponse testDetail = getTestDetail(testResultEntity.getTestId());
-        List<TestSubmitResponse.QuestionResponse> questionResponseArrayList = new ArrayList<>();
-        List<GetQuestionsResponse.QuestionResponse> questions = testDetail.getQuestions();
-        List<List<Integer>> correctAnswers = new ArrayList<>();
-        int result = 0;
-        for (GetQuestionsResponse.QuestionResponse question : questions) {
-            int correctCount = 0;
-            int answerCorrectCount = 0;
-            List<GetQuestionsResponse.AnswerResponse> answers = question.getAnswers();
-            List<Integer> correctAnswer = new ArrayList<>();
-            TestSubmitResponse.QuestionResponse questionResponse = new TestSubmitResponse.QuestionResponse();
-            questionResponse.setId(question.getId());
-            questionResponse.setContent(question.getContent());
-            questionResponse.setDescription(question.getDescription());
-            questionResponse.setSource(question.getSource());
-            questionResponse.setType(question.getType());
-            List<TestSubmitResponse.AnswerResponse> answerResponses = new ArrayList<>();
-            for (GetQuestionsResponse.AnswerResponse answer : answers) {
-                TestSubmitResponse.AnswerResponse answerResponse = new TestSubmitResponse.AnswerResponse();
-                answerResponse.setId(answer.getId());
-                answerResponse.setContent(answer.getContent());
-                answerResponse.setCorrect(answer.isCorrect());
-                answerResponse.setSource(answer.getSource());
-                answerResponse.setQuestionId(answer.getQuestionId());
-                if (body.getAnswers().get(questions.indexOf(question)).contains(answers.indexOf(answer))) {
-                    answerResponse.setSelected(true);
-                }
-                if (answer.isCorrect()) {
-                    correctCount++;
-                    correctAnswer.add(answers.indexOf(answer));
-                    answerResponse.setCorrect(true);
-                    if (body.getAnswers().size() > questions.indexOf(question)){
-                        if (body.getAnswers().get(questions.indexOf(question)).contains(answers.indexOf(answer))) {
-                            answerCorrectCount++;
-                        }
-                    }
-                }
-                answerResponses.add(answerResponse);
-            }
-            questionResponse.setAnswers(answerResponses);
-            questionResponseArrayList.add(questionResponse);
-            correctAnswers.add(correctAnswer);
-            if(body.getAnswers().size()>questions.indexOf(question))
-            {
-                for (Integer ans : body.getAnswers().get(questions.indexOf(question))) {
-                    StudentAnswersEntity studentAnswersEntity = studentAnswersRepository.findByStudentIdQuestionIdAndTestResultId(testResultEntity.getStudentId(), question.getId(), testResultEntity.getId());
-                    studentAnswersEntity.setAnswerId(answers.get(ans).getId());
-                    studentAnswersEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
-                    studentAnswersEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
-                    studentAnswersEntity.setCorrect(answers.get(ans).isCorrect());
-                    studentAnswersRepository.save(studentAnswersEntity);
-                }
-            }
-
-            if (correctCount == answerCorrectCount) {
-                result++;
-            }
-        }
-
-        testResultEntity.setAttendedAt(String.valueOf(System.currentTimeMillis()));
-        testResultEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
-        testResultEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
-        TestSubmitResponse resData = new TestSubmitResponse();
-        resData.setTestType("test");
-        resData.setStudentId(testResultEntity.getStudentId());
-        resData.setTestId(testResultEntity.getTestId());
-        resData.setAttendedAt(testResultEntity.getAttendedAt());
-        resData.setTotalCorrectAnswers(result);
-        resData.setTotalQuestions(questions.size());
-        resData.setQuestions(questionResponseArrayList);
-        double grade = (double) result / questions.size() * 10;
-        grade = Math.round(grade * 100.0) / 100.0;
-        resData.setGrade(grade);
-        resData.setPassed(grade >= 4);
-        testResultEntity.setGrade(grade);
-        testResultRepository.save(testResultEntity);
-
-        return resData;
-    }
-
-    @Override
     public TestResultResponse getTestResult(String studentId, String testId) {
         try{
             TestResultEntity testResultEntity = testResultRepository.findByStudentIdAndTestId(studentId, testId);
@@ -492,19 +468,195 @@ public class TestService implements ITestService {
             if (testEntity==null){
                 throw new IllegalArgumentException("TestId is not found");
             }
+            List<StudentAnswersEntity> studentAnswersEntities = studentAnswersRepository.findByStudentIdAndTestResultId(studentId, testResultEntity.getId());
+            List<GetQuestionsResponse.QuestionResponse> questionResponses = getQuestionResponses(testId);
+            for (GetQuestionsResponse.QuestionResponse questionResponse : questionResponses){
+                List<GetQuestionsResponse.AnswerResponse> answerResponses = questionResponse.getAnswers();
+                for (GetQuestionsResponse.AnswerResponse answerResponse : answerResponses){
+                    StudentAnswersEntity studentAnswer = studentAnswersEntities.stream()
+                            .filter(studentAnswersEntity -> studentAnswersEntity.getQuestionId().equals(questionResponse.getId()))
+                            .filter(studentAnswersEntity -> studentAnswersEntity.getAnswerId().equals(answerResponse.getId()))
+                            .findFirst()
+                            .orElse(null);
+                    if (studentAnswer!=null){
+                        answerResponse.setSelected(true);
+                    }
+                }
+            }
             TestResultResponse resData = new TestResultResponse();
             resData.setTestId(testResultEntity.getTestId());
             resData.setGrade(testResultEntity.getGrade());
             resData.setPassed(testResultEntity.getGrade()>=5);
             resData.setAttendedAt(testResultEntity.getAttendedAt().toString());
             resData.setCreatedAt(testResultEntity.getCreatedAt().toString());
-            List<QuestionAnswersDTO> questionAnswersDTOS = studentAnswersRepository.getStudentAnswers(studentId, testId);
-            resData.setChoiceAnswers(questionAnswersDTOS);
+            resData.setTestType("test");
+            resData.setQuestions(questionResponses);
             return resData;
         }
         catch (Exception e){
             throw new IllegalArgumentException(e.getMessage());
         }
+    }
+
+
+
+
+    @Override
+    public TestSubmitResponse submitTest(TestSubmitRequest body) {
+        TestResultEntity testResult = getTestResult(body.getTestResultId());
+        GetTestDetailResponse testDetail = getTestDetail(testResult.getTestId());
+        List<GetQuestionsResponse.QuestionResponse> questions = testDetail.getQuestions();
+
+        List<TestSubmitResponse.QuestionResponse> questionResponses = processQuestions(questions, body, testResult);
+        int totalCorrectAnswers = calculateTotalCorrectAnswers(questionResponses);
+
+        updateTestResult(testResult, totalCorrectAnswers, questions.size());
+
+        return createTestSubmitResponse(testResult, questionResponses, totalCorrectAnswers, questions.size());
+    }
+
+    private TestResultEntity getTestResult(String testResultId) {
+        return testResultRepository.findById(testResultId)
+                .orElseThrow(() -> new IllegalArgumentException("TestResult not found"));
+    }
+
+    private List<TestSubmitResponse.QuestionResponse> processQuestions(
+            List<GetQuestionsResponse.QuestionResponse> questions,
+            TestSubmitRequest body,
+            TestResultEntity testResult) {
+        return questions.stream()
+                .map(question -> processQuestion(question, body, questions.indexOf(question), testResult))
+                .collect(Collectors.toList());
+    }
+
+    private TestSubmitResponse.QuestionResponse processQuestion(
+            GetQuestionsResponse.QuestionResponse question,
+            TestSubmitRequest body,
+            int questionIndex,
+            TestResultEntity testResult) {
+        TestSubmitResponse.QuestionResponse questionResponse = mapQuestionResponse(question);
+        List<TestSubmitResponse.AnswerResponse> answerResponses = processAnswers(question, body, questionIndex, testResult);
+        questionResponse.setAnswers(answerResponses);
+        return questionResponse;
+    }
+
+    private TestSubmitResponse.QuestionResponse mapQuestionResponse(GetQuestionsResponse.QuestionResponse question) {
+        TestSubmitResponse.QuestionResponse questionResponse = new TestSubmitResponse.QuestionResponse();
+        questionResponse.setId(question.getId());
+        questionResponse.setContent(question.getContent());
+        questionResponse.setDescription(question.getDescription());
+        questionResponse.setSource(question.getSource());
+        questionResponse.setType(question.getType());
+        return questionResponse;
+    }
+
+    private List<TestSubmitResponse.AnswerResponse> processAnswers(
+            GetQuestionsResponse.QuestionResponse question,
+            TestSubmitRequest body,
+            int questionIndex,
+            TestResultEntity testResult) {
+        List<String> selectedAnswers = getSelectedAnswers(body, questionIndex);
+        return question.getAnswers().stream()
+                .map(answer -> processAnswer(answer, selectedAnswers, testResult, question.getId()))
+                .collect(Collectors.toList());
+    }
+
+    private List<String> getSelectedAnswers(TestSubmitRequest body, int questionIndex) {
+        return body.getQuestionAndAnswers().size() > questionIndex
+                ? body.getQuestionAndAnswers().get(questionIndex).getAnswers()
+                : Collections.emptyList();
+    }
+
+    private TestSubmitResponse.AnswerResponse processAnswer(
+            GetQuestionsResponse.AnswerResponse answer,
+            List<String> selectedAnswers,
+            TestResultEntity testResult,
+            String questionId) {
+        TestSubmitResponse.AnswerResponse answerResponse = mapAnswerResponse(answer);
+        answerResponse.setSelected(selectedAnswers.contains(answer.getId()));
+
+        if (answerResponse.isSelected()) {
+            saveStudentAnswer(testResult, questionId, answer);
+        }
+
+        return answerResponse;
+    }
+
+    private TestSubmitResponse.AnswerResponse mapAnswerResponse(GetQuestionsResponse.AnswerResponse answer) {
+        TestSubmitResponse.AnswerResponse answerResponse = new TestSubmitResponse.AnswerResponse();
+        answerResponse.setId(answer.getId());
+        answerResponse.setContent(answer.getContent());
+        answerResponse.setCorrect(answer.isCorrect());
+        answerResponse.setSource(answer.getSource());
+        answerResponse.setQuestionId(answer.getQuestionId());
+        return answerResponse;
+    }
+
+    private void saveStudentAnswer(TestResultEntity testResult, String questionId, GetQuestionsResponse.AnswerResponse answer) {
+        StudentAnswersEntity studentAnswer = studentAnswersRepository
+                .findByStudentIdAndTestResultIdAndQuestionIdAndAnswerId(
+                        testResult.getStudentId(), testResult.getTestId(), questionId, answer.getId());
+        if (studentAnswer ==null){
+            studentAnswer = new StudentAnswersEntity();
+        }
+
+        studentAnswer.setAnswerId(answer.getId());
+        studentAnswer.setQuestionId(questionId);
+        studentAnswer.setStudentId(testResult.getStudentId());
+        studentAnswer.setTestResultId(testResult.getTestId());
+        studentAnswer.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+        studentAnswer.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+        studentAnswer.setCorrect(answer.isCorrect());
+
+        studentAnswersRepository.save(studentAnswer);
+    }
+
+    private int calculateTotalCorrectAnswers(List<TestSubmitResponse.QuestionResponse> questionResponses) {
+        return (int) questionResponses.stream()
+                .filter(this::isQuestionCorrect)
+                .count();
+    }
+
+    private boolean isQuestionCorrect(TestSubmitResponse.QuestionResponse questionResponse) {
+        long correctAnswersCount = questionResponse.getAnswers().stream()
+                .filter(TestSubmitResponse.AnswerResponse::isCorrect)
+                .count();
+        long selectedCorrectAnswersCount = questionResponse.getAnswers().stream()
+                .filter(answer -> answer.isCorrect() && answer.isSelected())
+                .count();
+        return correctAnswersCount == selectedCorrectAnswersCount;
+    }
+
+    private void updateTestResult(TestResultEntity testResult, int totalCorrectAnswers, int totalQuestions) {
+        testResult.setAttendedAt(String.valueOf(System.currentTimeMillis()));
+        testResult.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+        testResult.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+        double grade = calculateGrade(totalCorrectAnswers, totalQuestions);
+        testResult.setGrade(grade);
+        testResultRepository.save(testResult);
+    }
+
+    private double calculateGrade(int totalCorrectAnswers, int totalQuestions) {
+        double grade = (double) totalCorrectAnswers / totalQuestions * 10;
+        return Math.round(grade * 100.0) / 100.0;
+    }
+
+    private TestSubmitResponse createTestSubmitResponse(
+            TestResultEntity testResult,
+            List<TestSubmitResponse.QuestionResponse> questionResponses,
+            int totalCorrectAnswers,
+            int totalQuestions) {
+        TestSubmitResponse response = new TestSubmitResponse();
+        response.setTestType("test");
+        response.setStudentId(testResult.getStudentId());
+        response.setTestId(testResult.getTestId());
+        response.setAttendedAt(testResult.getAttendedAt());
+        response.setTotalCorrectAnswers(totalCorrectAnswers);
+        response.setTotalQuestions(totalQuestions);
+//        response.setQuestions(questionResponses);
+        response.setGrade(testResult.getGrade());
+        response.setPassed(testResult.getGrade() >= 4);
+        return response;
     }
 
 }
