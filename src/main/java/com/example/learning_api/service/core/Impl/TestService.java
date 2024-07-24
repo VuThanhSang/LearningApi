@@ -13,6 +13,7 @@ import com.example.learning_api.dto.response.test.*;
 import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.ImportType;
 import com.example.learning_api.enums.TestShowResultType;
+import com.example.learning_api.enums.TestState;
 import com.example.learning_api.enums.TestStatus;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.*;
@@ -509,6 +510,24 @@ public class TestService implements ITestService {
         }
     }
 
+    @Override
+    public List<GetQuestionsResponse.QuestionResponse> getProgress(String testResultId) {
+        try {
+            TestResultEntity testResult = getTestResult(testResultId);
+            TestEntity test = testRepository.findById(testResult.getTestId())
+                    .orElseThrow(() -> new IllegalArgumentException("Test not found"));
+
+            List<GetQuestionsResponse.QuestionResponse> questionResponses = getQuestionResponses(testResult.getTestId());
+            List<StudentAnswersEntity> studentAnswersEntities = studentAnswersRepository.findByStudentIdAndTestResultId(testResult.getStudentId(), testResultId);
+
+            updateSelectedAnswers(questionResponses, studentAnswersEntities, testResultId);
+
+            return questionResponses;
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
     private List<GetQuestionsResponse.QuestionResponse> cloneQuestionResponses(List<GetQuestionsResponse.QuestionResponse> originalResponses) {
         return originalResponses.stream()
                 .map(question -> {
@@ -680,6 +699,7 @@ public class TestService implements ITestService {
         testResult.setCreatedAt(String.valueOf(System.currentTimeMillis()));
         testResult.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
         double grade = calculateGrade(totalCorrectAnswers, totalQuestions);
+        testResult.setState(TestState.FINISHED);
         testResult.setGrade(grade);
         testResultRepository.save(testResult);
     }

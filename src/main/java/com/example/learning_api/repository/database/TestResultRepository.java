@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.repository.Query;
 import java.util.List;
 
 public interface TestResultRepository extends MongoRepository<TestResultEntity, String> {
-
+    @Query(value = "{studentId: ?0, testId: ?1, state: 'FINISHED'}")
     List<TestResultEntity> findByStudentIdAndTestId(String studentId, String testId);
 
     void deleteByStudentIdAndTestId(String studentId, String testId);

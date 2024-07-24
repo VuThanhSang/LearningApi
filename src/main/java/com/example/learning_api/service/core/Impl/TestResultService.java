@@ -1,19 +1,22 @@
 package com.example.learning_api.service.core.Impl;
 
 import com.example.learning_api.dto.request.test.CreateTestResultRequest;
+import com.example.learning_api.dto.request.test.SaveProgressRequest;
 import com.example.learning_api.dto.request.test.UpdateTestResultRequest;
+import com.example.learning_api.dto.response.question.GetQuestionsResponse;
 import com.example.learning_api.dto.response.test.StartTestResponse;
+import com.example.learning_api.entity.sql.database.StudentAnswersEntity;
 import com.example.learning_api.entity.sql.database.TestEntity;
 import com.example.learning_api.entity.sql.database.TestResultEntity;
-import com.example.learning_api.repository.database.CourseRepository;
-import com.example.learning_api.repository.database.StudentRepository;
-import com.example.learning_api.repository.database.TestRepository;
-import com.example.learning_api.repository.database.TestResultRepository;
+import com.example.learning_api.enums.TestState;
+import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.ITestResultService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -23,7 +26,9 @@ public class TestResultService implements ITestResultService {
     private final StudentRepository studentRepository;
     private final ModelMapperService modelMapperService;
     private final TestRepository testRepository;
-
+    private final StudentAnswersRepository studentAnswerRepository;
+    private final AnswerRepository answerRepository;
+    private final QuestionRepository questionRepository;
 
     @Override
     public StartTestResponse addTestResult(CreateTestResultRequest body) {
@@ -43,6 +48,7 @@ public class TestResultService implements ITestResultService {
             if (count >= testEntity.getAttemptLimit()) {
                 throw new IllegalArgumentException("You have reached the limit of attempts");
             }
+            testResultEntity.setState(TestState.ONGOING);
             testResultEntity.setAttendedAt(String.valueOf(System.currentTimeMillis()));
             testResultEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
             testResultEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
@@ -97,4 +103,34 @@ public class TestResultService implements ITestResultService {
 
         }
     }
+
+    @Override
+    public void saveProgress(SaveProgressRequest body) {
+        try{
+            TestResultEntity testResultEntity = testResultRepository.findById(body.getTestResultId()).orElseThrow(() -> new IllegalArgumentException("Test result does not exist"));
+            if (testResultEntity.getState() == TestState.FINISHED) {
+                throw new IllegalArgumentException("Test is already finished");
+            }
+            for (SaveProgressRequest.QuestionAndAnswer questionAndAnswer : body.getQuestionAndAnswers()) {
+                for (String answerId : questionAndAnswer.getAnswers()) {
+                    StudentAnswersEntity studentAnswersEntity = new StudentAnswersEntity();
+                    studentAnswersEntity.setAnswerId(answerId);
+                    studentAnswersEntity.setQuestionId(questionAndAnswer.getQuestionId());
+                    studentAnswersEntity.setTestResultId(body.getTestResultId());
+                    studentAnswersEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+                    studentAnswersEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+                    studentAnswersEntity.setStudentId(testResultEntity.getStudentId());
+                    studentAnswerRepository.save(studentAnswersEntity);
+                }
+            }
+        }
+        catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+
+        }
+    }
+
+
+
+
 }
