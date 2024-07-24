@@ -16,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
+import java.util.List;
 
 import static com.example.learning_api.constant.RouterConstant.*;
 
@@ -334,10 +335,10 @@ public class TestController {
     }
 
     @GetMapping(path = "/result/{studentId}/{testId}")
-    public ResponseEntity<ResponseAPI<TestResultResponse>> getTestResult(@PathVariable String studentId, @PathVariable String testId) {
+    public ResponseEntity<ResponseAPI<List<TestResultResponse>>> getTestResult(@PathVariable String studentId, @PathVariable String testId) {
         try{
-            TestResultResponse resData = testService.getTestResult(studentId, testId);
-            ResponseAPI<TestResultResponse> res = ResponseAPI.<TestResultResponse>builder()
+            List<TestResultResponse> resData = testService.getTestResult(studentId, testId);
+            ResponseAPI<List<TestResultResponse>> res = ResponseAPI.<List<TestResultResponse>>builder()
                     .timestamp(new Date())
                     .message("Get test result successfully")
                     .data(resData)
@@ -345,7 +346,7 @@ public class TestController {
             return new ResponseEntity<>(res, StatusCode.OK);
         }
         catch (Exception e){
-            ResponseAPI<TestResultResponse> res = ResponseAPI.<TestResultResponse>builder()
+            ResponseAPI<List<TestResultResponse>> res = ResponseAPI.<List<TestResultResponse>>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();

@@ -2,10 +2,16 @@ package com.example.learning_api.repository.database;
 
 import com.example.learning_api.entity.sql.database.TestResultEntity;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
+
+import java.util.List;
 
 public interface TestResultRepository extends MongoRepository<TestResultEntity, String> {
 
-    TestResultEntity findByStudentIdAndTestId(String studentId, String testId);
+    List<TestResultEntity> findByStudentIdAndTestId(String studentId, String testId);
 
     void deleteByStudentIdAndTestId(String studentId, String testId);
+
+    @Query(value = "{studentId: ?0, testId: ?1}", count = true)
+    int countByStudentIdAndTestId(String studentId, String testId);
 }

@@ -28,6 +28,7 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -108,6 +109,7 @@ public class TestService implements ITestService {
             resData.setClassroomId(body.getClassroomId());
             resData.setShowResultType(body.getShowResultType());
             resData.setStatus(body.getStatus());
+            resData.setAttemptLimit(body.getAttemptLimit());
             return resData;
 
         }
@@ -166,6 +168,9 @@ public class TestService implements ITestService {
             }
             if(body.getStatus()!=null){
                 testEntity.setStatus(TestStatus.valueOf(body.getStatus()));
+            }
+            if (body.getAttemptLimit()!=0){
+                testEntity.setAttemptLimit(body.getAttemptLimit());
             }
 
             testRepository.save(testEntity);
@@ -329,13 +334,13 @@ public class TestService implements ITestService {
 
     private void saveQuestions(List<QuestionEntity> questions) {
         for (QuestionEntity question : questions) {
-            questionRepository.save(question);
+            QuestionEntity savedQuestion = questionRepository.save(question);
             for (AnswerEntity answer : question.getAnswers()) {
+                answer.setQuestionId(savedQuestion.getId());
                 answerRepository.save(answer);
             }
         }
     }
-
 
 
     @Override
@@ -455,49 +460,92 @@ public class TestService implements ITestService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
-
     @Override
-    public TestResultResponse getTestResult(String studentId, String testId) {
-        try{
-            TestResultEntity testResultEntity = testResultRepository.findByStudentIdAndTestId(studentId, testId);
-            if (testResultEntity==null){
+    public List<TestResultResponse> getTestResult(String studentId, String testId) {
+        try {
+            List<TestResultEntity> testResultEntities = testResultRepository.findByStudentIdAndTestId(studentId, testId);
+            if (testResultEntities.isEmpty()) {
                 throw new IllegalArgumentException("TestResult not found");
             }
+
             TestEntity testEntity = testRepository.findById(testId)
                     .orElseThrow(() -> new IllegalArgumentException("Test not found"));
-            if (testEntity==null){
-                throw new IllegalArgumentException("TestId is not found");
-            }
-            List<StudentAnswersEntity> studentAnswersEntities = studentAnswersRepository.findByStudentIdAndTestResultId(studentId, testResultEntity.getId());
+
             List<GetQuestionsResponse.QuestionResponse> questionResponses = getQuestionResponses(testId);
-            for (GetQuestionsResponse.QuestionResponse questionResponse : questionResponses){
-                List<GetQuestionsResponse.AnswerResponse> answerResponses = questionResponse.getAnswers();
-                for (GetQuestionsResponse.AnswerResponse answerResponse : answerResponses){
-                    StudentAnswersEntity studentAnswer = studentAnswersEntities.stream()
-                            .filter(studentAnswersEntity -> studentAnswersEntity.getQuestionId().equals(questionResponse.getId()))
-                            .filter(studentAnswersEntity -> studentAnswersEntity.getAnswerId().equals(answerResponse.getId()))
-                            .findFirst()
-                            .orElse(null);
-                    if (studentAnswer!=null){
-                        answerResponse.setSelected(true);
+
+            return testResultEntities.stream().map(testResultEntity -> {
+                List<StudentAnswersEntity> studentAnswersEntities = studentAnswersRepository.findByStudentIdAndTestResultId(studentId, testResultEntity.getId());
+
+                List<GetQuestionsResponse.QuestionResponse> clonedQuestionResponses = cloneQuestionResponses(questionResponses);
+
+                for (GetQuestionsResponse.QuestionResponse questionResponse : clonedQuestionResponses) {
+                    List<GetQuestionsResponse.AnswerResponse> answerResponses = questionResponse.getAnswers();
+                    for (GetQuestionsResponse.AnswerResponse answerResponse : answerResponses) {
+                        StudentAnswersEntity studentAnswer = studentAnswersEntities.stream()
+                                .filter(studentAnswersEntity -> studentAnswersEntity.getQuestionId().equals(questionResponse.getId()))
+                                .filter(studentAnswersEntity -> studentAnswersEntity.getAnswerId().equals(answerResponse.getId()))
+                                .findFirst()
+                                .orElse(null);
+                        if (studentAnswer != null) {
+                            answerResponse.setSelected(true);
+                        }
                     }
                 }
-            }
-            TestResultResponse resData = new TestResultResponse();
-            resData.setTestId(testResultEntity.getTestId());
-            resData.setGrade(testResultEntity.getGrade());
-            resData.setPassed(testResultEntity.getGrade()>=5);
-            resData.setAttendedAt(testResultEntity.getAttendedAt().toString());
-            resData.setCreatedAt(testResultEntity.getCreatedAt().toString());
-            resData.setTestType("test");
-            resData.setQuestions(questionResponses);
-            return resData;
-        }
-        catch (Exception e){
+
+                TestResultResponse resData = new TestResultResponse();
+                resData.setTestId(testResultEntity.getTestId());
+                resData.setGrade(testResultEntity.getGrade());
+                resData.setPassed(testResultEntity.getGrade() >= 5);
+                resData.setAttendedAt(testResultEntity.getAttendedAt().toString());
+                resData.setCreatedAt(testResultEntity.getCreatedAt().toString());
+                resData.setTestType("test");
+                updateSelectedAnswers(clonedQuestionResponses, studentAnswersEntities, testResultEntity.getId());
+                resData.setQuestions(clonedQuestionResponses);
+
+                return resData;
+            }).collect(Collectors.toList());
+        } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
 
+    private List<GetQuestionsResponse.QuestionResponse> cloneQuestionResponses(List<GetQuestionsResponse.QuestionResponse> originalResponses) {
+        return originalResponses.stream()
+                .map(question -> {
+                    GetQuestionsResponse.QuestionResponse clonedQuestion = new GetQuestionsResponse.QuestionResponse();
+                    BeanUtils.copyProperties(question, clonedQuestion);
+
+                    List<GetQuestionsResponse.AnswerResponse> clonedAnswers = question.getAnswers().stream()
+                            .map(answer -> {
+                                GetQuestionsResponse.AnswerResponse clonedAnswer = new GetQuestionsResponse.AnswerResponse();
+                                BeanUtils.copyProperties(answer, clonedAnswer);
+                                clonedAnswer.setSelected(false);  // Ensure all answers start as unselected
+                                return clonedAnswer;
+                            })
+                            .collect(Collectors.toList());
+
+                    clonedQuestion.setAnswers(clonedAnswers);
+                    return clonedQuestion;
+                })
+                .collect(Collectors.toList());
+    }
+
+    private void updateSelectedAnswers(List<GetQuestionsResponse.QuestionResponse> questionResponses,
+                                       List<StudentAnswersEntity> studentAnswersEntities,
+                                       String testResultId) {
+        for (GetQuestionsResponse.QuestionResponse questionResponse : questionResponses) {
+            for (GetQuestionsResponse.AnswerResponse answerResponse : questionResponse.getAnswers()) {
+                boolean isSelected = studentAnswersEntities.stream()
+                        .anyMatch(studentAnswer ->
+                                studentAnswer.getQuestionId().equals(questionResponse.getId()) &&
+                                        studentAnswer.getAnswerId().equals(answerResponse.getId()) &&
+                                        studentAnswer.getTestResultId().equals(testResultId)
+                        );
+
+                answerResponse.setSelected(isSelected);
+            }
+        }
+    }
 
 
 
@@ -603,7 +651,7 @@ public class TestService implements ITestService {
         studentAnswer.setAnswerId(answer.getId());
         studentAnswer.setQuestionId(questionId);
         studentAnswer.setStudentId(testResult.getStudentId());
-        studentAnswer.setTestResultId(testResult.getTestId());
+        studentAnswer.setTestResultId(testResult.getId());
         studentAnswer.setCreatedAt(String.valueOf(System.currentTimeMillis()));
         studentAnswer.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
         studentAnswer.setCorrect(answer.isCorrect());

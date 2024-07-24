@@ -34,4 +34,6 @@ public class CreateTestRequest {
     private String endAt;
     @NotBlank
     private String Status;
+    @NotBlank
+    private int attemptLimit;
 }

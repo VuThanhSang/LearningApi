@@ -3,6 +3,7 @@ package com.example.learning_api.service.core.Impl;
 import com.example.learning_api.dto.request.test.CreateTestResultRequest;
 import com.example.learning_api.dto.request.test.UpdateTestResultRequest;
 import com.example.learning_api.dto.response.test.StartTestResponse;
+import com.example.learning_api.entity.sql.database.TestEntity;
 import com.example.learning_api.entity.sql.database.TestResultEntity;
 import com.example.learning_api.repository.database.CourseRepository;
 import com.example.learning_api.repository.database.StudentRepository;
@@ -37,6 +38,11 @@ public class TestResultService implements ITestResultService {
                 throw new IllegalArgumentException("Student does not exist");
             }
             TestResultEntity testResultEntity = modelMapperService.mapClass(body, TestResultEntity.class);
+            TestEntity testEntity = testRepository.findById(body.getTestId()).orElseThrow(() -> new IllegalArgumentException("Test does not exist"));
+            int count = testResultRepository.countByStudentIdAndTestId(body.getStudentId(), body.getTestId());
+            if (count >= testEntity.getAttemptLimit()) {
+                throw new IllegalArgumentException("You have reached the limit of attempts");
+            }
             testResultEntity.setAttendedAt(String.valueOf(System.currentTimeMillis()));
             testResultEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
             testResultEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
@@ -46,6 +52,7 @@ public class TestResultService implements ITestResultService {
             startTestResponse.setStudentId(body.getStudentId());
             startTestResponse.setTestId(body.getTestId());
             startTestResponse.setTestResultId(testResultEntity.getId());
+            startTestResponse.setAttendedAt(testResultEntity.getAttendedAt());
             return startTestResponse;
 
         }
@@ -82,8 +89,8 @@ public class TestResultService implements ITestResultService {
     public void deleteTestResult(String studentId, String courseId) {
 
         try{
-            TestResultEntity testResultEntity = testResultRepository.findByStudentIdAndTestId(studentId, courseId);
-            testResultRepository.delete(testResultEntity);
+//            TestResultEntity testResultEntity = testResultRepository.findByStudentIdAndTestId(studentId, courseId);
+//            testResultRepository.delete(testResultEntity);
         }
         catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());

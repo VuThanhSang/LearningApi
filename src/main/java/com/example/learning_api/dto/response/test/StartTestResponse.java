@@ -6,6 +6,6 @@ import lombok.Data;
 public class StartTestResponse {
     private String testResultId;
     private String testId;
-    private String testType;
     private String studentId;
+    private String attendedAt;
 }

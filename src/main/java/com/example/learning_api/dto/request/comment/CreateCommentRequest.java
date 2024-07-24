@@ -1,8 +1,13 @@
 package com.example.learning_api.dto.request.comment;
 
 
+import com.example.learning_api.dto.common.SourceUploadDto;
+import com.example.learning_api.enums.FaqStatus;
+import com.example.learning_api.enums.RoleEnum;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+
+import java.util.List;
 
 @Data
 public class CreateCommentRequest {
@@ -11,7 +16,11 @@ public class CreateCommentRequest {
     @NotBlank
     private String userId;
     @NotBlank
+    private FaqStatus status;
+    @NotBlank
+    private RoleEnum role;
     private String content;
     private String parentId;
+    private List<SourceUploadDto> sources;
 
 }

@@ -19,4 +19,5 @@ public class UpdateTestRequest {
     private String endTime;
     private String showResultType;
     private String status;
+    private int attemptLimit;
 }
