@@ -14,6 +14,4 @@ public class CreateAnswerRequest {
     private String content;
     private boolean isCorrect;
     private MultipartFile source;
-    private String createdBy;
-    private String updatedBy;
 }

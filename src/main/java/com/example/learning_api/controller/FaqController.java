@@ -1,15 +1,17 @@
 package com.example.learning_api.controller;
 
 import com.example.learning_api.constant.StatusCode;
+import com.example.learning_api.dto.request.comment.CreateCommentRequest;
 import com.example.learning_api.dto.request.faq.CreateFaqRequest;
 import com.example.learning_api.dto.request.faq.UpdateFaqRequest;
 import com.example.learning_api.dto.response.comment.GetCommentByFaqResponse;
 import com.example.learning_api.model.ResponseAPI;
-import com.example.learning_api.service.core.ICommentService;
+import com.example.learning_api.service.core.IFaqCommentService;
 import com.example.learning_api.service.core.IFaqService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.thymeleaf.model.IComment;
@@ -24,9 +26,9 @@ import static com.example.learning_api.constant.RouterConstant.*;
 @RequestMapping(FAQ_BASE_PATH)
 public class FaqController {
     private final IFaqService faqService;
-    private final ICommentService commentService;
-    @PostMapping(path = "")
-    public ResponseEntity<ResponseAPI<String>> createFaq(@RequestBody @Valid CreateFaqRequest body) {
+    private final IFaqCommentService commentService;
+    @PostMapping(path = "",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ResponseAPI<String>> createFaq(@ModelAttribute @Valid CreateFaqRequest body) {
         try{
             faqService.createFaq(body);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
@@ -43,8 +45,8 @@ public class FaqController {
             return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
         }
     }
-    @PatchMapping(path = "/{faqId}")
-    public ResponseEntity<ResponseAPI<String>> updateFaq(@RequestBody @Valid UpdateFaqRequest body, @PathVariable String faqId) {
+    @PatchMapping(path = "/{faqId}",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ResponseAPI<String>> updateFaq(@ModelAttribute @Valid UpdateFaqRequest body, @PathVariable String faqId) {
         try{
             body.setId(faqId);
             faqService.updateFaq(body);
@@ -97,6 +99,27 @@ public class FaqController {
         }
         catch (Exception e){
             ResponseAPI<GetCommentByFaqResponse> res = ResponseAPI.<GetCommentByFaqResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
+
+    @PostMapping(path = "/{faqId}/comment",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ResponseAPI<String>> createComment(@PathVariable String faqId,@ModelAttribute @Valid CreateCommentRequest body) {
+        try{
+            body.setFaqId(faqId);
+            commentService.createComment(body);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message("Create comment successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.CREATED);
+        }
+        catch (Exception e){
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();

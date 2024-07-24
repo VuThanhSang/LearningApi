@@ -1,6 +1,6 @@
 package com.example.learning_api.dto.response.comment;
 
-import com.example.learning_api.entity.sql.database.CommentEntity;
+import com.example.learning_api.entity.sql.database.FaqCommentEntity;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -14,7 +14,7 @@ public class GetCommentByFaqResponse {
     private Long totalElements;
     private List<CommentResponse> comments;
 
-    public static GetCommentByFaqResponse fromCommentEntities(List<CommentEntity> commentEntities, int totalPage, long totalElements) {
+    public static GetCommentByFaqResponse fromCommentEntities(List<FaqCommentEntity> commentEntities, int totalPage, long totalElements) {
         GetCommentByFaqResponse response = new GetCommentByFaqResponse();
         response.setTotalPage(totalPage);
         response.setTotalElements(totalElements);
@@ -22,7 +22,7 @@ public class GetCommentByFaqResponse {
         Map<String, CommentResponse> commentMap = new HashMap<>();
         List<CommentResponse> rootComments = new ArrayList<>();
 
-        for (CommentEntity commentEntity : commentEntities) {
+        for (FaqCommentEntity commentEntity : commentEntities) {
             CommentResponse commentResponse = CommentResponse.formCommentEntity(commentEntity);
             commentMap.put(commentResponse.getId(), commentResponse);
 
@@ -50,7 +50,7 @@ public class GetCommentByFaqResponse {
         private String updatedAt;
         private List<CommentResponse> replies; // Thêm thuộc tính để lưu trữ các comment con
 
-        public static CommentResponse formCommentEntity(CommentEntity commentEntity) {
+        public static CommentResponse formCommentEntity(FaqCommentEntity commentEntity) {
             CommentResponse commentResponse = new CommentResponse();
             commentResponse.setId(commentEntity.getId());
             commentResponse.setFaqId(commentEntity.getFaqId());

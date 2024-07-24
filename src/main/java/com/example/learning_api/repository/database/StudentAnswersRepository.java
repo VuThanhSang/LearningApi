@@ -23,6 +23,9 @@ public interface StudentAnswersRepository extends MongoRepository<StudentAnswers
     })
     List<QuestionAnswersDTO> getStudentAnswers(String studentId, String testResultId);
 
+
+    @Query("{ studentId: ?0, testResultId: { $in: ?1 } }")
+    List<StudentAnswersEntity> findByStudentIdAndTestResultIdIn(String studentId, List<String> testResultIds);
     @Query("{ studentId: ?0, testResultId: ?1 }")
     List<StudentAnswersEntity> findByStudentIdAndTestResultId(String studentId, String testResultId);
 }

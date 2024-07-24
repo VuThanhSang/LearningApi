@@ -1,5 +1,6 @@
 package com.example.learning_api.entity.sql.database;
 
+import com.example.learning_api.enums.TestState;
 import jakarta.persistence.Id;
 import lombok.Builder;
 import lombok.Data;
@@ -19,6 +20,7 @@ public class TestResultEntity {
     private String testId;
     private boolean isPassed;
     private String attendedAt;
+    private TestState state;
     private String createdAt;
     private String updatedAt;
 

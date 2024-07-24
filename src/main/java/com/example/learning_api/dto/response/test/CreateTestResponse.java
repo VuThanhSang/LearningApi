@@ -16,6 +16,7 @@ public class CreateTestResponse {
     private String classroomId;
     private String showResultType;
     private String status;
+    private int attemptLimit;
     private String createdAt;
     private String updatedAt;
 }

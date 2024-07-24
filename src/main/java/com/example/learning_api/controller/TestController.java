@@ -2,6 +2,7 @@ package com.example.learning_api.controller;
 
 import com.example.learning_api.constant.StatusCode;
 import com.example.learning_api.dto.request.test.*;
+import com.example.learning_api.dto.response.question.GetQuestionsResponse;
 import com.example.learning_api.dto.response.teacher.GetTeachersResponse;
 import com.example.learning_api.dto.response.test.*;
 import com.example.learning_api.model.ResponseAPI;
@@ -16,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
+import java.util.List;
 
 import static com.example.learning_api.constant.RouterConstant.*;
 
@@ -292,6 +294,46 @@ public class TestController {
 
     }
 
+    @PostMapping(path = "/save-progress")
+    public ResponseEntity<ResponseAPI<String>> saveProgress(@RequestBody @Valid SaveProgressRequest body) {
+        try{
+            testResultService.saveProgress(body);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message("Save progress successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.CREATED);
+        }
+        catch (Exception e){
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
+
+    @GetMapping(path = "/progress/{testResultId}")
+    public ResponseEntity<ResponseAPI<List<GetQuestionsResponse.QuestionResponse>>> getProgress(@PathVariable String testResultId) {
+        try{
+            List<GetQuestionsResponse.QuestionResponse> resData = testService.getProgress(testResultId);
+            ResponseAPI<List<GetQuestionsResponse.QuestionResponse>> res = ResponseAPI.<List<GetQuestionsResponse.QuestionResponse>>builder()
+                    .timestamp(new Date())
+                    .message("Get progress successfully")
+                    .data(resData)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<List<GetQuestionsResponse.QuestionResponse>> res = ResponseAPI.<List<GetQuestionsResponse.QuestionResponse>>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
     @PatchMapping(path = "/result/{testResultId}")
     public ResponseEntity<ResponseAPI<String>> updateTestResult(@RequestBody @Valid UpdateTestResultRequest body, @PathVariable String testResultId) {
         try{
@@ -334,10 +376,10 @@ public class TestController {
     }
 
     @GetMapping(path = "/result/{studentId}/{testId}")
-    public ResponseEntity<ResponseAPI<TestResultResponse>> getTestResult(@PathVariable String studentId, @PathVariable String testId) {
+    public ResponseEntity<ResponseAPI<List<TestResultResponse>>> getTestResult(@PathVariable String studentId, @PathVariable String testId) {
         try{
-            TestResultResponse resData = testService.getTestResult(studentId, testId);
-            ResponseAPI<TestResultResponse> res = ResponseAPI.<TestResultResponse>builder()
+            List<TestResultResponse> resData = testService.getTestResult(studentId, testId);
+            ResponseAPI<List<TestResultResponse>> res = ResponseAPI.<List<TestResultResponse>>builder()
                     .timestamp(new Date())
                     .message("Get test result successfully")
                     .data(resData)
@@ -345,7 +387,7 @@ public class TestController {
             return new ResponseEntity<>(res, StatusCode.OK);
         }
         catch (Exception e){
-            ResponseAPI<TestResultResponse> res = ResponseAPI.<TestResultResponse>builder()
+            ResponseAPI<List<TestResultResponse>> res = ResponseAPI.<List<TestResultResponse>>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();
