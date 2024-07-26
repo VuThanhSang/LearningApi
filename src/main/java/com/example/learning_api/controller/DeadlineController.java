@@ -269,6 +269,30 @@ public class DeadlineController {
         }
 
     }
+    @GetMapping(path = "/{deadlineId}/submissions/student/{studentId}")
+    public ResponseEntity<ResponseAPI<GetDeadlineSubmissionsResponse>> getDeadlineSubmissionsByStudentId(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @PathVariable String deadlineId,
+            @PathVariable String studentId)  {
+        try{
+            GetDeadlineSubmissionsResponse data =  deadlineSubmissionsService.GetDeadlineSubmissionsByStudentId(studentId,deadlineId, page-1, size);
+            ResponseAPI<GetDeadlineSubmissionsResponse> res = ResponseAPI.<GetDeadlineSubmissionsResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get deadline submissions by studentId successfully")
+                    .data(data)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetDeadlineSubmissionsResponse> res = ResponseAPI.<GetDeadlineSubmissionsResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
 
     @GetMapping(path = "/{deadlineId}/submissions")
     public ResponseEntity<ResponseAPI<GetDeadlineSubmissionsResponse>> getDeadlineSubmissionsByDeadlineId(
