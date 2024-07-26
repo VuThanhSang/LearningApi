@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -50,8 +51,8 @@ public class FaqCommentService implements IFaqCommentService {
                 processSources(body.getSources(),body.getContent(), commentEntity);
             }
 
-            commentEntity.setCreatedAt(new Date());
-            commentEntity.setUpdatedAt(new Date());
+            commentEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+            commentEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             commentRepository.save(commentEntity);
         } catch (Exception e) {
             log.error(e.getMessage());
@@ -149,18 +150,20 @@ public class FaqCommentService implements IFaqCommentService {
             if (body.getContent()!=null)
                 commentEntity.setContent(body.getContent());
             if (commentEntity.getSources()!=null){
-                if (body.getSources().size()>0){
+                if (body.getSources()!=null && body.getSources().size()>0){
                     commentEntity.getSources().clear();
                     processSources(body.getSources(),body.getContent(), commentEntity);
                 }
             }
             else{
-                if (body.getSources().size()>0){
-                    commentEntity.setSources(new ArrayList<>());
-                    processSources(body.getSources(),body.getContent(), commentEntity);
+                if (body.getSources()!=null ){
+                    if ( body.getSources().size()>0){
+                        commentEntity.setSources(new ArrayList<>());
+                        processSources(body.getSources(),body.getContent(), commentEntity);
+                    }
                 }
             }
-            commentEntity.setUpdatedAt(new Date());
+            commentEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             commentRepository.save(commentEntity);
         }
         catch (Exception e){
@@ -186,10 +189,60 @@ public class FaqCommentService implements IFaqCommentService {
     public GetCommentByFaqResponse getCommentByFaqId(int page, int size, String faqId) {
         try {
             Pageable pageable = PageRequest.of(page, size);
-            Page<FaqCommentEntity> commentEntitiesPage = commentRepository.findByFaqId(faqId, pageable);
-            List<FaqCommentEntity> commentEntities = commentEntitiesPage.getContent();
+            Slice<GetCommentByFaqResponse.CommentResponse> commentEntitiesPage = commentRepository.findRootCommentsByFaqIdWithReplies(faqId, pageable);
+            List<GetCommentByFaqResponse.CommentResponse> commentEntities = commentEntitiesPage.getContent();
+            GetCommentByFaqResponse response = new GetCommentByFaqResponse();
+            List<GetCommentByFaqResponse.CommentResponse> commentResponses = new ArrayList<>();
+            for (GetCommentByFaqResponse.CommentResponse commentEntity : commentEntities) {
+                GetCommentByFaqResponse.CommentResponse commentResponse = new GetCommentByFaqResponse.CommentResponse();
+                commentResponse.setId(commentEntity.getId());
+                commentResponse.setFaqId(commentEntity.getFaqId());
+                commentResponse.setUserId(commentEntity.getUserId());
+                commentResponse.setContent(commentEntity.getContent());
+                commentResponse.setParentId(commentEntity.getParentId());
+                commentResponse.setCreatedAt(commentEntity.getCreatedAt().toString());
+                commentResponse.setUpdatedAt(commentEntity.getUpdatedAt().toString());
+                commentResponse.setReplies(commentEntity.getReplies());
+                commentResponses.add(commentResponse);
+            }
+            response.setComments(commentResponses);
+            response.setTotalElements((long) commentEntitiesPage.getNumberOfElements());
+            response.setTotalPage(
+                    (int) Math.ceil((double) commentEntitiesPage.getNumberOfElements() / commentEntitiesPage.getSize())
+            );
+            return response;
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
 
-            return GetCommentByFaqResponse.fromCommentEntities(commentEntities, commentEntitiesPage.getTotalPages(), commentEntitiesPage.getTotalElements());
+    @Override
+    public GetCommentByFaqResponse getRepliesByParentId(int page, int size, String parentId) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Slice<GetCommentByFaqResponse.CommentResponse> commentEntitiesPage = commentRepository.findRepliesByParentId(parentId, pageable);
+            List<GetCommentByFaqResponse.CommentResponse> commentEntities = commentEntitiesPage.getContent();
+            GetCommentByFaqResponse response = new GetCommentByFaqResponse();
+            List<GetCommentByFaqResponse.CommentResponse> commentResponses = new ArrayList<>();
+            for (GetCommentByFaqResponse.CommentResponse commentEntity : commentEntities) {
+                GetCommentByFaqResponse.CommentResponse commentResponse = new GetCommentByFaqResponse.CommentResponse();
+                commentResponse.setId(commentEntity.getId());
+                commentResponse.setFaqId(commentEntity.getFaqId());
+                commentResponse.setUserId(commentEntity.getUserId());
+                commentResponse.setContent(commentEntity.getContent());
+                commentResponse.setParentId(commentEntity.getParentId());
+                commentResponse.setCreatedAt(commentEntity.getCreatedAt().toString());
+                commentResponse.setUpdatedAt(commentEntity.getUpdatedAt().toString());
+                commentResponse.setReplies(commentEntity.getReplies());
+                commentResponses.add(commentResponse);
+            }
+            response.setComments(commentResponses);
+            response.setTotalElements((long) commentEntitiesPage.getNumberOfElements());
+            response.setTotalPage(
+                    (int) Math.ceil((double) commentEntitiesPage.getNumberOfElements() / commentEntitiesPage.getSize())
+            );
+            return response;
         } catch (Exception e) {
             log.error(e.getMessage());
             throw new IllegalArgumentException(e.getMessage());

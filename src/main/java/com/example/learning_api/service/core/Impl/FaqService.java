@@ -64,8 +64,8 @@ public class FaqService implements IFaqService {
     private FAQEntity createFaqEntity(CreateFaqRequest request) {
         FAQEntity faqEntity = modelMapperService.mapClass(request, FAQEntity.class);
         faqEntity.setStatus(request.getStatus() == null ? FaqStatus.DRAFT : FaqStatus.valueOf(request.getStatus()));
-        faqEntity.setCreatedAt(new Date());
-        faqEntity.setUpdatedAt(new Date());
+        faqEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+        faqEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
         return faqEntity;
     }
 
@@ -139,7 +139,7 @@ public class FaqService implements IFaqService {
                 faqEntity.getSources().clear();
                 processSources(updateFaqRequest.getSources(),updateFaqRequest.getQuestion(), faqEntity);
             }
-            faqEntity.setUpdatedAt(new Date());
+            faqEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             faqRepository.save(faqEntity);
         } catch (Exception e) {
             log.error(e.getMessage());
