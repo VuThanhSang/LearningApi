@@ -9,4 +9,5 @@ public interface IFaqCommentService {
     void updateComment(UpdateCommentRequest body);
     void deleteComment(String commentId);
     GetCommentByFaqResponse getCommentByFaqId(int page, int size, String faqId);
+    GetCommentByFaqResponse getRepliesByParentId(int page, int size, String parentId);
 }

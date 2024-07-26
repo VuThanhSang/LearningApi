@@ -2,6 +2,7 @@ package com.example.learning_api.controller;
 
 import com.example.learning_api.constant.StatusCode;
 import com.example.learning_api.dto.request.comment.CreateCommentRequest;
+import com.example.learning_api.dto.request.comment.UpdateCommentRequest;
 import com.example.learning_api.dto.request.faq.CreateFaqRequest;
 import com.example.learning_api.dto.request.faq.UpdateFaqRequest;
 import com.example.learning_api.dto.response.comment.GetCommentByFaqResponse;
@@ -126,4 +127,66 @@ public class FaqController {
             return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
         }
     }
+
+    @PatchMapping(path = "/comment/{commentId}",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ResponseAPI<String>> updateComment(@ModelAttribute @Valid UpdateCommentRequest body, @PathVariable String commentId) {
+        try{
+            body.setId(commentId);
+            commentService.updateComment(body);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message("Update comment successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
+    @DeleteMapping(path = "/comment/{commentId}")
+    public ResponseEntity<ResponseAPI<String>> deleteComment(@PathVariable String commentId) {
+        try{
+            commentService.deleteComment(commentId);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message("Delete comment successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping(path = "/comment/{commentId}/replies")
+    public ResponseEntity<ResponseAPI<GetCommentByFaqResponse>> getRepliesByParentId(@PathVariable String commentId,
+                                                                                     @RequestParam(name="page",required = false,defaultValue = "1") int page,
+                                                                                     @RequestParam(name="size",required = false,defaultValue = "10") int size) {
+        try{
+            GetCommentByFaqResponse data = commentService.getRepliesByParentId( page-1, size,commentId);
+            ResponseAPI<GetCommentByFaqResponse> res = ResponseAPI.<GetCommentByFaqResponse>builder()
+                    .timestamp(new Date())
+                    .data(data)
+                    .message("Get replies by parent id successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetCommentByFaqResponse> res = ResponseAPI.<GetCommentByFaqResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
 }

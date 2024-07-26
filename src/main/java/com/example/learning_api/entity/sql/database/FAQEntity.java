@@ -21,8 +21,8 @@ public class FAQEntity {
     private String userId;
     private FaqStatus status;
     private List<SourceDto> sources;
-    private Date createdAt;
-    private Date updatedAt;
+    private String createdAt;
+    private String updatedAt;
     @Data
     public static class SourceDto {
         private FaqSourceType type;

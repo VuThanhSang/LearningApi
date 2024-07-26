@@ -23,8 +23,8 @@ public class FaqCommentEntity {
     private FaqStatus status;
     private RoleEnum role;
     private List<SourceDto> sources;
-    private Date createdAt;
-    private Date updatedAt;
+    private String createdAt;
+    private String updatedAt;
     @Data
     public static class SourceDto {
         private FaqSourceType type;

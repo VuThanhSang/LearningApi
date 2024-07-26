@@ -14,31 +14,6 @@ public class GetCommentByFaqResponse {
     private Long totalElements;
     private List<CommentResponse> comments;
 
-    public static GetCommentByFaqResponse fromCommentEntities(List<FaqCommentEntity> commentEntities, int totalPage, long totalElements) {
-        GetCommentByFaqResponse response = new GetCommentByFaqResponse();
-        response.setTotalPage(totalPage);
-        response.setTotalElements(totalElements);
-
-        Map<String, CommentResponse> commentMap = new HashMap<>();
-        List<CommentResponse> rootComments = new ArrayList<>();
-
-        for (FaqCommentEntity commentEntity : commentEntities) {
-            CommentResponse commentResponse = CommentResponse.formCommentEntity(commentEntity);
-            commentMap.put(commentResponse.getId(), commentResponse);
-
-            if (commentResponse.getParentId() == null || commentResponse.getParentId().isEmpty()) {
-                rootComments.add(commentResponse);
-            } else {
-                CommentResponse parentComment = commentMap.get(commentResponse.getParentId());
-                if (parentComment != null) {
-                    parentComment.getReplies().add(commentResponse);
-                }
-            }
-        }
-
-        response.setComments(rootComments);
-        return response;
-    }
     @Data
     public static class CommentResponse {
         private String id;
@@ -48,8 +23,8 @@ public class GetCommentByFaqResponse {
         private String parentId;
         private String createdAt;
         private String updatedAt;
-        private List<CommentResponse> replies; // Thêm thuộc tính để lưu trữ các comment con
-
+//        private List<CommentResponse> replies; // Thêm thuộc tính để lưu trữ các comment con
+        private int replies;
         public static CommentResponse formCommentEntity(FaqCommentEntity commentEntity) {
             CommentResponse commentResponse = new CommentResponse();
             commentResponse.setId(commentEntity.getId());
@@ -59,7 +34,6 @@ public class GetCommentByFaqResponse {
             commentResponse.setParentId(commentEntity.getParentId());
             commentResponse.setCreatedAt(commentEntity.getCreatedAt().toString());
             commentResponse.setUpdatedAt(commentEntity.getUpdatedAt().toString());
-            commentResponse.setReplies(new ArrayList<>()); // Khởi tạo danh sách replies rỗng
             return commentResponse;
         }
     }
