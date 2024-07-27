@@ -8,4 +8,8 @@ import org.springframework.data.mongodb.repository.Query;
 public interface DiscussionRepository extends MongoRepository<DiscussionEntity, String> {
     @Query("{'title': {$regex: ?0, $options: 'i'}}")
     Page<DiscussionEntity> findAllByTitleContaining(String title, org.springframework.data.domain.Pageable pageable);
+    Page<DiscussionEntity> findByAuthorId(String authorId, org.springframework.data.domain.Pageable pageable);
+    @Query("{'tags': {$regex: ?0, $options: 'i'}}")
+    Page<DiscussionEntity> findByTagsContaining(String tag, org.springframework.data.domain.Pageable pageable);
+
 }

@@ -1,7 +1,10 @@
 package com.example.learning_api.dto.request.discussion;
 
+import com.example.learning_api.dto.common.SourceUploadDto;
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Data
 public class UpdateDiscussionCommentRequest {
@@ -11,6 +14,6 @@ public class UpdateDiscussionCommentRequest {
     private int downvote;
     private int replyCount;
     private String status;
-    private MultipartFile source;
+    private List<SourceUploadDto> sources;
 
 }

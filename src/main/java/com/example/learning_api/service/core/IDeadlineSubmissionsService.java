@@ -11,4 +11,5 @@ public interface IDeadlineSubmissionsService {
     void DeleteDeadlineSubmissions(String id);
     DeadlineSubmissionsEntity GetDeadlineSubmissions(String id);
     GetDeadlineSubmissionsResponse GetDeadlineSubmissionsByDeadlineId(String deadlineId, Integer page, Integer size);
+    GetDeadlineSubmissionsResponse GetDeadlineSubmissionsByStudentId(String studentId,String deadlineId, Integer page, Integer size);
 }

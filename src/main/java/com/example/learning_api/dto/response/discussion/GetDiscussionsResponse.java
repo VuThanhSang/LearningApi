@@ -19,7 +19,9 @@ public class GetDiscussionsResponse {
         private int upvote;
         private int downvote;
         private int commentCount;
+        private List<DiscussionEntity.SourceDto> sources;
         private String status;
+        private List<String> tags;
         private String createdAt;
         private String updatedAt;
         public static DiscussionResponse formDiscussionEntity(DiscussionEntity discussionEntity){

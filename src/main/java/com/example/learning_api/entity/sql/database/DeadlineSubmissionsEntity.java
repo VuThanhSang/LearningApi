@@ -1,12 +1,15 @@
 package com.example.learning_api.entity.sql.database;
 
+import com.example.learning_api.dto.common.FileDto;
 import com.example.learning_api.enums.DeadlineSubmissionStatus;
 import jakarta.persistence.Id;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.io.File;
 import java.util.Date;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -17,11 +20,11 @@ public class DeadlineSubmissionsEntity {
     private String title;
     private String deadlineId;
     private String studentId;
-    private String attachment;
+    private List<FileDto> attachments;
     private String submission;
     private String grade;
     private String feedback;
     private DeadlineSubmissionStatus status;
-    private Date createdAt;
-    private Date updatedAt;
+    private String createdAt;
+    private String updatedAt;
 }

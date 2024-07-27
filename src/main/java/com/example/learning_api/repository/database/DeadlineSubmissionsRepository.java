@@ -6,4 +6,5 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface DeadlineSubmissionsRepository extends MongoRepository<DeadlineSubmissionsEntity, String> {
     Page<DeadlineSubmissionsEntity> findAllByDeadlineId(String deadlineId, org.springframework.data.domain.Pageable pageable);
+    Page<DeadlineSubmissionsEntity> findAllByStudentIdAndDeadlineId(String studentId,String deadlineId , org.springframework.data.domain.Pageable pageable);
 }

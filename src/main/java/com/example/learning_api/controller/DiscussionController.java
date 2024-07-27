@@ -5,6 +5,7 @@ import com.example.learning_api.dto.request.discussion.CreateDiscussionRequest;
 import com.example.learning_api.dto.request.discussion.UpdateDiscussionCommentRequest;
 import com.example.learning_api.dto.request.discussion.UpdateDiscussionRequest;
 import com.example.learning_api.dto.response.answer.CreateAnswerResponse;
+import com.example.learning_api.dto.response.discussion.GetDiscussionCommentResponse;
 import com.example.learning_api.dto.response.discussion.GetDiscussionDetailResponse;
 import com.example.learning_api.dto.response.discussion.GetDiscussionsResponse;
 import com.example.learning_api.model.ResponseAPI;
@@ -74,6 +75,39 @@ public class DiscussionController {
         }
     }
 
+    @PostMapping(path = "/{discussionId}/upvote")
+    public ResponseEntity<ResponseAPI<String>> upvoteDiscussion(@PathVariable String discussionId) {
+        try{
+            discussionService.upvoteDiscussion(discussionId);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .message("Upvote discussion successfully")
+                    .build();
+            return ResponseEntity.ok(res);
+        }
+        catch (Exception e){
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .message(e.getMessage())
+                    .build();
+            return ResponseEntity.badRequest().body(res);
+        }
+    }
+    @PostMapping(path = "/{discussionId}/downvote")
+    public ResponseEntity<ResponseAPI<String>> downvoteDiscussion(@PathVariable String discussionId) {
+        try{
+            discussionService.downvoteDiscussion(discussionId);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .message("Downvote discussion successfully")
+                    .build();
+            return ResponseEntity.ok(res);
+        }
+        catch (Exception e){
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .message(e.getMessage())
+                    .build();
+            return ResponseEntity.badRequest().body(res);
+        }
+    }
+
     @GetMapping(path = "")
     public ResponseEntity<ResponseAPI<GetDiscussionsResponse>> getDiscussion(
             @RequestParam(name="name",required = false,defaultValue = "") String search,
@@ -84,6 +118,45 @@ public class DiscussionController {
             GetDiscussionsResponse data = discussionService.getDiscussions(page-1, size, search);
             ResponseAPI<GetDiscussionsResponse> res = ResponseAPI.<GetDiscussionsResponse>builder()
                     .message("Get discussion successfully")
+                    .data(data)
+                    .build();
+            return ResponseEntity.ok(res);
+        }
+        catch (Exception e){
+            ResponseAPI<GetDiscussionsResponse> res = ResponseAPI.<GetDiscussionsResponse>builder()
+                    .message(e.getMessage())
+                    .build();
+            return ResponseEntity.badRequest().body(res);
+        }
+    }
+    @GetMapping(path = "/author/{authorId}")
+    public ResponseEntity<ResponseAPI<GetDiscussionsResponse>> getDiscussionByAuthor(@PathVariable String authorId,
+                                                                                     @RequestParam(name="page",required = false,defaultValue = "1") int page,
+                                                                                     @RequestParam(name="size",required = false,defaultValue = "10") int size) {
+        try{
+            GetDiscussionsResponse data = discussionService.getDiscussionByAuthor(authorId, page-1, size);
+            ResponseAPI<GetDiscussionsResponse> res = ResponseAPI.<GetDiscussionsResponse>builder()
+                    .message("Get discussion by author successfully")
+                    .data(data)
+                    .build();
+            return ResponseEntity.ok(res);
+        }
+        catch (Exception e){
+            ResponseAPI<GetDiscussionsResponse> res = ResponseAPI.<GetDiscussionsResponse>builder()
+                    .message(e.getMessage())
+                    .build();
+            return ResponseEntity.badRequest().body(res);
+        }
+    }
+
+    @GetMapping(path = "/tag")
+    public ResponseEntity<ResponseAPI<GetDiscussionsResponse>> getDiscussionByTag(@RequestParam(name="search",required = false,defaultValue = "") String tag,
+                                                                                  @RequestParam(name="page",required = false,defaultValue = "1") int page,
+                                                                                  @RequestParam(name="size",required = false,defaultValue = "10") int size) {
+        try{
+            GetDiscussionsResponse data = discussionService.getDiscussionByTag(tag, page-1, size);
+            ResponseAPI<GetDiscussionsResponse> res = ResponseAPI.<GetDiscussionsResponse>builder()
+                    .message("Get discussion by tag successfully")
                     .data(data)
                     .build();
             return ResponseEntity.ok(res);
@@ -112,6 +185,7 @@ public class DiscussionController {
             return ResponseEntity.badRequest().body(res);
         }
     }
+
 
 
     @PostMapping(path= "/comment", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -160,6 +234,26 @@ public class DiscussionController {
         }
         catch (Exception e){
             ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .message(e.getMessage())
+                    .build();
+            return ResponseEntity.badRequest().body(res);
+        }
+    }
+
+    @GetMapping(path = "/comment/reply/{parentId}")
+    public ResponseEntity<ResponseAPI<GetDiscussionCommentResponse>> getReplyComments(@PathVariable String parentId,
+                                                                                      @RequestParam(name="page",required = false,defaultValue = "1") int page,
+                                                                                      @RequestParam(name="size",required = false,defaultValue = "10") int size) {
+        try{
+            GetDiscussionCommentResponse data = discussionService.getReplyComments(parentId, page-1, size);
+            ResponseAPI<GetDiscussionCommentResponse> res = ResponseAPI.<GetDiscussionCommentResponse>builder()
+                    .message("Get reply comments successfully")
+                    .data(data)
+                    .build();
+            return ResponseEntity.ok(res);
+        }
+        catch (Exception e){
+            ResponseAPI<GetDiscussionCommentResponse> res = ResponseAPI.<GetDiscussionCommentResponse>builder()
                     .message(e.getMessage())
                     .build();
             return ResponseEntity.badRequest().body(res);
