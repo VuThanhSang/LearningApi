@@ -38,8 +38,7 @@ public class FaqService implements IFaqService {
         validateRequest(request);
         FAQEntity faqEntity = createFaqEntity(request);
         faqEntity.setSources(new ArrayList<>());
-        if (request.getSources().size()>0)
-            processSources(request.getSources(),request.getQuestion(), faqEntity);
+        processSources(request.getSources(),request.getQuestion(), faqEntity);
         saveFaqEntity(faqEntity);
     }
 
@@ -135,7 +134,7 @@ public class FaqService implements IFaqService {
                 faqEntity.setQuestion(updateFaqRequest.getQuestion());
             if (updateFaqRequest.getStatus() != null)
                 faqEntity.setStatus(FaqStatus.valueOf(updateFaqRequest.getStatus()));
-            if (updateFaqRequest.getSources().size() > 0){
+            if (updateFaqRequest.getSources()!=null){
                 faqEntity.getSources().clear();
                 processSources(updateFaqRequest.getSources(),updateFaqRequest.getQuestion(), faqEntity);
             }

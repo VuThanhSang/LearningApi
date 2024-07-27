@@ -2,6 +2,8 @@ package com.example.learning_api.service.core.Impl;
 
 import com.example.learning_api.dto.request.term.CreateTermRequest;
 import com.example.learning_api.entity.sql.database.TermsEntity;
+import com.example.learning_api.repository.database.AcademicYearsRepository;
+import com.example.learning_api.repository.database.MajorsRepository;
 import com.example.learning_api.repository.database.TermsRepository;
 import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.ITermsService;
@@ -17,10 +19,23 @@ import java.text.SimpleDateFormat;
 public class TermService implements ITermsService {
     private final TermsRepository termsRepository;
     private final ModelMapperService modelMapperService;
-
+    private final MajorsRepository majorsRepository;
+    private final AcademicYearsRepository academicYearRepository;
     @Override
     public void addTerm(CreateTermRequest body) {
         try {
+            if (body.getMajorId()==null){
+                throw new RuntimeException("MajorId is required");
+            }
+            if (body.getAcademicYearId()==null){
+                throw new RuntimeException("AcademicYearId is required");
+            }
+            if (majorsRepository.findById(body.getMajorId()).isEmpty()){
+                throw new RuntimeException("MajorId not found");
+            }
+            if (academicYearRepository.findById(body.getAcademicYearId()).isEmpty()){
+                throw new RuntimeException("AcademicYearId not found");
+            }
             TermsEntity termsEntity = modelMapperService.mapClass(body, TermsEntity.class);
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
             termsEntity.setStartDate(formatter.parse(body.getStartDate()));

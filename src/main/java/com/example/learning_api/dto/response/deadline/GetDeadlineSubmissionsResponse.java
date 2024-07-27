@@ -37,8 +37,6 @@ public class GetDeadlineSubmissionsResponse {
             deadlineSubmissionResponse.setGrade(deadlineSubmissionEntity.getGrade());
             deadlineSubmissionResponse.setFeedback(deadlineSubmissionEntity.getFeedback());
             deadlineSubmissionResponse.setStatus(String.valueOf(deadlineSubmissionEntity.getStatus()));
-            deadlineSubmissionResponse.setCreatedAt(deadlineSubmissionEntity.getCreatedAt());
-            deadlineSubmissionResponse.setUpdatedAt(deadlineSubmissionEntity.getUpdatedAt());
             return deadlineSubmissionResponse;
         }
     }
