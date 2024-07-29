@@ -57,8 +57,8 @@ public class AnswerService implements IAnswerService {
                 );
                 answerEntity.setSource(imageUploaded.getUrl());
             }
-            answerEntity.setCreatedAt(new Date());
-            answerEntity.setUpdatedAt(new Date());
+            answerEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+            answerEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             answerRepository.save(answerEntity);
             resData.setQuestionId(body.getQuestionId());
             resData.setCreatedAt(answerEntity.getCreatedAt().toString());
@@ -101,7 +101,7 @@ public class AnswerService implements IAnswerService {
                 );
                 answerEntity.setSource(imageUploaded.getUrl());
               }
-              answerEntity.setUpdatedAt(new Date());
+              answerEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
               answerRepository.save(answerEntity);
          }
          catch (Exception e){

@@ -30,7 +30,7 @@ public class TestEntity {
     private String endTime;
     private TestStatus status;
     private Integer attemptLimit;
-    private Date createdAt;
-    private Date updatedAt;
+    private String createdAt;
+    private String updatedAt;
 
 }

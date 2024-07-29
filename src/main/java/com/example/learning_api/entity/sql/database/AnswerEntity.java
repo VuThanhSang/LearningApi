@@ -20,6 +20,6 @@ public class AnswerEntity {
     private boolean isCorrect;
     private String questionId;
     private String source;
-    private Date createdAt;
-    private Date updatedAt;
+    private String createdAt;
+    private String updatedAt;
 }
