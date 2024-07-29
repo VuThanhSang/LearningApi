@@ -45,6 +45,9 @@ public class TestResultService implements ITestResultService {
             TestResultEntity testResultEntity = modelMapperService.mapClass(body, TestResultEntity.class);
             TestEntity testEntity = testRepository.findById(body.getTestId()).orElseThrow(() -> new IllegalArgumentException("Test does not exist"));
             int count = testResultRepository.countByStudentIdAndTestId(body.getStudentId(), body.getTestId());
+            if (testEntity.getAttemptLimit()==null){
+                testEntity.setAttemptLimit(1);
+            }
             if (count >= testEntity.getAttemptLimit()) {
                 throw new IllegalArgumentException("You have reached the limit of attempts");
             }

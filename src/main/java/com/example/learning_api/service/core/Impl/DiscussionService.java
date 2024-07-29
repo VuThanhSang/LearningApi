@@ -296,7 +296,8 @@ public class DiscussionService implements IDiscussionService {
                 discussionResponse.setSources(discussionEntity.getSources());
                 discussionResponse.setTags(discussionEntity.getTags());
                 discussionResponse.setUpvote(voteRepository.countUpvoteByDiscussionId(discussionEntity.getId()));
-                discussionResponse.setDownvote(voteRepository.countDownvoteByDiscussionId(discussionEntity.getId()));
+                discussionResponse.setDownvote(voteRepository.countDownvoteByDiscussionId(discussionEntity.getId())); .
+
                 data.add(discussionResponse);
             });
             getDiscussionsResponse.setDiscussions(data);
