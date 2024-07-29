@@ -21,6 +21,7 @@ public class GetTestInProgress {
         private String startTime;
         private String endTime;
         private String showResultType;
+        private int attemptLimit;
         private String teacherId;
         private String createdAt;
         private String updatedAt;

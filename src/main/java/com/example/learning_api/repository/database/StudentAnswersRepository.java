@@ -12,6 +12,7 @@ import java.util.List;
 public interface StudentAnswersRepository extends MongoRepository<StudentAnswersEntity, String> {
     void deleteByQuestionId(String questionId);
     void deleteByStudentId(String studentId);
+    void deleteByTestResultId(String testResultId);
     @Query("{ studentId: ?0, testResultId: ?1, questionId: ?2 , answerId: ?3}")
     StudentAnswersEntity findByStudentIdAndTestResultIdAndQuestionIdAndAnswerId(String studentId, String testResultId, String questionId, String answerId);
     @Aggregation(pipeline = {
@@ -26,6 +27,6 @@ public interface StudentAnswersRepository extends MongoRepository<StudentAnswers
 
     @Query("{ studentId: ?0, testResultId: { $in: ?1 } }")
     List<StudentAnswersEntity> findByStudentIdAndTestResultIdIn(String studentId, List<String> testResultIds);
-    @Query("{ studentId: ?0, testResultId: ?1 }")
+    @Query("{ studentId: ?0, testResultId: ?1, }")
     List<StudentAnswersEntity> findByStudentIdAndTestResultId(String studentId, String testResultId);
 }

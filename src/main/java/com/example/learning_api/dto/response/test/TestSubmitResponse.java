@@ -20,6 +20,7 @@ public class TestSubmitResponse {
     private String testType;
     private boolean isPassed;
     private String attendedAt;
+    private String finishedAt;
     private List<QuestionResponse> questions;
     @Data
     public static class QuestionResponse {
