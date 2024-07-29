@@ -1,12 +1,11 @@
 package com.example.learning_api.controller;
 
-import com.example.learning_api.dto.request.discussion.*;
-import com.example.learning_api.dto.response.answer.CreateAnswerResponse;
-import com.example.learning_api.dto.response.discussion.GetDiscussionCommentResponse;
-import com.example.learning_api.dto.response.discussion.GetDiscussionDetailResponse;
-import com.example.learning_api.dto.response.discussion.GetDiscussionsResponse;
+import com.example.learning_api.dto.request.forum.*;
+import com.example.learning_api.dto.response.forum.GetForumCommentResponse;
+import com.example.learning_api.dto.response.forum.GetForumDetailResponse;
+import com.example.learning_api.dto.response.forum.GetForumsResponse;
 import com.example.learning_api.model.ResponseAPI;
-import com.example.learning_api.service.core.IDiscussionService;
+import com.example.learning_api.service.core.IForumService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,16 +16,16 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping("/api/v1/discussion")
-public class DiscussionController {
-    private final IDiscussionService discussionService;
+@RequestMapping("/api/v1/forum")
+public class ForumController {
+    private final IForumService forumService;
 
     @PostMapping(path = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ResponseAPI<String>> createDiscussion(@ModelAttribute @Valid CreateDiscussionRequest body) {
+    public ResponseEntity<ResponseAPI<String>> createForum(@ModelAttribute @Valid CreateForumRequest body) {
         try{
-            discussionService.createDiscussion(body);
+            forumService.createForum(body);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
-                    .message("Create discussion successfully")
+                    .message("Create forum successfully")
                     .build();
             return ResponseEntity.ok(res);
         }
@@ -37,13 +36,13 @@ public class DiscussionController {
             return ResponseEntity.badRequest().body(res);
         }
     }
-    @PatchMapping(path = "/{discussionId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ResponseAPI<String>> updateDiscussion(@ModelAttribute @Valid UpdateDiscussionRequest body, @PathVariable String discussionId) {
+    @PatchMapping(path = "/{forumId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ResponseAPI<String>> updateForum(@ModelAttribute @Valid UpdateForumRequest body, @PathVariable String forumId) {
         try{
-            body.setId(discussionId);
-            discussionService.updateDiscussion(body);
+            body.setId(forumId);
+            forumService.updateForum(body);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
-                    .message("Update discussion successfully")
+                    .message("Update forum successfully")
                     .build();
             return ResponseEntity.ok(res);
         }
@@ -55,12 +54,12 @@ public class DiscussionController {
         }
     }
 
-    @DeleteMapping(path = "/{discussionId}")
-    public ResponseEntity<ResponseAPI<String>> deleteDiscussion(@PathVariable String discussionId) {
+    @DeleteMapping(path = "/{forumId}")
+    public ResponseEntity<ResponseAPI<String>> deleteForum(@PathVariable String forumId) {
         try{
-            discussionService.deleteDiscussion(discussionId);
+            forumService.deleteForum(forumId);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
-                    .message("Delete discussion successfully")
+                    .message("Delete forum successfully")
                     .build();
             return ResponseEntity.ok(res);
         }
@@ -73,11 +72,11 @@ public class DiscussionController {
     }
 
     @PostMapping(path = "/vote")
-    public ResponseEntity<ResponseAPI<String>> voteDiscussion(@RequestBody @Valid VoteRequest body) {
+    public ResponseEntity<ResponseAPI<String>> voteForum(@RequestBody @Valid VoteRequest body) {
         try{
-            discussionService.voteDiscussion(body);
+            forumService.voteForum(body);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
-                    .message("Vote discussion successfully")
+                    .message("Vote forum successfully")
                     .build();
             return ResponseEntity.ok(res);
         }
@@ -89,40 +88,40 @@ public class DiscussionController {
         }
     }
     @GetMapping(path = "")
-    public ResponseEntity<ResponseAPI<GetDiscussionsResponse>> getDiscussion(
+    public ResponseEntity<ResponseAPI<GetForumsResponse>> getForum(
             @RequestParam(name="name",required = false,defaultValue = "") String search,
             @RequestParam(name="page",required = false,defaultValue = "1") int page,
             @RequestParam(name="size",required = false,defaultValue = "10") int size
     ) {
         try{
-            GetDiscussionsResponse data = discussionService.getDiscussions(page-1, size, search);
-            ResponseAPI<GetDiscussionsResponse> res = ResponseAPI.<GetDiscussionsResponse>builder()
-                    .message("Get discussion successfully")
+            GetForumsResponse data = forumService.getForums(page-1, size, search);
+            ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
+                    .message("Get forum successfully")
                     .data(data)
                     .build();
             return ResponseEntity.ok(res);
         }
         catch (Exception e){
-            ResponseAPI<GetDiscussionsResponse> res = ResponseAPI.<GetDiscussionsResponse>builder()
+            ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
                     .message(e.getMessage())
                     .build();
             return ResponseEntity.badRequest().body(res);
         }
     }
     @GetMapping(path = "/author/{authorId}")
-    public ResponseEntity<ResponseAPI<GetDiscussionsResponse>> getDiscussionByAuthor(@PathVariable String authorId,
+    public ResponseEntity<ResponseAPI<GetForumsResponse>> getForumByAuthor(@PathVariable String authorId,
                                                                                      @RequestParam(name="page",required = false,defaultValue = "1") int page,
                                                                                      @RequestParam(name="size",required = false,defaultValue = "10") int size) {
         try{
-            GetDiscussionsResponse data = discussionService.getDiscussionByAuthor(authorId, page-1, size);
-            ResponseAPI<GetDiscussionsResponse> res = ResponseAPI.<GetDiscussionsResponse>builder()
-                    .message("Get discussion by author successfully")
+            GetForumsResponse data = forumService.getForumByAuthor(authorId, page-1, size);
+            ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
+                    .message("Get forum by author successfully")
                     .data(data)
                     .build();
             return ResponseEntity.ok(res);
         }
         catch (Exception e){
-            ResponseAPI<GetDiscussionsResponse> res = ResponseAPI.<GetDiscussionsResponse>builder()
+            ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
                     .message(e.getMessage())
                     .build();
             return ResponseEntity.badRequest().body(res);
@@ -130,36 +129,36 @@ public class DiscussionController {
     }
 
     @GetMapping(path = "/tag")
-    public ResponseEntity<ResponseAPI<GetDiscussionsResponse>> getDiscussionByTag(@RequestParam(name="search",required = false,defaultValue = "") String tag,
+    public ResponseEntity<ResponseAPI<GetForumsResponse>> getForumByTag(@RequestParam(name="search",required = false,defaultValue = "") String tag,
                                                                                   @RequestParam(name="page",required = false,defaultValue = "1") int page,
                                                                                   @RequestParam(name="size",required = false,defaultValue = "10") int size) {
         try{
-            GetDiscussionsResponse data = discussionService.getDiscussionByTag(tag, page-1, size);
-            ResponseAPI<GetDiscussionsResponse> res = ResponseAPI.<GetDiscussionsResponse>builder()
-                    .message("Get discussion by tag successfully")
+            GetForumsResponse data = forumService.getForumByTag(tag, page-1, size);
+            ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
+                    .message("Get forum by tag successfully")
                     .data(data)
                     .build();
             return ResponseEntity.ok(res);
         }
         catch (Exception e){
-            ResponseAPI<GetDiscussionsResponse> res = ResponseAPI.<GetDiscussionsResponse>builder()
+            ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
                     .message(e.getMessage())
                     .build();
             return ResponseEntity.badRequest().body(res);
         }
     }
-    @GetMapping(path = "/{discussionId}")
-    public ResponseEntity<ResponseAPI<GetDiscussionDetailResponse>> getDiscussionDetail(@PathVariable String discussionId) {
+    @GetMapping(path = "/{forumId}")
+    public ResponseEntity<ResponseAPI<GetForumDetailResponse>> getForumDetail(@PathVariable String forumId) {
         try{
-            GetDiscussionDetailResponse data = discussionService.getDiscussionDetail(discussionId);
-            ResponseAPI<GetDiscussionDetailResponse> res = ResponseAPI.<GetDiscussionDetailResponse>builder()
-                    .message("Get discussion detail successfully")
+            GetForumDetailResponse data = forumService.getForumDetail(forumId);
+            ResponseAPI<GetForumDetailResponse> res = ResponseAPI.<GetForumDetailResponse>builder()
+                    .message("Get forum detail successfully")
                     .data(data)
                     .build();
             return ResponseEntity.ok(res);
         }
         catch (Exception e){
-            ResponseAPI<GetDiscussionDetailResponse> res = ResponseAPI.<GetDiscussionDetailResponse>builder()
+            ResponseAPI<GetForumDetailResponse> res = ResponseAPI.<GetForumDetailResponse>builder()
                     .message(e.getMessage())
                     .build();
             return ResponseEntity.badRequest().body(res);
@@ -169,11 +168,11 @@ public class DiscussionController {
 
 
     @PostMapping(path= "/comment", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ResponseAPI<String>> createDiscussionComment(@ModelAttribute @Valid CreateDiscussionCommentRequest body) {
+    public ResponseEntity<ResponseAPI<String>> createForumComment(@ModelAttribute @Valid CreateForumCommentRequest body) {
         try{
-            discussionService.createDiscussionComment(body);
+            forumService.createForumComment(body);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
-                    .message("Create discussion comment successfully")
+                    .message("Create forum comment successfully")
                     .build();
             return ResponseEntity.ok(res);
         }
@@ -186,12 +185,12 @@ public class DiscussionController {
     }
 
     @PatchMapping(path = "/comment/{commentId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ResponseAPI<String>> updateDiscussionComment(@ModelAttribute @Valid UpdateDiscussionCommentRequest body, @PathVariable String commentId) {
+    public ResponseEntity<ResponseAPI<String>> updateForumComment(@ModelAttribute @Valid UpdateForumCommentRequest body, @PathVariable String commentId) {
         try{
             body.setId(commentId);
-            discussionService.updateDiscussionComment(body);
+            forumService.updateForumComment(body);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
-                    .message("Update discussion comment successfully")
+                    .message("Update forum comment successfully")
                     .build();
             return ResponseEntity.ok(res);
         }
@@ -204,11 +203,11 @@ public class DiscussionController {
     }
 
     @DeleteMapping(path = "/comment/{commentId}")
-    public ResponseEntity<ResponseAPI<String>> deleteDiscussionComment(@PathVariable String commentId) {
+    public ResponseEntity<ResponseAPI<String>> deleteForumComment(@PathVariable String commentId) {
         try{
-            discussionService.deleteDiscussionComment(commentId);
+            forumService.deleteForumComment(commentId);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
-                    .message("Delete discussion comment successfully")
+                    .message("Delete forum comment successfully")
                     .build();
             return ResponseEntity.ok(res);
         }
@@ -221,19 +220,19 @@ public class DiscussionController {
     }
 
     @GetMapping(path = "/comment/reply/{parentId}")
-    public ResponseEntity<ResponseAPI<GetDiscussionCommentResponse>> getReplyComments(@PathVariable String parentId,
+    public ResponseEntity<ResponseAPI<GetForumCommentResponse>> getReplyComments(@PathVariable String parentId,
                                                                                       @RequestParam(name="page",required = false,defaultValue = "1") int page,
                                                                                       @RequestParam(name="size",required = false,defaultValue = "10") int size) {
         try{
-            GetDiscussionCommentResponse data = discussionService.getReplyComments(parentId, page-1, size);
-            ResponseAPI<GetDiscussionCommentResponse> res = ResponseAPI.<GetDiscussionCommentResponse>builder()
+            GetForumCommentResponse data = forumService.getReplyComments(parentId, page-1, size);
+            ResponseAPI<GetForumCommentResponse> res = ResponseAPI.<GetForumCommentResponse>builder()
                     .message("Get reply comments successfully")
                     .data(data)
                     .build();
             return ResponseEntity.ok(res);
         }
         catch (Exception e){
-            ResponseAPI<GetDiscussionCommentResponse> res = ResponseAPI.<GetDiscussionCommentResponse>builder()
+            ResponseAPI<GetForumCommentResponse> res = ResponseAPI.<GetForumCommentResponse>builder()
                     .message(e.getMessage())
                     .build();
             return ResponseEntity.badRequest().body(res);

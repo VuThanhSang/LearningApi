@@ -1,6 +1,6 @@
 package com.example.learning_api.enums;
 
-public enum DiscussionStatus {
+public enum ForumStatus {
     PUBLIC,
     PRIVATE,
     DELETED

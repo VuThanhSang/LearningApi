@@ -1,37 +1,37 @@
-package com.example.learning_api.dto.response.discussion;
+package com.example.learning_api.dto.response.forum;
 
 import com.example.learning_api.entity.sql.database.StudentEntity;
 import com.example.learning_api.entity.sql.database.TeacherEntity;
-import com.example.learning_api.enums.DiscussionStatus;
+import com.example.learning_api.enums.ForumStatus;
 import com.example.learning_api.enums.RoleEnum;
 import lombok.Data;
 
 import java.util.List;
 
 @Data
-public class GetDiscussionDetailResponse {
+public class GetForumDetailResponse {
     private String id;
     private String title;
     private String content;
     private String authorId;
     private String image;
-    private DiscussionStatus status;
+    private ForumStatus status;
     private int commentCount;
     private RoleEnum role;
     private int upvoteCount;
     private int downvoteCount;
     private String createdAt;
     private String updatedAt;
-    private List<DiscussionComment> comments;
+    private List<ForumComment> comments;
     @Data
-    public static class DiscussionComment {
+    public static class ForumComment {
         private String id;
-        private String discussionId;
+        private String forumId;
         private String content;
         private int upvote;
         private int downvote;
         private int replyCount;
-        private DiscussionStatus status;
+        private ForumStatus status;
         private String image;
         private RoleEnum role;
         private String createdAt;

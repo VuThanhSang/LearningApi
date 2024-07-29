@@ -1,4 +1,4 @@
-package com.example.learning_api.dto.request.discussion;
+package com.example.learning_api.dto.request.forum;
 
 import com.example.learning_api.enums.RoleEnum;
 import lombok.Data;
@@ -7,7 +7,7 @@ import lombok.Data;
 public class VoteRequest {
     private String authorId;
     private int isUpvote;
-    private String discussionId;
+    private String forumId;
     private RoleEnum role;
 
 }
