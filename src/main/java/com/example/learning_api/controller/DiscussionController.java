@@ -1,9 +1,6 @@
 package com.example.learning_api.controller;
 
-import com.example.learning_api.dto.request.discussion.CreateDiscussionCommentRequest;
-import com.example.learning_api.dto.request.discussion.CreateDiscussionRequest;
-import com.example.learning_api.dto.request.discussion.UpdateDiscussionCommentRequest;
-import com.example.learning_api.dto.request.discussion.UpdateDiscussionRequest;
+import com.example.learning_api.dto.request.discussion.*;
 import com.example.learning_api.dto.response.answer.CreateAnswerResponse;
 import com.example.learning_api.dto.response.discussion.GetDiscussionCommentResponse;
 import com.example.learning_api.dto.response.discussion.GetDiscussionDetailResponse;
@@ -75,12 +72,12 @@ public class DiscussionController {
         }
     }
 
-    @PostMapping(path = "/{discussionId}/upvote")
-    public ResponseEntity<ResponseAPI<String>> upvoteDiscussion(@PathVariable String discussionId) {
+    @PostMapping(path = "/vote")
+    public ResponseEntity<ResponseAPI<String>> voteDiscussion(@RequestBody @Valid VoteRequest body) {
         try{
-            discussionService.upvoteDiscussion(discussionId);
+            discussionService.voteDiscussion(body);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
-                    .message("Upvote discussion successfully")
+                    .message("Vote discussion successfully")
                     .build();
             return ResponseEntity.ok(res);
         }
@@ -91,23 +88,6 @@ public class DiscussionController {
             return ResponseEntity.badRequest().body(res);
         }
     }
-    @PostMapping(path = "/{discussionId}/downvote")
-    public ResponseEntity<ResponseAPI<String>> downvoteDiscussion(@PathVariable String discussionId) {
-        try{
-            discussionService.downvoteDiscussion(discussionId);
-            ResponseAPI<String> res = ResponseAPI.<String>builder()
-                    .message("Downvote discussion successfully")
-                    .build();
-            return ResponseEntity.ok(res);
-        }
-        catch (Exception e){
-            ResponseAPI<String> res = ResponseAPI.<String>builder()
-                    .message(e.getMessage())
-                    .build();
-            return ResponseEntity.badRequest().body(res);
-        }
-    }
-
     @GetMapping(path = "")
     public ResponseEntity<ResponseAPI<GetDiscussionsResponse>> getDiscussion(
             @RequestParam(name="name",required = false,defaultValue = "") String search,

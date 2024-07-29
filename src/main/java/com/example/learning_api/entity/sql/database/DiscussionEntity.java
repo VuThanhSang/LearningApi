@@ -6,6 +6,7 @@ import com.example.learning_api.enums.RoleEnum;
 import jakarta.persistence.Id;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
@@ -22,8 +23,8 @@ public class DiscussionEntity {
     private List<SourceDto> sources;
     private List<String> tags;
     private DiscussionStatus status;
-    private int upvote;
-    private int downvote;
+    @DBRef
+    private List<VoteEntity> votes;
     private int commentCount;
     private RoleEnum role;
     private String parentId;

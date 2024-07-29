@@ -22,6 +22,8 @@ public class GetDiscussionsResponse {
         private List<DiscussionEntity.SourceDto> sources;
         private String status;
         private List<String> tags;
+        private int upvoteCount;
+        private int downvoteCount;
         private String createdAt;
         private String updatedAt;
         public static DiscussionResponse formDiscussionEntity(DiscussionEntity discussionEntity){
@@ -32,8 +34,7 @@ public class GetDiscussionsResponse {
             discussionResponse.setCreatedAt(discussionEntity.getCreatedAt().toString());
             discussionResponse.setUpdatedAt(discussionEntity.getUpdatedAt().toString());
             discussionResponse.setAuthorId(discussionEntity.getAuthorId());
-            discussionResponse.setUpvote(discussionEntity.getUpvote());
-            discussionResponse.setDownvote(discussionEntity.getDownvote());
+
             discussionResponse.setCommentCount(discussionEntity.getCommentCount());
             discussionResponse.setStatus(discussionEntity.getStatus().name());
             return discussionResponse;

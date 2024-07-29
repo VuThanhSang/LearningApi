@@ -76,6 +76,9 @@ public class TestService implements ITestService {
             if (classRoomRepository.findById(body.getClassroomId()).isEmpty()){
                 throw new IllegalArgumentException("ClassroomId is not found");
             }
+            if (body.getAttemptLimit()==0){
+                throw new IllegalArgumentException("AttemptLimit is required");
+            }
             CreateTestResponse resData = new CreateTestResponse();
             TestEntity testEntity = modelMapperService.mapClass(body, TestEntity.class);
             if(body.getSource()!=null){
@@ -170,7 +173,7 @@ public class TestService implements ITestService {
             if(body.getStatus()!=null){
                 testEntity.setStatus(TestStatus.valueOf(body.getStatus()));
             }
-            if (body.getAttemptLimit()!=0){
+            if (body.getAttemptLimit()!=null){
                 testEntity.setAttemptLimit(body.getAttemptLimit());
             }
 
@@ -210,6 +213,7 @@ public class TestService implements ITestService {
             List<GetTestsResponse.TestResponse> testResponses = new ArrayList<>();
             for (TestEntity testEntity : testEntities){
                 GetTestsResponse.TestResponse testResponse = modelMapperService.mapClass(testEntity, GetTestsResponse.TestResponse.class);
+                testResponse.setAttemptLimit(testEntity.getAttemptLimit());
                 testResponses.add(testResponse);
             }
             resData.setTests(testResponses);
@@ -367,6 +371,7 @@ public class TestService implements ITestService {
         response.setDuration(testEntity.getDuration());
         response.setSource(testEntity.getSource());
         response.setTeacherId(testEntity.getTeacherId());
+        response.setAttemptLimit(testEntity.getAttemptLimit());
         response.setStartTime(Optional.ofNullable(testEntity.getStartTime()).map(Object::toString).orElse(null));
         response.setEndTime(Optional.ofNullable(testEntity.getEndTime()).map(Object::toString).orElse(null));
         response.setShowResultType(testEntity.getShowResultType().toString());

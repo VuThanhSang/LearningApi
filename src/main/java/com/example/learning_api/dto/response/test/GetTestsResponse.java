@@ -23,6 +23,7 @@ public class GetTestsResponse {
         private String endTime;
         private String classroomId;
         private String showResultType;
+        private int attemptLimit;
         private String teacherId;
         private String createdAt;
         private String updatedAt;
