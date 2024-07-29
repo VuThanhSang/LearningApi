@@ -1,14 +1,12 @@
-package com.example.learning_api.dto.request.discussion;
+package com.example.learning_api.dto.request.forum;
 
 import com.example.learning_api.dto.common.SourceUploadDto;
-import com.example.learning_api.enums.DiscussionStatus;
 import lombok.Data;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 @Data
-public class CreateDiscussionRequest {
+public class CreateForumRequest {
     private String title;
     private String content;
     private String authorId;

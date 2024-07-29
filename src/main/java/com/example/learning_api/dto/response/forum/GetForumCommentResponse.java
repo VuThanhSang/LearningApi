@@ -1,4 +1,4 @@
-package com.example.learning_api.dto.response.discussion;
+package com.example.learning_api.dto.response.forum;
 
 import com.example.learning_api.entity.sql.database.StudentEntity;
 import com.example.learning_api.entity.sql.database.TeacherEntity;
@@ -7,14 +7,14 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class GetDiscussionCommentResponse {
+public class GetForumCommentResponse {
     private Integer totalPage;
     private Long totalElements;
-    private List<DiscussionCommentResponse> comments;
+    private List<ForumCommentResponse> comments;
     @Data
-    public static class DiscussionCommentResponse {
+    public static class ForumCommentResponse {
         private String id;
-        private String discussionId;
+        private String forumId;
         private String content;
         private String authorId;
         private int upvote;
