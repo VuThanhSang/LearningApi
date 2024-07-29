@@ -35,5 +35,5 @@ public class CreateTestRequest {
     @NotBlank
     private String Status;
     @NotBlank
-    private int attemptLimit;
+    private Integer attemptLimit;
 }

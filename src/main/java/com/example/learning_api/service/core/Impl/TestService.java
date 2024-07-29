@@ -76,7 +76,7 @@ public class TestService implements ITestService {
             if (classRoomRepository.findById(body.getClassroomId()).isEmpty()){
                 throw new IllegalArgumentException("ClassroomId is not found");
             }
-            if (body.getAttemptLimit()==0){
+            if (body.getAttemptLimit()==null){
                 throw new IllegalArgumentException("AttemptLimit is required");
             }
             CreateTestResponse resData = new CreateTestResponse();
@@ -96,9 +96,9 @@ public class TestService implements ITestService {
                 );
                 testEntity.setSource(imageUploaded.getUrl());
             }
-            testEntity.setCreatedAt(new Date());
+            testEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
 
-            testEntity.setUpdatedAt(new Date());
+            testEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             testRepository.save(testEntity);
             resData.setTeacherId(body.getTeacherId());
             resData.setCreatedAt(testEntity.getCreatedAt().toString());
@@ -133,7 +133,7 @@ public class TestService implements ITestService {
             if (testEntity==null){
                 throw new IllegalArgumentException("TestId is not found");
             }
-            testEntity.setUpdatedAt(new Date());
+            testEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             if (body.getName()!=null){
                 testEntity.setName(body.getName());
             }
@@ -371,7 +371,13 @@ public class TestService implements ITestService {
         response.setDuration(testEntity.getDuration());
         response.setSource(testEntity.getSource());
         response.setTeacherId(testEntity.getTeacherId());
-        response.setAttemptLimit(testEntity.getAttemptLimit());
+        if (testEntity.getAttemptLimit()==null){
+            response.setAttemptLimit(1);
+        }
+        else{
+
+            response.setAttemptLimit(testEntity.getAttemptLimit());
+        }
         response.setStartTime(Optional.ofNullable(testEntity.getStartTime()).map(Object::toString).orElse(null));
         response.setEndTime(Optional.ofNullable(testEntity.getEndTime()).map(Object::toString).orElse(null));
         response.setShowResultType(testEntity.getShowResultType().toString());
