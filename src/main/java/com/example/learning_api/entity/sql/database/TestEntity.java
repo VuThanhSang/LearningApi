@@ -20,7 +20,7 @@ public class TestEntity {
     private String id;
     private String name;
     private String description;
-    private int duration;
+    private Integer duration;
     private String classroomId;
     private String teacherId;
     private String source;
@@ -29,7 +29,7 @@ public class TestEntity {
     private String startTime;
     private String endTime;
     private TestStatus status;
-    private int attemptLimit;
+    private Integer attemptLimit;
     private Date createdAt;
     private Date updatedAt;
 
