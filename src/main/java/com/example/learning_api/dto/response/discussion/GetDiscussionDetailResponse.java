@@ -16,10 +16,10 @@ public class GetDiscussionDetailResponse {
     private String authorId;
     private String image;
     private DiscussionStatus status;
-    private int upvote;
-    private int downvote;
     private int commentCount;
     private RoleEnum role;
+    private int upvoteCount;
+    private int downvoteCount;
     private String createdAt;
     private String updatedAt;
     private List<DiscussionComment> comments;

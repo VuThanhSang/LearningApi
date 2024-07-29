@@ -14,10 +14,10 @@ public class UpdateTestRequest {
     private String description;
     private MultipartFile source;
     private String image;
-    private int duration;
+    private Integer duration;
     private String startTime;
     private String endTime;
     private String showResultType;
     private String status;
-    private int attemptLimit;
+    private Integer attemptLimit;
 }

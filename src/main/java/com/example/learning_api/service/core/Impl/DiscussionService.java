@@ -2,10 +2,7 @@ package com.example.learning_api.service.core.Impl;
 
 import com.example.learning_api.constant.CloudinaryConstant;
 import com.example.learning_api.dto.common.SourceUploadDto;
-import com.example.learning_api.dto.request.discussion.CreateDiscussionCommentRequest;
-import com.example.learning_api.dto.request.discussion.CreateDiscussionRequest;
-import com.example.learning_api.dto.request.discussion.UpdateDiscussionCommentRequest;
-import com.example.learning_api.dto.request.discussion.UpdateDiscussionRequest;
+import com.example.learning_api.dto.request.discussion.*;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.discussion.GetDiscussionCommentResponse;
 import com.example.learning_api.dto.response.discussion.GetDiscussionDetailResponse;
@@ -13,12 +10,10 @@ import com.example.learning_api.dto.response.discussion.GetDiscussionsResponse;
 import com.example.learning_api.entity.sql.database.DiscussionCommentEntity;
 import com.example.learning_api.entity.sql.database.DiscussionEntity;
 import com.example.learning_api.entity.sql.database.FAQEntity;
+import com.example.learning_api.entity.sql.database.VoteEntity;
 import com.example.learning_api.enums.DiscussionStatus;
 import com.example.learning_api.enums.RoleEnum;
-import com.example.learning_api.repository.database.DiscussionCommentRepository;
-import com.example.learning_api.repository.database.DiscussionRepository;
-import com.example.learning_api.repository.database.StudentRepository;
-import com.example.learning_api.repository.database.TeacherRepository;
+import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
 import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.IDiscussionService;
@@ -46,6 +41,7 @@ public class DiscussionService implements IDiscussionService {
     private final CloudinaryService cloudinaryService;
     private final TeacherRepository teacherRepository;
     private final StudentRepository studentRepository;
+    private final VoteRepository voteRepository;
     @Override
     public void createDiscussion(CreateDiscussionRequest request) {
         try{
@@ -63,8 +59,6 @@ public class DiscussionService implements IDiscussionService {
             discussionEntity.setSources(new ArrayList<>());
             processSources(request.getSources(), request.getTitle(), discussionEntity);
             discussionEntity.setCommentCount(0);
-            discussionEntity.setUpvote(0);
-            discussionEntity.setDownvote(0);
             discussionEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
             discussionEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             discussionRepository.save(discussionEntity);
@@ -165,33 +159,48 @@ public class DiscussionService implements IDiscussionService {
         }
 
     }
-
     @Override
-    public void upvoteDiscussion(String id) {
-        try{
-            DiscussionEntity discussionEntity = discussionRepository.findById(id).orElseThrow(()->new IllegalArgumentException("Id is not found"));
-            discussionEntity.setUpvote(discussionEntity.getUpvote()+1);
-            discussionRepository.save(discussionEntity);
-        }
-        catch (Exception e){
+    public void voteDiscussion(VoteRequest request) {
+        try {
+            validateRole(request);
+            DiscussionEntity discussionEntity = discussionRepository.findById(request.getDiscussionId())
+                    .orElseThrow(() -> new IllegalArgumentException("Discussion Id is not found"));
+            VoteEntity voteEntity = voteRepository.findByAuthorIdAndDiscussionId(request.getAuthorId(), request.getDiscussionId());
+
+            if (voteEntity != null) {
+                handleExistingVote(request, voteEntity);
+            } else {
+                createNewVote(request, discussionEntity);
+            }
+        } catch (Exception e) {
             log.error(e.getMessage());
             throw new IllegalArgumentException(e.getMessage());
         }
-
     }
 
-    @Override
-    public void downvoteDiscussion(String id) {
-        try{
-            DiscussionEntity discussionEntity = discussionRepository.findById(id).orElseThrow(()->new IllegalArgumentException("Id is not found"));
-            discussionEntity.setDownvote(discussionEntity.getDownvote()+1);
-            discussionRepository.save(discussionEntity);
+    private void validateRole(VoteRequest request) {
+        if (request.getRole().name().equals("USER") && studentRepository.findById(request.getAuthorId()).isEmpty()) {
+            throw new IllegalArgumentException("Student Id is not found");
+        } else if (request.getRole().name().equals("TEACHER") && teacherRepository.findById(request.getAuthorId()).isEmpty()) {
+            throw new IllegalArgumentException("Teacher Id is not found");
         }
-        catch (Exception e){
-            log.error(e.getMessage());
-            throw new IllegalArgumentException(e.getMessage());
-        }
+    }
 
+    private void handleExistingVote(VoteRequest request, VoteEntity voteEntity) {
+        boolean requestUpvote = request.getIsUpvote() == 1;
+        if (voteEntity.isUpvote() == requestUpvote) {
+            voteRepository.delete(voteEntity);
+        } else {
+            voteEntity.setUpvote(requestUpvote);
+            voteRepository.save(voteEntity);
+        }
+    }
+
+    private void createNewVote(VoteRequest request, DiscussionEntity discussionEntity) {
+        VoteEntity voteEntity = modelMapperService.mapClass(request, VoteEntity.class);
+        voteEntity.setUpvote(request.getIsUpvote() == 1);
+        voteEntity.setDiscussion(discussionEntity);
+        voteRepository.save(voteEntity);
     }
 
     @Override
@@ -204,6 +213,8 @@ public class DiscussionService implements IDiscussionService {
             discussionEntities.forEach(discussionEntity -> {
                 GetDiscussionsResponse.DiscussionResponse discussionResponse = GetDiscussionsResponse.DiscussionResponse.formDiscussionEntity(discussionEntity);
                 discussionResponse.setSources(discussionEntity.getSources());
+                discussionResponse.setUpvote(voteRepository.countUpvoteByDiscussionId(discussionEntity.getId()));
+                discussionResponse.setDownvote(voteRepository.countDownvoteByDiscussionId(discussionEntity.getId()));
                 data.add(discussionResponse);
             });
             getDiscussionsResponse.setDiscussions(data);
@@ -222,6 +233,8 @@ public class DiscussionService implements IDiscussionService {
         try{
             DiscussionEntity discussionEntity = discussionRepository.findById(id).orElseThrow(()->new IllegalArgumentException("Id is not found"));
             GetDiscussionDetailResponse getDiscussionDetailResponse = modelMapperService.mapClass(discussionEntity, GetDiscussionDetailResponse.class);
+            getDiscussionDetailResponse.setUpvoteCount(voteRepository.countUpvoteByDiscussionId(id));
+            getDiscussionDetailResponse.setDownvoteCount(voteRepository.countDownvoteByDiscussionId(id));
             List<DiscussionCommentEntity> discussionCommentEntities = discussionCommentRepository.findByDiscussionId(id);
             List<GetDiscussionDetailResponse.DiscussionComment> discussionComments = new ArrayList<>();
             discussionCommentEntities.forEach(discussionCommentEntity -> {
@@ -256,6 +269,8 @@ public class DiscussionService implements IDiscussionService {
                 GetDiscussionsResponse.DiscussionResponse discussionResponse = GetDiscussionsResponse.DiscussionResponse.formDiscussionEntity(discussionEntity);
                 discussionResponse.setSources(discussionEntity.getSources());
                 discussionResponse.setTags(discussionEntity.getTags());
+                discussionResponse.setUpvote(voteRepository.countUpvoteByDiscussionId(discussionEntity.getId()));
+                discussionResponse.setDownvote(voteRepository.countDownvoteByDiscussionId(discussionEntity.getId()));
                 data.add(discussionResponse);
             });
             getDiscussionsResponse.setDiscussions(data);
@@ -280,6 +295,8 @@ public class DiscussionService implements IDiscussionService {
                 GetDiscussionsResponse.DiscussionResponse discussionResponse = GetDiscussionsResponse.DiscussionResponse.formDiscussionEntity(discussionEntity);
                 discussionResponse.setSources(discussionEntity.getSources());
                 discussionResponse.setTags(discussionEntity.getTags());
+                discussionResponse.setUpvote(voteRepository.countUpvoteByDiscussionId(discussionEntity.getId()));
+                discussionResponse.setDownvote(voteRepository.countDownvoteByDiscussionId(discussionEntity.getId()));
                 data.add(discussionResponse);
             });
             getDiscussionsResponse.setDiscussions(data);
