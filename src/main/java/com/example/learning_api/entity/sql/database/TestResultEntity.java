@@ -20,6 +20,7 @@ public class TestResultEntity {
     private String testId;
     private boolean isPassed;
     private String attendedAt;
+    private String finishedAt;
     private TestState state;
     private String createdAt;
     private String updatedAt;

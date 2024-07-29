@@ -202,6 +202,7 @@ public class TestService implements ITestService {
             }
             questionRepository.deleteByTestId(id);
             testRepository.deleteById(id);
+            testResultRepository.deleteByTestId(id);
         }
         catch (Exception e){
             throw new IllegalArgumentException(e.getMessage());
@@ -450,12 +451,18 @@ public class TestService implements ITestService {
     public GetTestInProgress getTestInProgress(int page,int size,String studentId) {
         try{
             Pageable pageAble = PageRequest.of(page, size);
-            String currentTimestamp = String.valueOf(System.currentTimeMillis() );
+            String currentTimestamp = String.valueOf(System.currentTimeMillis());
             Slice<TestEntity> testEntities = testRepository.findTestInProgressByStudentId(studentId,currentTimestamp, pageAble);
             GetTestInProgress resData = new GetTestInProgress();
             List<GetTestInProgress.TestResponse> testResponses = new ArrayList<>();
             for (TestEntity testEntity : testEntities){
                 GetTestInProgress.TestResponse testResponse = modelMapperService.mapClass(testEntity, GetTestInProgress.TestResponse.class);
+                if (testEntity.getAttemptLimit()==null){
+                    testResponse.setAttemptLimit(1);
+                }
+                else{
+                    testResponse.setAttemptLimit(testEntity.getAttemptLimit());
+                }
                 testResponses.add(testResponse);
             }
             resData.setTests(testResponses);
@@ -495,7 +502,9 @@ public class TestService implements ITestService {
             if (testResultEntities.isEmpty()) {
                 throw new IllegalArgumentException("TestResult not found");
             }
-
+            if (testId ==null){
+                return new ArrayList<>();
+            }
             TestEntity testEntity = testRepository.findById(testId)
                     .orElseThrow(() -> new IllegalArgumentException("Test not found"));
 
@@ -538,17 +547,15 @@ public class TestService implements ITestService {
     }
 
     @Override
-    public List<GetQuestionsResponse.QuestionResponse> getProgress(String testResultId) {
+    public List<GetQuestionsResponse.QuestionResponse>  getProgress(String studentId,String testId) {
         try {
-            TestResultEntity testResult = getTestResult(testResultId);
-            TestEntity test = testRepository.findById(testResult.getTestId())
-                    .orElseThrow(() -> new IllegalArgumentException("Test not found"));
-
-            List<GetQuestionsResponse.QuestionResponse> questionResponses = getQuestionResponses(testResult.getTestId());
-            List<StudentAnswersEntity> studentAnswersEntities = studentAnswersRepository.findByStudentIdAndTestResultId(testResult.getStudentId(), testResultId);
-
-            updateSelectedAnswers(questionResponses, studentAnswersEntities, testResultId);
-
+            TestResultEntity testResultEntity = testResultRepository.findFirstByStudentIdAndTestIdAndStateOrderByAttendedAtDesc(studentId, testId, TestState.ONGOING.name());
+            if (testResultEntity == null) {
+                throw new IllegalArgumentException("TestResult not found");
+            }
+            List<StudentAnswersEntity> studentAnswersEntities = studentAnswersRepository.findByStudentIdAndTestResultId(studentId, testResultEntity.getId());
+            List<GetQuestionsResponse.QuestionResponse> questionResponses = getQuestionResponses(testId);
+            updateSelectedAnswers(questionResponses, studentAnswersEntities, testResultEntity.getId());
             return questionResponses;
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
@@ -603,7 +610,9 @@ public class TestService implements ITestService {
 
         List<TestSubmitResponse.QuestionResponse> questionResponses = processQuestions(questions, body, testResult);
         int totalCorrectAnswers = calculateTotalCorrectAnswers(questionResponses);
-
+        if (testResult.getState() == TestState.FINISHED) {
+            throw  new IllegalArgumentException("Test is already finished");
+        }
         updateTestResult(testResult, totalCorrectAnswers, questions.size());
 
         return createTestSubmitResponse(testResult, questionResponses, totalCorrectAnswers, questions.size());
@@ -722,9 +731,8 @@ public class TestService implements ITestService {
     }
 
     private void updateTestResult(TestResultEntity testResult, int totalCorrectAnswers, int totalQuestions) {
-        testResult.setAttendedAt(String.valueOf(System.currentTimeMillis()));
-        testResult.setCreatedAt(String.valueOf(System.currentTimeMillis()));
         testResult.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+        testResult.setFinishedAt(String.valueOf(System.currentTimeMillis()));
         double grade = calculateGrade(totalCorrectAnswers, totalQuestions);
         testResult.setState(TestState.FINISHED);
         testResult.setGrade(grade);
@@ -748,7 +756,8 @@ public class TestService implements ITestService {
         response.setAttendedAt(testResult.getAttendedAt());
         response.setTotalCorrectAnswers(totalCorrectAnswers);
         response.setTotalQuestions(totalQuestions);
-//        response.setQuestions(questionResponses);
+        response.setFinishedAt(testResult.getFinishedAt());
+        response.setAttendedAt(testResult.getAttendedAt());
         response.setGrade(testResult.getGrade());
         response.setPassed(testResult.getGrade() >= 4);
         return response;

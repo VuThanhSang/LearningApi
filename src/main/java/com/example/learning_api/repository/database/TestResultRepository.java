@@ -11,7 +11,8 @@ public interface TestResultRepository extends MongoRepository<TestResultEntity, 
     List<TestResultEntity> findByStudentIdAndTestId(String studentId, String testId);
 
     void deleteByStudentIdAndTestId(String studentId, String testId);
-
+    void deleteByTestId(String testId);
     @Query(value = "{studentId: ?0, testId: ?1}", count = true)
     int countByStudentIdAndTestId(String studentId, String testId);
+    TestResultEntity findFirstByStudentIdAndTestIdAndStateOrderByAttendedAtDesc(String studentId, String testId, String state);
 }

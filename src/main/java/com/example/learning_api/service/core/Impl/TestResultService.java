@@ -42,11 +42,19 @@ public class TestResultService implements ITestResultService {
             if (studentRepository.existsById(body.getStudentId()) == false) {
                 throw new IllegalArgumentException("Student does not exist");
             }
+
             TestResultEntity testResultEntity = modelMapperService.mapClass(body, TestResultEntity.class);
             TestEntity testEntity = testRepository.findById(body.getTestId()).orElseThrow(() -> new IllegalArgumentException("Test does not exist"));
             int count = testResultRepository.countByStudentIdAndTestId(body.getStudentId(), body.getTestId());
             if (testEntity.getAttemptLimit()==null){
                 testEntity.setAttemptLimit(1);
+            }
+
+            TestResultEntity ongoingTest = testResultRepository.findFirstByStudentIdAndTestIdAndStateOrderByAttendedAtDesc(body.getStudentId(),body.getTestId(), TestState.ONGOING.name());
+            if (ongoingTest != null){
+                if (System.currentTimeMillis() - Long.parseLong(ongoingTest.getAttendedAt()) < testEntity.getDuration()  * 1000) {
+                    throw new IllegalArgumentException("You have an ongoing test");
+                }
             }
             if (count >= testEntity.getAttemptLimit()) {
                 throw new IllegalArgumentException("You have reached the limit of attempts");
@@ -114,6 +122,7 @@ public class TestResultService implements ITestResultService {
             if (testResultEntity.getState() == TestState.FINISHED) {
                 throw new IllegalArgumentException("Test is already finished");
             }
+            studentAnswerRepository.deleteByTestResultId(body.getTestResultId());
             for (SaveProgressRequest.QuestionAndAnswer questionAndAnswer : body.getQuestionAndAnswers()) {
                 for (String answerId : questionAndAnswer.getAnswers()) {
                     StudentAnswersEntity studentAnswersEntity = new StudentAnswersEntity();

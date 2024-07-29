@@ -18,20 +18,19 @@ public interface TestRepository extends MongoRepository<TestEntity, String> {
     Page<TestEntity> findByNameContaining(String name, Pageable pageable);
     @Aggregation({
             "{ $lookup: { from: 'student_enrollments', let: { classroomId: '$classroomId' }, pipeline: [ { $match: { $expr: { $and: [ { $eq: ['$classroomId', '$$classroomId'] }, { $eq: ['$studentId', ?0] } ] } } } ], as: 'enrollments' } }",
-            "{ $match: { $and: [ { 'enrollments': { $not: { $size: 0 } } }, { 'endTime': { $gt: ?1 } } ] } }",
+            "{ $match: { $and: [ { 'enrollments': { $not: { $size: 0 } } }, { 'startTime': { $lte: ?1 } }, { 'endTime': { $gt: ?1 } } ] } }",
             "{ $project: { _id: 1, name: 1, description: 1, duration: 1, classroomId: 1, teacherId: 1, source: 1, startTime: 1, endTime: 1, status: 1, createdAt: 1, updatedAt: 1 } }"
     })
     Slice<TestEntity> findTestInProgressByStudentId(String studentId, String currentTimestamp, Pageable pageable);
     @Aggregation({
-            "{ $addFields: { startDateOnly: { $dateToString: { format: '%Y-%m-%d', date: { $toDate: { $multiply: [{ $toLong: '$startTime' }, 1000] } } } } } }",
             "{ $lookup: { from: 'student_enrollments', let: { classroomId: '$classroomId' }, pipeline: [ { $match: { $expr: { $and: [ { $eq: ['$classroomId', '$$classroomId'] }, { $eq: ['$studentId', ?0] } ] } } } ], as: 'enrollments' } }",
-            "{ $match: { $and: [ { 'enrollments': { $not: { $size: 0 } } }, { 'startDateOnly': ?1 } ] } }",
+            "{ $match: { $and: [ { 'enrollments': { $not: { $size: 0 } } }, { 'startTime': { $gte: ?1 } }, { 'startTime': { $lt: { $add: [?1, 86400000] } } } ] } }",
             "{ $project: { _id: 1, name: 1, description: 1, duration: 1, classroomId: 1, teacherId: 1, source: 1, startTime: 1, endTime: 1, status: 1, createdAt: 1, updatedAt: 1, showResultType: 1 } }",
             "{ $sort: { 'startTime': 1 } }"
     })
     Slice<TestEntity> findTestsOnSpecificDateByStudentId(
             String studentId,
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) String date,
+            String dateTimestamp,
             Pageable pageable
     );
     @Aggregation(pipeline = {
