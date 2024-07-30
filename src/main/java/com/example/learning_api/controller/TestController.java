@@ -315,10 +315,10 @@ public class TestController {
     }
 
     @GetMapping(path = "/progress/{studentId}/{testId}")
-    public ResponseEntity<ResponseAPI<List<GetQuestionsResponse.QuestionResponse>>> getProgress(@PathVariable String studentId, @PathVariable String testId) {
+    public ResponseEntity<ResponseAPI<GetTestProgressResponse>> getProgress(@PathVariable String studentId, @PathVariable String testId) {
         try{
-            List<GetQuestionsResponse.QuestionResponse> resData = testService.getProgress(studentId, testId);
-            ResponseAPI<List<GetQuestionsResponse.QuestionResponse>> res = ResponseAPI.<List<GetQuestionsResponse.QuestionResponse>>builder()
+            GetTestProgressResponse resData = testService.getProgress(studentId, testId);
+            ResponseAPI<GetTestProgressResponse> res = ResponseAPI.<GetTestProgressResponse>builder()
                     .timestamp(new Date())
                     .message("Get progress successfully")
                     .data(resData)
@@ -326,7 +326,7 @@ public class TestController {
             return new ResponseEntity<>(res, StatusCode.OK);
         }
         catch (Exception e){
-            ResponseAPI<List<GetQuestionsResponse.QuestionResponse>> res = ResponseAPI.<List<GetQuestionsResponse.QuestionResponse>>builder()
+            ResponseAPI<GetTestProgressResponse> res = ResponseAPI.<GetTestProgressResponse>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();

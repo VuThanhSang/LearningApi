@@ -500,7 +500,7 @@ public class TestService implements ITestService {
         try {
             List<TestResultEntity> testResultEntities = testResultRepository.findByStudentIdAndTestId(studentId, testId);
             if (testResultEntities.isEmpty()) {
-                throw new IllegalArgumentException("TestResult not found");
+                return new ArrayList<>();
             }
             if (testId ==null){
                 return new ArrayList<>();
@@ -547,16 +547,22 @@ public class TestService implements ITestService {
     }
 
     @Override
-    public List<GetQuestionsResponse.QuestionResponse>  getProgress(String studentId,String testId) {
+    public GetTestProgressResponse  getProgress(String studentId,String testId) {
         try {
             TestResultEntity testResultEntity = testResultRepository.findFirstByStudentIdAndTestIdAndStateOrderByAttendedAtDesc(studentId, testId, TestState.ONGOING.name());
             if (testResultEntity == null) {
-                throw new IllegalArgumentException("TestResult not found");
+                GetTestProgressResponse resData = new GetTestProgressResponse();
+                resData.setTestResult(null);
+                resData.setQuestions(new ArrayList<>());
+                return resData;
             }
             List<StudentAnswersEntity> studentAnswersEntities = studentAnswersRepository.findByStudentIdAndTestResultId(studentId, testResultEntity.getId());
             List<GetQuestionsResponse.QuestionResponse> questionResponses = getQuestionResponses(testId);
             updateSelectedAnswers(questionResponses, studentAnswersEntities, testResultEntity.getId());
-            return questionResponses;
+            GetTestProgressResponse resData = new GetTestProgressResponse();
+            resData.setTestResult(testResultEntity);
+            resData.setQuestions(questionResponses);
+            return resData;
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }

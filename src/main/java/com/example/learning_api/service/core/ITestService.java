@@ -22,6 +22,6 @@ public interface ITestService {
     GetTestInProgress getTestOnSpecificDayByStudentId(String studentId,String date,int page,int size);
     TestSubmitResponse submitTest( TestSubmitRequest body);
     List<TestResultResponse> getTestResult(String studentId, String testId);
-    List<GetQuestionsResponse.QuestionResponse> getProgress(String studentId, String testId);
+    GetTestProgressResponse getProgress(String studentId, String testId);
 
 }
