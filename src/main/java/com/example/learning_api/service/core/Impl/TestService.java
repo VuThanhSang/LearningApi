@@ -556,6 +556,15 @@ public class TestService implements ITestService {
                 resData.setQuestions(new ArrayList<>());
                 return resData;
             }
+            TestEntity testEntity = testRepository.findById(testId).orElseThrow(() -> new IllegalArgumentException("Test does not exist"));
+            if (System.currentTimeMillis() - Long.parseLong(testResultEntity.getAttendedAt()) > testEntity.getDuration()  * 1000) {
+                TestSubmitRequest data= convertToTestSubmitRequest(testResultEntity,studentId);
+                submitTest(data);
+                GetTestProgressResponse resData = new GetTestProgressResponse();
+                resData.setTestResult(null);
+                resData.setQuestions(new ArrayList<>());
+                return resData;
+            }
             List<StudentAnswersEntity> studentAnswersEntities = studentAnswersRepository.findByStudentIdAndTestResultId(studentId, testResultEntity.getId());
             List<GetQuestionsResponse.QuestionResponse> questionResponses = getQuestionResponses(testId);
             updateSelectedAnswers(questionResponses, studentAnswersEntities, testResultEntity.getId());
@@ -567,7 +576,28 @@ public class TestService implements ITestService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
+    private TestSubmitRequest convertToTestSubmitRequest(TestResultEntity testResult,String studentId) {
+        List<StudentAnswersEntity> studentAnswersEntities = studentAnswersRepository.findByStudentIdAndTestResultId(studentId, testResult.getId());
+        List<TestSubmitRequest.QuestionAndAnswer> questionAndAnswers = new ArrayList<>();
+        for (StudentAnswersEntity studentAnswer : studentAnswersEntities) {
+            TestSubmitRequest.QuestionAndAnswer questionAndAnswer = questionAndAnswers.stream()
+                    .filter(qa -> qa.getQuestionId().equals(studentAnswer.getQuestionId()))
+                    .findFirst()
+                    .orElseGet(() -> {
+                        TestSubmitRequest.QuestionAndAnswer qa = new TestSubmitRequest.QuestionAndAnswer();
+                        qa.setQuestionId(studentAnswer.getQuestionId());
+                        qa.setAnswers(new ArrayList<>());
+                        questionAndAnswers.add(qa);
+                        return qa;
+                    });
+            questionAndAnswer.getAnswers().add(studentAnswer.getAnswerId());
+        }
+        TestSubmitRequest request = new TestSubmitRequest();
+        request.setTestResultId(testResult.getId());
+        request.setQuestionAndAnswers(questionAndAnswers);
+        return request;
 
+    }
     private List<GetQuestionsResponse.QuestionResponse> cloneQuestionResponses(List<GetQuestionsResponse.QuestionResponse> originalResponses) {
         return originalResponses.stream()
                 .map(question -> {
