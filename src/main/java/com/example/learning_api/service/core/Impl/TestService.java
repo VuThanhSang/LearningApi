@@ -535,6 +535,7 @@ public class TestService implements ITestService {
                 resData.setPassed(testResultEntity.getGrade() >= 5);
                 resData.setAttendedAt(testResultEntity.getAttendedAt().toString());
                 resData.setCreatedAt(testResultEntity.getCreatedAt().toString());
+                resData.setFinishedAt(testResultEntity.getFinishedAt().toString());
                 resData.setTestType("test");
                 updateSelectedAnswers(clonedQuestionResponses, studentAnswersEntities, testResultEntity.getId());
                 resData.setQuestions(clonedQuestionResponses);

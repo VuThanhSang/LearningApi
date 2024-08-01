@@ -14,6 +14,7 @@ public class TestResultResponse {
     private boolean isPassed;
     private String attendedAt;
     private String createdAt;
+    private String finishedAt;
     private List<GetQuestionsResponse.QuestionResponse> questions;
 
 }
