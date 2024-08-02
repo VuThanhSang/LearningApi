@@ -11,8 +11,8 @@ public class KafkaConfig {
 
 
     @Bean
-    JsonMessageConverter jsonMessageConverter() {
-        return new JsonMessageConverter();
+    public NewTopic createMailTopic() {
+        return new NewTopic(KafkaConstant.SEND_CODE_EMAIL_TOPIC, 2, (short) 1);
     }
 
 }

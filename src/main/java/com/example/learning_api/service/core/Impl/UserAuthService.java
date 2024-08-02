@@ -12,6 +12,8 @@ import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.ConfirmationCodeStatus;
 import com.example.learning_api.enums.RoleEnum;
 import com.example.learning_api.enums.UserStatus;
+import com.example.learning_api.kafka.message.CodeEmailMsgData;
+import com.example.learning_api.kafka.publisher.MailerKafkaPublisher;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.JwtService;
@@ -71,6 +73,7 @@ public class UserAuthService  implements IUserAuthService {
     private final UserTokenRedisService userTokenRedisService;
     private final TeacherRepository teacherRepository;
     private final StudentRepository studentRepository;
+    private final MailerKafkaPublisher mailerKafkaPublisher;
     @Autowired
     private final JavaMailSender javaMailSender;
     
@@ -274,7 +277,8 @@ public class UserAuthService  implements IUserAuthService {
         if (user != null && user.getStatus() == UserStatus.INACTIVE){
             String code = GeneratorUtils.generateRandomCode(6);
             createOrUpdateConfirmationInfo(email, code);
-            sendEmailWithCode(email, code, "Active User Successfully");
+            mailerKafkaPublisher.sendMessageToCodeEmail(new CodeEmailMsgData(email, code));
+//            sendEmailWithCode(email, code, "Active User Successfully");
             return;
         }else if(user != null && user.getStatus() == UserStatus.ACTIVE){
             throw new CustomException( "User already Active");
