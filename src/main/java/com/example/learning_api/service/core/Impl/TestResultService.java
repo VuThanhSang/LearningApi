@@ -1,11 +1,13 @@
 package com.example.learning_api.service.core.Impl;
 
+import com.example.learning_api.dto.request.test.CreateExitLogRequest;
 import com.example.learning_api.dto.request.test.CreateTestResultRequest;
 import com.example.learning_api.dto.request.test.SaveProgressRequest;
 import com.example.learning_api.dto.request.test.UpdateTestResultRequest;
 import com.example.learning_api.dto.response.question.GetQuestionsResponse;
 import com.example.learning_api.dto.response.test.StartTestResponse;
 import com.example.learning_api.entity.sql.database.StudentAnswersEntity;
+import com.example.learning_api.entity.sql.database.StudentTestExitLogEntity;
 import com.example.learning_api.entity.sql.database.TestEntity;
 import com.example.learning_api.entity.sql.database.TestResultEntity;
 import com.example.learning_api.enums.TestState;
@@ -16,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -29,7 +32,7 @@ public class TestResultService implements ITestResultService {
     private final StudentAnswersRepository studentAnswerRepository;
     private final AnswerRepository answerRepository;
     private final QuestionRepository questionRepository;
-
+    private final StudentTestExitLogRepository studentTestExitLogRepository;
     @Override
     public StartTestResponse addTestResult(CreateTestResultRequest body) {
         try{
@@ -142,7 +145,40 @@ public class TestResultService implements ITestResultService {
         }
     }
 
+    @Override
+    public void exitTestLog(CreateExitLogRequest body) {
+        try{
+            TestResultEntity testResultEntity = testResultRepository.findById(body.getTestResultId()).orElseThrow(() -> new IllegalArgumentException("Test result does not exist"));
+            if (testResultEntity.getState() == TestState.FINISHED) {
+                throw new IllegalArgumentException("Test is already finished");
+            }
+            StudentTestExitLogEntity studentTestExitLogEntity = new StudentTestExitLogEntity();
+            studentTestExitLogEntity.setStudentId(body.getStudentId());
+            studentTestExitLogEntity.setTestResultId(body.getTestResultId());
+            studentTestExitLogEntity.setTime(body.getTime());
+            studentTestExitLogRepository.save(studentTestExitLogEntity);
+        }
+        catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
 
+
+        }
+    }
+
+    @Override
+    public List<StudentTestExitLogEntity> getTestResult(String studentId, String TestResultId) {
+        try{
+            List<StudentTestExitLogEntity> data= studentTestExitLogRepository.findByStudentIdAndTestResultId(studentId, TestResultId);
+            if (data.isEmpty()) {
+                return new ArrayList<>();
+            }
+            return data;
+        }
+        catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+
+        }
+    }
 
 
 }
