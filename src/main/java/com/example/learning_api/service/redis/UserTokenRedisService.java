@@ -15,6 +15,29 @@ public class UserTokenRedisService {
     public static final String PREFIX_KEY_USER_TOKEN = "user_token";
     public final static String STRING_FORMAT_KEY_USER_TOKEN = PREFIX_KEY_USER_TOKEN + ":%s:%s";
     private static final int MAX_TOKENS_PER_USER = 1;
+    public static final String PREFIX_KEY_USER_STATUS = "user_status";
+    public final static String STRING_FORMAT_KEY_USER_STATUS = PREFIX_KEY_USER_STATUS + ":%s";
+
+    private String getKeyUserStatus(String userId) {
+        return String.format(STRING_FORMAT_KEY_USER_STATUS, userId);
+    }
+
+    public void setUserOnline(String userId) {
+        String key = getKeyUserStatus(userId);
+        redisTemplate.opsForValue().set(key, "online");
+    }
+
+    public void setUserOffline(String userId) {
+        String key = getKeyUserStatus(userId);
+        redisTemplate.opsForValue().set(key, "offline");
+    }
+
+    public String getUserStatus(String userId) {
+        String key = getKeyUserStatus(userId);
+        return (String) redisTemplate.opsForValue().get(key);
+    }
+
+
     private String getKeyUserTokenKey(String userId, String token) {
         return String.format(STRING_FORMAT_KEY_USER_TOKEN, userId, token);
     }

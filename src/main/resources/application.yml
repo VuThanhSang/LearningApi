@@ -41,7 +41,7 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: com.example.learning_api.dto.*
+        spring.json.trusted.packages: com.example.learning_api.kafka.message
   redis:
     host: ${REDIS_HOST}
     port: ${REDIS_PORT}

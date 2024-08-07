@@ -7,9 +7,11 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import static com.example.learning_api.constant.SwaggerConstant.*;
+
 @Data
-@Builder
+@NoArgsConstructor  // Add this annotation to generate a default constructor
 public class RegisterUserRequest {
     @Schema(example = EMAIL_EX)
     @Email
@@ -33,10 +35,7 @@ public class RegisterUserRequest {
     @NotBlank
     private String role;
 
-
     @Schema(example = PHONE_NUMBER_EX)
     @Pattern(regexp = PHONE_NUMBER_REGEX)
     private String phoneNumber;
-
-
 }

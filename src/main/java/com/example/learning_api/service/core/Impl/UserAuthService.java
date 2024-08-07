@@ -147,7 +147,7 @@ public class UserAuthService  implements IUserAuthService {
             String refreshToken = jwtService.issueRefreshToken(user.getId(), user.getEmail(), user.getRole());
 
             userTokenRedisService.upsertUserToken(user.getId(), refreshToken, false);
-
+            userTokenRedisService.setUserOnline(user.getId());
             return buildLoginResponse(user, jwt, refreshToken);
         } catch (Exception e) {
             throw new CustomException(e.getMessage());
@@ -192,7 +192,7 @@ public class UserAuthService  implements IUserAuthService {
             }
 
             userTokenRedisService.upsertUserToken(user.getId(), refreshToken, false);
-
+            userTokenRedisService.setUserOnline(user.getId());
             return responseBuilder.build();
         }
         catch (Exception e){
@@ -220,6 +220,14 @@ public class UserAuthService  implements IUserAuthService {
                 .accessToken(newAccessToken)
                 .refreshToken(newRefreshToken)
                 .build();
+    }
+
+    @Override
+    public void logout(String userId) {
+        userTokenRedisService.deleteAllTokenOfUser(userId);
+        UserEntity user = userRepository.findById(userId).orElseThrow();
+        userTokenRedisService.setUserOffline(user.getId());
+        revokeAllTokenByUser(user);
     }
 
     private void revokeAllTokenByUser(UserEntity user) {
@@ -277,7 +285,7 @@ public class UserAuthService  implements IUserAuthService {
         if (user != null && user.getStatus() == UserStatus.INACTIVE){
             String code = GeneratorUtils.generateRandomCode(6);
             createOrUpdateConfirmationInfo(email, code);
-            mailerKafkaPublisher.sendMessageToCodeEmail(new CodeEmailMsgData(email, code));
+            mailerKafkaPublisher.sendMessageToCodeEmail(new CodeEmailMsgData(code, email));
 //            sendEmailWithCode(email, code, "Active User Successfully");
             return;
         }else if(user != null && user.getStatus() == UserStatus.ACTIVE){

@@ -15,7 +15,7 @@ import static com.example.learning_api.kafka.KafkaConstant.*;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class MailerKafkaListener {
+public class    MailerKafkaListener {
     private final EmailService emailService;
 
 

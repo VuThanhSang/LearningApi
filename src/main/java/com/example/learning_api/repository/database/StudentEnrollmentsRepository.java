@@ -60,5 +60,6 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
     })
     List<UpcomingDeadlinesResponse> getUpcomingDeadlines(String studentId, String compareDate);
 
-
+    @Query("{'classroomId': ?0}")
+    Page<StudentEnrollmentsEntity> findByClassroomId(String classroomId, Pageable pageable);
 }
