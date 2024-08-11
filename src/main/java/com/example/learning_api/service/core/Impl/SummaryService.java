@@ -13,6 +13,7 @@ import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.ISummaryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.math3.stat.descriptive.summary.Sum;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -149,7 +150,7 @@ public class SummaryService implements ISummaryService {
     }
 
     @Override
-    public void getSummariesByStudentIdAndTermId(String studentId, String termId) {
+    public List<GetSummaryResponse> getSummariesByStudentIdAndTermId(String studentId, String termId) {
         try {
             if (studentRepository.findById(studentId).isEmpty()) {
                 throw new IllegalArgumentException("StudentId is not found");
@@ -157,7 +158,21 @@ public class SummaryService implements ISummaryService {
             if (termRepository.findById(termId).isEmpty()) {
                 throw new IllegalArgumentException("TermId is not found");
             }
-            summaryRepository.findByStudentIdAndTermId(studentId, termId);
+           List<SummaryEntity> data = summaryRepository.findByStudentIdAndTermId(studentId, termId);
+            List<GetSummaryResponse> response = new ArrayList<>();
+            for (SummaryEntity summaryEntity : data) {
+                GetSummaryResponse resData = new GetSummaryResponse();
+                CourseEntity courseEntity = courseRepository.findById(summaryEntity.getCourseId()).orElse(null);
+                resData.setId(summaryEntity.getId());
+                resData.setCourseId(courseEntity.getId());
+                resData.setCourseName(courseEntity.getName());
+                resData.setFinalExamGrade(summaryEntity.getFinalExamGrade());
+                resData.setFinalGrade(summaryEntity.getFinalGrade());
+                resData.setMidTermGrade(summaryEntity.getMidTermGrade());
+                resData.setPassed(summaryEntity.isPassed());
+                response.add(resData);
+            }
+            return response;
         } catch (Exception e) {
             log.error("Error in getSummariesByStudentIdAndTermId: ", e);
             throw new IllegalArgumentException(e.getMessage());

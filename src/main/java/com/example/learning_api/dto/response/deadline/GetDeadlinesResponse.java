@@ -24,8 +24,8 @@ public class GetDeadlinesResponse {
         private String attachment;
         private String StartDate;
         private String EndDate;
-        private Date createdAt;
-        private Date updatedAt;
+        private String createdAt;
+        private String updatedAt;
         public static DeadlineResponse fromDeadlineEntity(DeadlineEntity deadlineEntity){
             DeadlineResponse deadlineResponse = new DeadlineResponse();
             deadlineResponse.setId(deadlineEntity.getId());

@@ -5,6 +5,7 @@ import com.example.learning_api.dto.request.test.SaveProgressRequest;
 import com.example.learning_api.dto.request.test.UpdateTestResultRequest;
 import com.example.learning_api.dto.response.question.GetQuestionsResponse;
 import com.example.learning_api.dto.response.test.StartTestResponse;
+import com.example.learning_api.dto.response.test.TestResultsForClassroomResponse;
 import com.example.learning_api.entity.sql.database.StudentAnswersEntity;
 import com.example.learning_api.entity.sql.database.TestEntity;
 import com.example.learning_api.entity.sql.database.TestResultEntity;
@@ -29,7 +30,8 @@ public class TestResultService implements ITestResultService {
     private final StudentAnswersRepository studentAnswerRepository;
     private final AnswerRepository answerRepository;
     private final QuestionRepository questionRepository;
-
+    private final StudentEnrollmentsRepository studentEnrollmentsRepository;
+    private final ClassRoomRepository classRoomRepository;
     @Override
     public StartTestResponse addTestResult(CreateTestResultRequest body) {
         try{
@@ -142,7 +144,22 @@ public class TestResultService implements ITestResultService {
         }
     }
 
+    @Override
+    public List<TestResultsForClassroomResponse> getTestResultsForClassroom(String classroomId) {
+        try{
+            if (classroomId == null) {
+                throw new IllegalArgumentException("Classroom id must be provided");
+            }
+            if (classRoomRepository.existsById(classroomId) == false) {
+                throw new IllegalArgumentException("Classroom does not exist");
+            }
+            return studentEnrollmentsRepository.getTestResultsForClassroom(classroomId);
+        }
+        catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
 
+        }
+    }
 
 
 }

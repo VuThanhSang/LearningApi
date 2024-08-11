@@ -5,6 +5,7 @@ import com.example.learning_api.dto.request.test.SaveProgressRequest;
 import com.example.learning_api.dto.request.test.UpdateTestResultRequest;
 import com.example.learning_api.dto.response.question.GetQuestionsResponse;
 import com.example.learning_api.dto.response.test.StartTestResponse;
+import com.example.learning_api.dto.response.test.TestResultsForClassroomResponse;
 
 import java.util.List;
 
@@ -13,5 +14,6 @@ public interface ITestResultService {
     void updateTestResult(UpdateTestResultRequest body);
     void deleteTestResult(String studentId, String courseId);
     void saveProgress(SaveProgressRequest body);
+    List<TestResultsForClassroomResponse> getTestResultsForClassroom(String classroomId);
 
 }

@@ -23,7 +23,7 @@ public class DeadlineEntity {
     private String attachment;
     private String startDate;
     private String endDate;
-    private Date createdAt;
-    private Date updatedAt;
+    private String createdAt;
+    private String updatedAt;
 
 }

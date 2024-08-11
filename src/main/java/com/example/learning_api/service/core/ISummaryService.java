@@ -13,6 +13,6 @@ public interface ISummaryService {
     void deleteSummary(String id);
     SummaryEntity getSummary(String id);
     List<GetSummaryResponse> getSummariesByStudentId(String studentId);
-    void getSummariesByStudentIdAndTermId(String studentId, String termId);
+    List<GetSummaryResponse> getSummariesByStudentIdAndTermId(String studentId, String termId);
 //    void getSummariesByTermIdAndCourseId(String termId, String courseId);
 }

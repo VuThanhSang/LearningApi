@@ -145,8 +145,20 @@ public class UserAuthService  implements IUserAuthService {
             UserEntity user = authenticateUser(body.getEmail(), body.getPassword());
             String jwt = jwtService.issueAccessToken(user.getId(), user.getEmail(), user.getRole());
             String refreshToken = jwtService.issueRefreshToken(user.getId(), user.getEmail(), user.getRole());
-
-            userTokenRedisService.upsertUserToken(user.getId(), refreshToken, false);
+            String userId= null;
+            if (user.getRole().equals(RoleEnum.TEACHER)) {
+                TeacherEntity teacher = teacherRepository.findByUserId(user.getId());
+                if (teacher != null) {
+                    userId = teacher.getId();
+                }
+            }
+            else{
+                StudentEntity student = studentRepository.findByUserId(user.getId());
+                if (student != null) {
+                    userId = student.getId();
+                }
+            }
+            userTokenRedisService.upsertUserToken(userId, refreshToken, false);
             userTokenRedisService.setUserOnline(user.getId());
             return buildLoginResponse(user, jwt, refreshToken);
         } catch (Exception e) {
