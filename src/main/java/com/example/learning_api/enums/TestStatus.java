@@ -1,7 +1,8 @@
 package com.example.learning_api.enums;
 
 public enum TestStatus {
-    PENDING,
+    NOT_OPEN,
+    UPCOMING,
     ONGOING,
     FINISHED
 }

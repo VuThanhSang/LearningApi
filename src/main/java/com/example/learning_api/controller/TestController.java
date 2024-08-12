@@ -5,7 +5,7 @@ import com.example.learning_api.dto.request.test.*;
 import com.example.learning_api.dto.response.question.GetQuestionsResponse;
 import com.example.learning_api.dto.response.teacher.GetTeachersResponse;
 import com.example.learning_api.dto.response.test.*;
-import com.example.learning_api.entity.sql.database.StudentTestExitLogEntity;
+import com.example.learning_api.entity.sql.database.StudentEntity;
 import com.example.learning_api.model.ResponseAPI;
 import com.example.learning_api.service.core.ITestResultService;
 import com.example.learning_api.service.core.ITestService;
@@ -395,26 +395,6 @@ public class TestController {
             return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
         }
     }
- @GetMapping(path = "/result/{studentId}/{testId}")
-    public ResponseEntity<ResponseAPI<List<TestResultResponse>>> getTestResult(@PathVariable String studentId, @PathVariable String testId) {
-        try{
-            List<TestResultResponse> resData = testService.getTestResult(studentId, testId);
-            ResponseAPI<List<TestResultResponse>> res = ResponseAPI.<List<TestResultResponse>>builder()
-                    .timestamp(new Date())
-                    .message("Get test result successfully")
-                    .data(resData)
-                    .build();
-            return new ResponseEntity<>(res, StatusCode.OK);
-        }
-        catch (Exception e){
-            ResponseAPI<List<TestResultResponse>> res = ResponseAPI.<List<TestResultResponse>>builder()
-                    .timestamp(new Date())
-                    .message(e.getMessage())
-                    .build();
-            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
-        }
-    }
-
     @GetMapping(path = "/result/classroom/{classroomId}")
     public ResponseEntity<ResponseAPI<List<TestResultsForClassroomResponse>>> getTestResultsForClassroom(@PathVariable String classroomId) {
         try{
@@ -435,18 +415,19 @@ public class TestController {
         }
     }
 
-    @PostMapping(path = "/exit-log")
-    public ResponseEntity<ResponseAPI<String>> exitTestLog(@RequestBody @Valid CreateExitLogRequest body) {
+    @GetMapping(path = "/result/student/{studentId}/classroom/{classroomId}")
+    public ResponseEntity<ResponseAPI<List<TestResultForStudentResponse>>> getTestResultsByStudentIdAndClassroomId(@PathVariable String studentId, @PathVariable String classroomId) {
         try{
-            testResultService.exitTestLog(body);
-            ResponseAPI<String> res = ResponseAPI.<String>builder()
+            List<TestResultForStudentResponse> resData = testResultService.getTestResultsByStudentIdAndClassroomId(studentId, classroomId);
+            ResponseAPI<List<TestResultForStudentResponse>> res = ResponseAPI.<List<TestResultForStudentResponse>>builder()
                     .timestamp(new Date())
-                    .message("Exit test log successfully")
+                    .message("Get test results by student id and classroom id successfully")
+                    .data(resData)
                     .build();
-            return new ResponseEntity<>(res, StatusCode.CREATED);
+            return new ResponseEntity<>(res, StatusCode.OK);
         }
         catch (Exception e){
-            ResponseAPI<String> res = ResponseAPI.<String>builder()
+            ResponseAPI<List<TestResultForStudentResponse>> res = ResponseAPI.<List<TestResultForStudentResponse>>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();
@@ -454,19 +435,59 @@ public class TestController {
         }
     }
 
-    @GetMapping(path = "/exit-log/{studentId}/{TestResultId}")
-    public ResponseEntity<ResponseAPI<List<StudentTestExitLogEntity>>> getExitLogs(@PathVariable String studentId, @PathVariable String TestResultId) {
+    @GetMapping(path = "/result/overview/{testId}")
+    public ResponseEntity<ResponseAPI<OverviewResultResponse>> getOverviewOfTestResults(@PathVariable String testId) {
         try{
-            List<StudentTestExitLogEntity> resData = testResultService.getTestResult(studentId, TestResultId);
-            ResponseAPI<List<StudentTestExitLogEntity>> res = ResponseAPI.<List<StudentTestExitLogEntity>>builder()
+            OverviewResultResponse resData = testResultService.getOverviewOfTestResults(testId);
+            ResponseAPI<OverviewResultResponse> res = ResponseAPI.<OverviewResultResponse>builder()
                     .timestamp(new Date())
-                    .message("Get test result successfully")
+                    .message("Get overview of test results successfully")
                     .data(resData)
                     .build();
             return new ResponseEntity<>(res, StatusCode.OK);
         }
         catch (Exception e){
-            ResponseAPI<List<StudentTestExitLogEntity>> res = ResponseAPI.<List<StudentTestExitLogEntity>>builder()
+            ResponseAPI<OverviewResultResponse> res = ResponseAPI.<OverviewResultResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping(path = "/result/statistics/{testId}")
+    public ResponseEntity<ResponseAPI<StatisticsResultResponse>> getStatisticsQuestionAndAnswerOfTest(@PathVariable String testId) {
+        try{
+            StatisticsResultResponse resData = testResultService.getStatisticsQuestionAndAnswerOfTest(testId);
+            ResponseAPI<StatisticsResultResponse> res = ResponseAPI.<StatisticsResultResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get statistics question and answer of test successfully")
+                    .data(resData)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<StatisticsResultResponse> res = ResponseAPI.<StatisticsResultResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping(path = "/result/student/not-attempted/{testId}")
+    public ResponseEntity<ResponseAPI<List<StudentEntity>>> getStudentNotAttemptedTest(@PathVariable String testId) {
+        try{
+            List<StudentEntity> resData = testResultService.getStudentNotAttemptedTest(testId);
+            ResponseAPI<List<StudentEntity>> res = ResponseAPI.<List<StudentEntity>>builder()
+                    .timestamp(new Date())
+                    .message("Get student not attempted test successfully")
+                    .data(resData)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<List<StudentEntity>> res = ResponseAPI.<List<StudentEntity>>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();

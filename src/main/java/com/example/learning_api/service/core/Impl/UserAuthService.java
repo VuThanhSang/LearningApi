@@ -12,15 +12,15 @@ import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.ConfirmationCodeStatus;
 import com.example.learning_api.enums.RoleEnum;
 import com.example.learning_api.enums.UserStatus;
-import com.example.learning_api.kafka.message.CodeEmailMsgData;
-import com.example.learning_api.kafka.publisher.MailerKafkaPublisher;
+//import com.example.learning_api.kafka.message.CodeEmailMsgData;
+//import com.example.learning_api.kafka.publisher.MailerKafkaPublisher;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.JwtService;
 import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.IUserAuthService;
-import com.example.learning_api.service.redis.Impl.BaseRedisServiceImpl;
-import com.example.learning_api.service.redis.UserTokenRedisService;
+//import com.example.learning_api.service.redis.Impl.BaseRedisServiceImpl;
+//import com.example.learning_api.service.redis.UserTokenRedisService;
 import com.example.learning_api.utils.GeneratorUtils;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -70,10 +70,10 @@ public class UserAuthService  implements IUserAuthService {
     private final AuthenticationManager authenticationManager;
     private final TokenRepository tokenRepository;
     private final ConfirmationRepository confirmationRepository;
-    private final UserTokenRedisService userTokenRedisService;
+//    private final UserTokenRedisService userTokenRedisService;
     private final TeacherRepository teacherRepository;
     private final StudentRepository studentRepository;
-    private final MailerKafkaPublisher mailerKafkaPublisher;
+//    private final MailerKafkaPublisher mailerKafkaPublisher;
     @Autowired
     private final JavaMailSender javaMailSender;
     
@@ -133,7 +133,7 @@ public class UserAuthService  implements IUserAuthService {
         userEntity = userRepository.save(userEntity);
         var accessToken = jwtService.issueAccessToken(userEntity.getId(), userEntity.getEmail(), userEntity.getRole());
         var refreshToken = jwtService.issueRefreshToken(userEntity.getId(), userEntity.getEmail(), userEntity.getRole());
-        userTokenRedisService.upsertUserToken(userEntity.getId(), refreshToken, false);
+//        userTokenRedisService.upsertUserToken(userEntity.getId(), refreshToken, false);
         resData.setAccessToken(accessToken);
         resData.setRefreshToken(refreshToken);
         resData.setUserId(userEntity.getId());
@@ -158,8 +158,8 @@ public class UserAuthService  implements IUserAuthService {
                     userId = student.getId();
                 }
             }
-            userTokenRedisService.upsertUserToken(userId, refreshToken, false);
-            userTokenRedisService.setUserOnline(user.getId());
+//            userTokenRedisService.upsertUserToken(userId, refreshToken, false);
+//            userTokenRedisService.setUserOnline(user.getId());
             return buildLoginResponse(user, jwt, refreshToken);
         } catch (Exception e) {
             throw new CustomException(e.getMessage());
@@ -203,8 +203,8 @@ public class UserAuthService  implements IUserAuthService {
                 }
             }
 
-            userTokenRedisService.upsertUserToken(user.getId(), refreshToken, false);
-            userTokenRedisService.setUserOnline(user.getId());
+//            userTokenRedisService.upsertUserToken(user.getId(), refreshToken, false);
+//            userTokenRedisService.setUserOnline(user.getId());
             return responseBuilder.build();
         }
         catch (Exception e){
@@ -215,19 +215,19 @@ public class UserAuthService  implements IUserAuthService {
     public RefreshTokenResponse refreshToken(String refreshToken) {
         DecodedJWT decodedJWT = jwtService.decodeRefreshToken(refreshToken);
         String userId = decodedJWT.getSubject();
-        Boolean tokenInfo = userTokenRedisService.getUserTokenValue(userId, refreshToken);
-        if(tokenInfo==null){
-            throw new CustomException("Token not found");
-        }
-        if(tokenInfo){
-            userTokenRedisService.deleteAllTokenOfUser(userId);
-            throw new CustomException("Token has been used");
-        }
+//        Boolean tokenInfo = userTokenRedisService.getUserTokenValue(userId, refreshToken);
+//        if(tokenInfo==null){
+//            throw new CustomException("Token not found");
+//        }
+//        if(tokenInfo){
+//            userTokenRedisService.deleteAllTokenOfUser(userId);
+//            throw new CustomException("Token has been used");
+//        }
         UserEntity user = userRepository.findById(userId).orElseThrow();
         String newAccessToken = jwtService.issueAccessToken(user.getId(), user.getEmail(), user.getRole());
         String newRefreshToken = jwtService.issueRefreshToken(user.getId(), user.getEmail(), user.getRole());
-        userTokenRedisService.upsertUserToken(user.getId(), newRefreshToken, false);
-        userTokenRedisService.upsertUserToken(user.getId(), refreshToken, true);
+//        userTokenRedisService.upsertUserToken(user.getId(), newRefreshToken, false);
+//        userTokenRedisService.upsertUserToken(user.getId(), refreshToken, true);
         return RefreshTokenResponse.builder()
                 .accessToken(newAccessToken)
                 .refreshToken(newRefreshToken)
@@ -236,9 +236,9 @@ public class UserAuthService  implements IUserAuthService {
 
     @Override
     public void logout(String userId) {
-        userTokenRedisService.deleteAllTokenOfUser(userId);
+//        userTokenRedisService.deleteAllTokenOfUser(userId);
         UserEntity user = userRepository.findById(userId).orElseThrow();
-        userTokenRedisService.setUserOffline(user.getId());
+//        userTokenRedisService.setUserOffline(user.getId());
         revokeAllTokenByUser(user);
     }
 
@@ -297,7 +297,7 @@ public class UserAuthService  implements IUserAuthService {
         if (user != null && user.getStatus() == UserStatus.INACTIVE){
             String code = GeneratorUtils.generateRandomCode(6);
             createOrUpdateConfirmationInfo(email, code);
-            mailerKafkaPublisher.sendMessageToCodeEmail(new CodeEmailMsgData(code, email));
+//            mailerKafkaPublisher.sendMessageToCodeEmail(new CodeEmailMsgData(code, email));
 //            sendEmailWithCode(email, code, "Active User Successfully");
             return;
         }else if(user != null && user.getStatus() == UserStatus.ACTIVE){

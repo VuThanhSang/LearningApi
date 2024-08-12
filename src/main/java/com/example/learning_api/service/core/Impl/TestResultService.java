@@ -1,26 +1,26 @@
 package com.example.learning_api.service.core.Impl;
 
-import com.example.learning_api.dto.request.test.CreateExitLogRequest;
 import com.example.learning_api.dto.request.test.CreateTestResultRequest;
 import com.example.learning_api.dto.request.test.SaveProgressRequest;
 import com.example.learning_api.dto.request.test.UpdateTestResultRequest;
 import com.example.learning_api.dto.response.question.GetQuestionsResponse;
-import com.example.learning_api.dto.response.test.StartTestResponse;
-import com.example.learning_api.dto.response.test.TestResultsForClassroomResponse;
+import com.example.learning_api.dto.response.test.*;
 import com.example.learning_api.entity.sql.database.StudentAnswersEntity;
-import com.example.learning_api.entity.sql.database.StudentTestExitLogEntity;
+import com.example.learning_api.entity.sql.database.StudentEntity;
 import com.example.learning_api.entity.sql.database.TestEntity;
 import com.example.learning_api.entity.sql.database.TestResultEntity;
 import com.example.learning_api.enums.TestState;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.ITestResultService;
+import com.example.learning_api.service.core.ITestService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,7 +35,7 @@ public class TestResultService implements ITestResultService {
     private final QuestionRepository questionRepository;
     private final StudentEnrollmentsRepository studentEnrollmentsRepository;
     private final ClassRoomRepository classRoomRepository;
-    private final StudentTestExitLogRepository studentTestExitLogRepository;
+    private final ITestService testService;
     @Override
     public StartTestResponse addTestResult(CreateTestResultRequest body) {
         try{
@@ -164,39 +164,196 @@ public class TestResultService implements ITestResultService {
 
         }
     }
-    public void exitTestLog(CreateExitLogRequest body) {
-        try{
-            TestResultEntity testResultEntity = testResultRepository.findById(body.getTestResultId()).orElseThrow(() -> new IllegalArgumentException("Test result does not exist"));
-            if (testResultEntity.getState() == TestState.FINISHED) {
-                throw new IllegalArgumentException("Test is already finished");
+    @Override
+    public List<TestResultForStudentResponse> getTestResultsByStudentIdAndClassroomId(String studentId, String classroomId) {
+        try {
+            if (studentId == null || classroomId == null) {
+                throw new IllegalArgumentException("Student id and classroom id must be provided");
             }
-            StudentTestExitLogEntity studentTestExitLogEntity = new StudentTestExitLogEntity();
-            studentTestExitLogEntity.setStudentId(body.getStudentId());
-            studentTestExitLogEntity.setTestResultId(body.getTestResultId());
-            studentTestExitLogEntity.setTime(body.getTime());
-            studentTestExitLogRepository.save(studentTestExitLogEntity);
+            if (studentRepository.existsById(studentId) == false) {
+                throw new IllegalArgumentException("Student does not exist");
+            }
+            if (classRoomRepository.existsById(classroomId) == false) {
+                throw new IllegalArgumentException("Classroom does not exist");
+            }
+            return studentEnrollmentsRepository.getTestResultsForStudent(studentId, classroomId);
         }
         catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
-
 
         }
     }
 
     @Override
-    public List<StudentTestExitLogEntity> getTestResult(String studentId, String TestResultId) {
-        try{
-            List<StudentTestExitLogEntity> data= studentTestExitLogRepository.findByStudentIdAndTestResultId(studentId, TestResultId);
-            if (data.isEmpty()) {
-                return new ArrayList<>();
-            }
-            return data;
-        }
-        catch (Exception e) {
-            throw new IllegalArgumentException(e.getMessage());
+    public OverviewResultResponse getOverviewOfTestResults(String testId) {
+        validateTestIdf(testId);
+        List<TestResultOfTestResponse> results = testResultRepository.findHighestGradesByTestIdAndFinishedStateSortedAscending(testId);
 
+        if (results.isEmpty()) {
+            throw new IllegalStateException("No test results found for the given test ID");
+        }
+
+        int totalStudentInClass = getTotalStudentsInClass(results.get(0).getTestInfo().getClassroomId());
+        OverviewResultResponse response = new OverviewResultResponse();
+
+        response.setTotalStudent(totalStudentInClass);
+        response.setTestResults(results);
+
+        calculateAndSetStatistics(response, results, totalStudentInClass);
+
+        return response;
+    }
+
+    private void validateTestIdf(String testId) {
+        if (testId == null) {
+            throw new IllegalArgumentException("Test id must be provided");
+        }
+        if (!testRepository.existsById(testId)) {
+            throw new IllegalArgumentException("Test does not exist");
         }
     }
 
+    private int getTotalStudentsInClass(String classroomId) {
+        return studentEnrollmentsRepository.countByClassroomId(classroomId);
+    }
+
+    private void calculateAndSetStatistics(OverviewResultResponse response, List<TestResultOfTestResponse> results, int totalStudentInClass) {
+        int totalPassed = 0;
+        int totalFailed = 0;
+        double totalGrade = 0;
+        int maxGrade = Integer.MIN_VALUE;
+        int minGrade = Integer.MAX_VALUE;
+
+        for (TestResultOfTestResponse result : results) {
+            if (result.isPassed()) {
+                totalPassed++;
+            } else {
+                totalFailed++;
+            }
+            totalGrade += result.getGrade();
+            maxGrade = Math.max(maxGrade, result.getGrade());
+            minGrade = Math.min(minGrade, result.getGrade());
+        }
+
+        int resultCount = results.size();
+        double averageGrade = resultCount > 0 ? totalGrade / resultCount : 0;
+
+        response.setMaxGrade(maxGrade);
+        response.setMinGrade(minGrade);
+        response.setAverageGrade(averageGrade);
+        response.setTotalPassed(totalPassed);
+        response.setTotalFailed(totalFailed);
+        response.setTotalNotAttended(totalStudentInClass - totalPassed - totalFailed);
+        response.setTotalGrade(resultCount);
+    }
+
+    @Override
+    public StatisticsResultResponse getStatisticsQuestionAndAnswerOfTest(String testId) {
+        validateTestId(testId);
+
+        GetTestDetailResponse testDetail = testService.getTestDetail(testId);
+        OverviewResultResponse overviewResult = getOverviewOfTestResults(testId);
+        List<TestResultOfTestResponse> results = overviewResult.getTestResults();
+
+        StatisticsResultResponse response = new StatisticsResultResponse();
+        List<StatisticsResultResponse.Question> processedQuestions = processQuestions(testDetail.getQuestions(), results);
+        response.setQuestions(processedQuestions);
+        response.setQuestionSortByIncorrectRate(sortQuestionsByIncorrectRate(processedQuestions));
+        setOverviewStatistics(response, overviewResult);
+
+        return response;
+    }
+
+    @Override
+    public List<StudentEntity> getStudentNotAttemptedTest(String testId) {
+        validateTestId(testId);
+        TestEntity test = testRepository.findById(testId).orElseThrow(() -> new IllegalArgumentException("Test does not exist"));
+        List<String> studentIds = studentEnrollmentsRepository.findStudentsNotTakenTest(test.getClassroomId(),testId);
+        List<StudentEntity> data  =  new ArrayList<>();
+        for (String studentId : studentIds) {
+            StudentEntity student = studentRepository.findById(studentId).orElseThrow(() -> new IllegalArgumentException("Student does not exist"));
+            data.add(student);
+        }
+        return data;
+    }
+
+    private void validateTestId(String testId) {
+        if (testId == null) {
+            throw new IllegalArgumentException("Test id must be provided");
+        }
+        if (!testRepository.existsById(testId)) {
+            throw new IllegalArgumentException("Test does not exist");
+        }
+    }
+
+    private List<StatisticsResultResponse.Question> processQuestions(List<GetQuestionsResponse.QuestionResponse> questions, List<TestResultOfTestResponse> results) {
+        return questions.stream()
+                .map(question -> processQuestion(question, results))
+                .collect(Collectors.toList());
+    }
+
+    private StatisticsResultResponse.Question processQuestion(GetQuestionsResponse.QuestionResponse question, List<TestResultOfTestResponse> results) {
+        StatisticsResultResponse.Question questionRes = modelMapperService.mapClass(question, StatisticsResultResponse.Question.class);
+        questionRes.setAnswers(processAnswers(question.getAnswers(), results));
+
+        int[] totals = calculateTotals(questionRes.getAnswers());
+        questionRes.setTotalCorrect(totals[0]);
+        questionRes.setTotalIncorrect(totals[1]);
+
+        return questionRes;
+    }
+
+    private List<StatisticsResultResponse.Answers> processAnswers(List<GetQuestionsResponse.AnswerResponse> answers, List<TestResultOfTestResponse> results) {
+        return answers.stream()
+                .map(answer -> processAnswer(answer, results))
+                .collect(Collectors.toList());
+    }
+
+    private StatisticsResultResponse.Answers processAnswer(GetQuestionsResponse.AnswerResponse answer, List<TestResultOfTestResponse> results) {
+        StatisticsResultResponse.Answers answerRes = modelMapperService.mapClass(answer, StatisticsResultResponse.Answers.class);
+        int count = countStudentAnswers(answer.getId(), results);
+        answerRes.setTotalSelected(count);
+        return answerRes;
+    }
+
+    private int countStudentAnswers(String answerId, List<TestResultOfTestResponse> results) {
+        return (int) results.stream()
+                .filter(result -> studentAnswerRepository.countByStudentIdAndTestResultIdAndAnswerId(result.getStudentId(), result.getResultId(), answerId) > 0)
+                .count();
+    }
+
+    private int[] calculateTotals(List<StatisticsResultResponse.Answers> answers) {
+        int totalCorrect = 0;
+        int totalIncorrect = 0;
+        for (StatisticsResultResponse.Answers answer : answers) {
+            if (answer.isCorrect()) {
+                totalCorrect += answer.getTotalSelected();
+            } else {
+                totalIncorrect += answer.getTotalSelected();
+            }
+        }
+        return new int[]{totalCorrect, totalIncorrect};
+    }
+
+    private void setOverviewStatistics(StatisticsResultResponse response, OverviewResultResponse overviewResult) {
+        response.setTotalPassed(overviewResult.getTotalPassed());
+        response.setTotalFailed(overviewResult.getTotalFailed());
+        response.setTotalAttempted(overviewResult.getTotalGrade());
+        response.setTotalNotAttempted(overviewResult.getTotalStudent() - overviewResult.getTotalGrade());
+    }
+    private List<StatisticsResultResponse.Question> sortQuestionsByIncorrectRate(List<StatisticsResultResponse.Question> questions) {
+        return questions.stream()
+                .sorted((q1, q2) -> {
+                    double rate1 = calculateIncorrectRate(q1);
+                    double rate2 = calculateIncorrectRate(q2);
+                    return Double.compare(rate2, rate1); // Sắp xếp giảm dần
+                })
+                .collect(Collectors.toList());
+    }
+
+    private double calculateIncorrectRate(StatisticsResultResponse.Question question) {
+        int total = question.getTotalCorrect() + question.getTotalIncorrect();
+        return total == 0 ? 0 : (double) question.getTotalIncorrect() / total;
+    }
 
 }
