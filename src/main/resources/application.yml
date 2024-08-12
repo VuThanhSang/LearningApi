@@ -14,6 +14,7 @@ spring:
     allow-bean-definition-overriding: true
   mail:
     host: smtp.gmail.com
+    default-encoding: UTF-8
     port: 587
     username: ${EMAIL_ID}
     password: ${EMAIL_PASSWORD}
@@ -26,24 +27,28 @@ spring:
     verify:
       host: http://localhost:8080
   kafka:
-    bootstrap-servers: http://localhost:9092
+    bootstrap-servers: localhost:9094
     producer:
       acks: -1
-      bootstrap-servers: http://localhost:9092
+      bootstrap-servers: localhost:9094
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties.[enable.idempotence]: true
       properties.[max.in.flight.requests.per.connection]: 5
     consumer:
-      bootstrap-servers: http://localhost:9092
+      bootstrap-servers: localhost:9094
       group-id: group-01
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: com.example.learning_api.dto.*
+        spring.json.trusted.packages: com.example.learning_api.kafka.message
   redis:
     host: ${REDIS_HOST}
     port: ${REDIS_PORT}
+  elasticsearch:
+    host: ${ELASTICSEARCH_HOST}
+    port: ${ELASTICSEARCH_PORT}
+
   security:
     oauth2:
       client:

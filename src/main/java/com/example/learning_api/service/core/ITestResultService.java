@@ -6,6 +6,7 @@ import com.example.learning_api.dto.request.test.SaveProgressRequest;
 import com.example.learning_api.dto.request.test.UpdateTestResultRequest;
 import com.example.learning_api.dto.response.question.GetQuestionsResponse;
 import com.example.learning_api.dto.response.test.StartTestResponse;
+import com.example.learning_api.dto.response.test.TestResultsForClassroomResponse;
 import com.example.learning_api.entity.sql.database.StudentTestExitLogEntity;
 import com.example.learning_api.repository.database.StudentTestExitLogRepository;
 
@@ -16,6 +17,7 @@ public interface ITestResultService {
     void updateTestResult(UpdateTestResultRequest body);
     void deleteTestResult(String studentId, String courseId);
     void saveProgress(SaveProgressRequest body);
+    List<TestResultsForClassroomResponse> getTestResultsForClassroom(String classroomId);
     void exitTestLog(CreateExitLogRequest body);
     List<StudentTestExitLogEntity> getTestResult(String studentId, String TestResultId);
 }

@@ -14,7 +14,7 @@ public interface IUserAuthService {
     LoginResponse loginUser(LoginUserRequest body);
     LoginResponse loginGoogleUser(OAuth2User oAuth2User);
     RefreshTokenResponse refreshToken(String refreshToken);
-
+    void logout(String userId);
     void sendCodeToRegister(String email);
 
     void sendCodeForgotPassword(String email);

@@ -395,6 +395,45 @@ public class TestController {
             return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
         }
     }
+ @GetMapping(path = "/result/{studentId}/{testId}")
+    public ResponseEntity<ResponseAPI<List<TestResultResponse>>> getTestResult(@PathVariable String studentId, @PathVariable String testId) {
+        try{
+            List<TestResultResponse> resData = testService.getTestResult(studentId, testId);
+            ResponseAPI<List<TestResultResponse>> res = ResponseAPI.<List<TestResultResponse>>builder()
+                    .timestamp(new Date())
+                    .message("Get test result successfully")
+                    .data(resData)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<List<TestResultResponse>> res = ResponseAPI.<List<TestResultResponse>>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping(path = "/result/classroom/{classroomId}")
+    public ResponseEntity<ResponseAPI<List<TestResultsForClassroomResponse>>> getTestResultsForClassroom(@PathVariable String classroomId) {
+        try{
+            List<TestResultsForClassroomResponse> resData = testResultService.getTestResultsForClassroom(classroomId);
+            ResponseAPI<List<TestResultsForClassroomResponse>> res = ResponseAPI.<List<TestResultsForClassroomResponse>>builder()
+                    .timestamp(new Date())
+                    .message("Get test results for classroom successfully")
+                    .data(resData)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<List<TestResultsForClassroomResponse>> res = ResponseAPI.<List<TestResultsForClassroomResponse>>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
 
     @PostMapping(path = "/exit-log")
     public ResponseEntity<ResponseAPI<String>> exitTestLog(@RequestBody @Valid CreateExitLogRequest body) {
@@ -413,7 +452,6 @@ public class TestController {
                     .build();
             return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
         }
-
     }
 
     @GetMapping(path = "/exit-log/{studentId}/{TestResultId}")
@@ -435,6 +473,5 @@ public class TestController {
             return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
         }
     }
-
 
 }

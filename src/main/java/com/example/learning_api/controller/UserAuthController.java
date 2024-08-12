@@ -10,6 +10,7 @@ import com.example.learning_api.dto.response.auth.RefreshTokenResponse;
 import com.example.learning_api.dto.response.auth.RegisterResponse;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.model.ResponseAPI;
+import com.example.learning_api.service.common.JwtService;
 import com.example.learning_api.service.core.IUserAuthService;
 import com.example.learning_api.utils.CookieUtils;
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,6 +42,7 @@ public class UserAuthController {
     private final IUserAuthService userAuthService;
     private static final Logger logger = LoggerFactory.getLogger(UserAuthController.class);
     private final ClientRegistrationRepository clientRegistrationRepository;
+    private final JwtService jwtService;
     @Operation(summary = USER_AUTH_REGISTER_SUM, description = USER_AUTH_REGISTER_DESC)
     @PostMapping(POST_USER_AUTH_REGISTER_SUB_PATH)
     public ResponseEntity<ResponseAPI<RegisterResponse>> registerUser(@RequestBody @Valid RegisterUserRequest body) {
@@ -159,14 +161,14 @@ public class UserAuthController {
     }
 
     @Operation(summary = USER_AUTH_LOGOUT_SUM)
-    @GetMapping(USER_AUTH_LOGOUT_PATH)
-    public ResponseEntity<ResponseAPI<?>> logoutUser(@CookieValue(name = "refreshToken", required = false) String refreshToken
+    @GetMapping("/logout/{userId}")
+    public ResponseEntity<ResponseAPI<?>> logoutUser(@CookieValue(name = "refreshToken", required = false) String refreshToken, @PathVariable String userId
                                                      ) {
 
         if (refreshToken == null) {
             throw new CustomException(ErrorConstant.NOT_FOUND);
         }
-
+        userAuthService.logout(userId);
         ResponseAPI<?> res = ResponseAPI.builder()
                 .timestamp(new Date())
                 .message(SuccessConstant.LOGOUT)

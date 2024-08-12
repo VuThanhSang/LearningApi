@@ -6,6 +6,7 @@ import com.example.learning_api.dto.request.test.SaveProgressRequest;
 import com.example.learning_api.dto.request.test.UpdateTestResultRequest;
 import com.example.learning_api.dto.response.question.GetQuestionsResponse;
 import com.example.learning_api.dto.response.test.StartTestResponse;
+import com.example.learning_api.dto.response.test.TestResultsForClassroomResponse;
 import com.example.learning_api.entity.sql.database.StudentAnswersEntity;
 import com.example.learning_api.entity.sql.database.StudentTestExitLogEntity;
 import com.example.learning_api.entity.sql.database.TestEntity;
@@ -32,6 +33,8 @@ public class TestResultService implements ITestResultService {
     private final StudentAnswersRepository studentAnswerRepository;
     private final AnswerRepository answerRepository;
     private final QuestionRepository questionRepository;
+    private final StudentEnrollmentsRepository studentEnrollmentsRepository;
+    private final ClassRoomRepository classRoomRepository;
     private final StudentTestExitLogRepository studentTestExitLogRepository;
     @Override
     public StartTestResponse addTestResult(CreateTestResultRequest body) {
@@ -146,6 +149,21 @@ public class TestResultService implements ITestResultService {
     }
 
     @Override
+    public List<TestResultsForClassroomResponse> getTestResultsForClassroom(String classroomId) {
+        try{
+            if (classroomId == null) {
+                throw new IllegalArgumentException("Classroom id must be provided");
+            }
+            if (classRoomRepository.existsById(classroomId) == false) {
+                throw new IllegalArgumentException("Classroom does not exist");
+            }
+            return studentEnrollmentsRepository.getTestResultsForClassroom(classroomId);
+        }
+        catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+
+        }
+    }
     public void exitTestLog(CreateExitLogRequest body) {
         try{
             TestResultEntity testResultEntity = testResultRepository.findById(body.getTestResultId()).orElseThrow(() -> new IllegalArgumentException("Test result does not exist"));

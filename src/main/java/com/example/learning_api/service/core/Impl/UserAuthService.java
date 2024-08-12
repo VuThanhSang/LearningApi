@@ -12,6 +12,8 @@ import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.ConfirmationCodeStatus;
 import com.example.learning_api.enums.RoleEnum;
 import com.example.learning_api.enums.UserStatus;
+import com.example.learning_api.kafka.message.CodeEmailMsgData;
+import com.example.learning_api.kafka.publisher.MailerKafkaPublisher;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.JwtService;
@@ -25,17 +27,21 @@ import jakarta.mail.internet.MimeMessage;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -47,13 +53,15 @@ import static com.example.learning_api.constant.ErrorConstant.UNAUTHORIZED;
 
 
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.spring6.SpringTemplateEngine;
 
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class UserAuthService  implements IUserAuthService {
-
+    Logger logger = LoggerFactory.getLogger(this.getClass());
     @Value("${spring.mail.username}")
     private String mailFrom;
     private final ModelMapperService modelMapperService;
@@ -65,8 +73,12 @@ public class UserAuthService  implements IUserAuthService {
     private final UserTokenRedisService userTokenRedisService;
     private final TeacherRepository teacherRepository;
     private final StudentRepository studentRepository;
+    private final MailerKafkaPublisher mailerKafkaPublisher;
     @Autowired
     private final JavaMailSender javaMailSender;
+    
+    @Autowired
+    private SpringTemplateEngine templateEngine;
     @Autowired
     @Lazy
     private PasswordEncoder passwordEncoder;
@@ -121,7 +133,7 @@ public class UserAuthService  implements IUserAuthService {
         userEntity = userRepository.save(userEntity);
         var accessToken = jwtService.issueAccessToken(userEntity.getId(), userEntity.getEmail(), userEntity.getRole());
         var refreshToken = jwtService.issueRefreshToken(userEntity.getId(), userEntity.getEmail(), userEntity.getRole());
-//        userTokenRedisService.createNewUserRefreshToken(refreshToken, userEntity.getId());
+        userTokenRedisService.upsertUserToken(userEntity.getId(), refreshToken, false);
         resData.setAccessToken(accessToken);
         resData.setRefreshToken(refreshToken);
         resData.setUserId(userEntity.getId());
@@ -133,6 +145,21 @@ public class UserAuthService  implements IUserAuthService {
             UserEntity user = authenticateUser(body.getEmail(), body.getPassword());
             String jwt = jwtService.issueAccessToken(user.getId(), user.getEmail(), user.getRole());
             String refreshToken = jwtService.issueRefreshToken(user.getId(), user.getEmail(), user.getRole());
+            String userId= null;
+            if (user.getRole().equals(RoleEnum.TEACHER)) {
+                TeacherEntity teacher = teacherRepository.findByUserId(user.getId());
+                if (teacher != null) {
+                    userId = teacher.getId();
+                }
+            }
+            else{
+                StudentEntity student = studentRepository.findByUserId(user.getId());
+                if (student != null) {
+                    userId = student.getId();
+                }
+            }
+            userTokenRedisService.upsertUserToken(userId, refreshToken, false);
+            userTokenRedisService.setUserOnline(user.getId());
             return buildLoginResponse(user, jwt, refreshToken);
         } catch (Exception e) {
             throw new CustomException(e.getMessage());
@@ -175,6 +202,9 @@ public class UserAuthService  implements IUserAuthService {
                     responseBuilder.student(student);
                 }
             }
+
+            userTokenRedisService.upsertUserToken(user.getId(), refreshToken, false);
+            userTokenRedisService.setUserOnline(user.getId());
             return responseBuilder.build();
         }
         catch (Exception e){
@@ -185,14 +215,31 @@ public class UserAuthService  implements IUserAuthService {
     public RefreshTokenResponse refreshToken(String refreshToken) {
         DecodedJWT decodedJWT = jwtService.decodeRefreshToken(refreshToken);
         String userId = decodedJWT.getSubject();
+        Boolean tokenInfo = userTokenRedisService.getUserTokenValue(userId, refreshToken);
+        if(tokenInfo==null){
+            throw new CustomException("Token not found");
+        }
+        if(tokenInfo){
+            userTokenRedisService.deleteAllTokenOfUser(userId);
+            throw new CustomException("Token has been used");
+        }
         UserEntity user = userRepository.findById(userId).orElseThrow();
         String newAccessToken = jwtService.issueAccessToken(user.getId(), user.getEmail(), user.getRole());
         String newRefreshToken = jwtService.issueRefreshToken(user.getId(), user.getEmail(), user.getRole());
-
+        userTokenRedisService.upsertUserToken(user.getId(), newRefreshToken, false);
+        userTokenRedisService.upsertUserToken(user.getId(), refreshToken, true);
         return RefreshTokenResponse.builder()
                 .accessToken(newAccessToken)
                 .refreshToken(newRefreshToken)
                 .build();
+    }
+
+    @Override
+    public void logout(String userId) {
+        userTokenRedisService.deleteAllTokenOfUser(userId);
+        UserEntity user = userRepository.findById(userId).orElseThrow();
+        userTokenRedisService.setUserOffline(user.getId());
+        revokeAllTokenByUser(user);
     }
 
     private void revokeAllTokenByUser(UserEntity user) {
@@ -243,12 +290,15 @@ public class UserAuthService  implements IUserAuthService {
         }
     }
     @Override
+    @Async
     public void sendCodeToRegister(String email) {
+        logger.info("Send code to register email: " + email +" ... ");
         UserEntity user = userRepository.findByEmail(email).orElse(null);
         if (user != null && user.getStatus() == UserStatus.INACTIVE){
             String code = GeneratorUtils.generateRandomCode(6);
             createOrUpdateConfirmationInfo(email, code);
-            sendEmailWithCode(email, code, "Active User Successfully");
+            mailerKafkaPublisher.sendMessageToCodeEmail(new CodeEmailMsgData(code, email));
+//            sendEmailWithCode(email, code, "Active User Successfully");
             return;
         }else if(user != null && user.getStatus() == UserStatus.ACTIVE){
             throw new CustomException( "User already Active");
@@ -272,17 +322,23 @@ public class UserAuthService  implements IUserAuthService {
         try {
             MimeMessage mimeMessage = javaMailSender.createMimeMessage();
 
-            MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage,true);
+            MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, StandardCharsets.UTF_8.name());
+
+            Context context = new Context();
+            context.setVariable("body", body);
+            context.setVariable("toMail", toMail);
+            String htmlContent = templateEngine.process("email-template", context);
+
 
             mimeMessageHelper.setFrom(mailFrom);
             mimeMessageHelper.setTo(toMail);
-            mimeMessageHelper.setText(body);
+            mimeMessageHelper.setText(htmlContent, true);
             mimeMessageHelper.setSubject(subject);
 
 
 
             javaMailSender.send(mimeMessage);
-            System.out.println("Mail sent aith attachment to mail addresss: "+toMail);
+            logger.info("Send email to " + toMail + " successfully");
         } catch (MessagingException e) {
             throw new CustomException( "Error while sending email");
         }

@@ -61,7 +61,8 @@ public class DeadlineService implements IDeadlineService {
                 );
                 deadlineEntity.setAttachment(response.getSecureUrl());
             }
-            deadlineEntity.setCreatedAt(new Date());
+            deadlineEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+            deadlineEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             deadlineEntity.setStatus(DeadlineStatus.UPCOMING);
             deadlineRepository.save(deadlineEntity);
         } catch (Exception e) {
@@ -107,7 +108,7 @@ public class DeadlineService implements IDeadlineService {
                 );
                 deadlineEntity.setAttachment(response.getSecureUrl());
             }
-            deadlineEntity.setUpdatedAt(new Date());
+            deadlineEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             deadlineRepository.save(deadlineEntity);
         }
         catch (Exception e) {
@@ -198,4 +199,6 @@ public class DeadlineService implements IDeadlineService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
+
+
 }

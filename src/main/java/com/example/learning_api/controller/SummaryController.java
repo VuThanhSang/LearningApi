@@ -111,4 +111,22 @@ public class SummaryController {
         }
     }
 
+    @GetMapping(path = "/student/{studentId}/term/{termId}")
+    public ResponseEntity<ResponseAPI<List<GetSummaryResponse>>> getSummariesByStudentIdAndTermId(@PathVariable String studentId, @PathVariable String termId) {
+        try{
+            List<GetSummaryResponse> data = summaryService.getSummariesByStudentIdAndTermId(studentId, termId);
+            ResponseAPI<List<GetSummaryResponse>> res = ResponseAPI.<List<GetSummaryResponse>>builder()
+                    .message("Get summaries by studentId and termId successfully")
+                    .data(data)
+                    .build();
+            return ResponseEntity.ok(res);
+        }
+        catch (Exception e){
+            ResponseAPI<List<GetSummaryResponse>> res = ResponseAPI.<List<GetSummaryResponse>>builder()
+                    .message(e.getMessage())
+                    .build();
+            return ResponseEntity.badRequest().body(res);
+        }
+    }
+
 }

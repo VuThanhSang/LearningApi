@@ -3,6 +3,7 @@ package com.example.learning_api.repository.database;
 import com.example.learning_api.dto.response.classroom.GetClassRoomRecentResponse;
 import com.example.learning_api.dto.response.classroom.GetScheduleResponse;
 import com.example.learning_api.dto.response.deadline.UpcomingDeadlinesResponse;
+import com.example.learning_api.dto.response.test.TestResultsForClassroomResponse;
 import com.example.learning_api.entity.sql.database.ClassRoomEntity;
 import com.example.learning_api.entity.sql.database.StudentEnrollmentsEntity;
 import org.springframework.data.domain.Page;
@@ -60,5 +61,19 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
     })
     List<UpcomingDeadlinesResponse> getUpcomingDeadlines(String studentId, String compareDate);
 
+    @Query("{'classroomId': ?0}")
+    Page<StudentEnrollmentsEntity> findByClassroomId(String classroomId, Pageable pageable);
+    @Aggregation(pipeline = {
+            "{$match: {classroomId: '?0'}}",
+            "{$lookup: {from: 'test', localField: 'classroomId', foreignField: 'classroomId', as: 'tests'}}",
+            "{$unwind: '$tests'}",
+            "{$lookup: {from: 'test_results', let: { testId: {$toString:'$tests._id'}, studentId: '$studentId' }, pipeline: [{$match: {$expr: {$and: [{ $eq: ['$testId', '$$testId'] },{ $eq: ['$studentId', '$$studentId'] }]}}}], as: 'result'}}",
+            "{$unwind: {path: '$result', preserveNullAndEmptyArrays: true}}",
+            "{$project: {_id: 0, studentId: 1, testId: '$tests._id', testName: '$tests.name', grade: { $ifNull: ['$result.grade', null] }, isPassed: { $ifNull: ['$result.isPassed', null] }, state: { $ifNull: ['$result.state', 'NOT_ATTENDED'] }, attendedAt: { $ifNull: ['$result.attendedAt', null] }, finishedAt: { $ifNull: ['$result.finishedAt', null] }}}",
+            "{$group: {_id: {testId: '$testId', studentId: '$studentId'}, testName: { $first: '$testName' }, result: {$push: {grade: '$grade', isPassed: '$isPassed', state: '$state', attendedAt: '$attendedAt', finishedAt: '$finishedAt'}}}}",
+            "{$group: {_id: '$_id.testId', testName: { $first: '$testName' }, students: {$push: {studentId: '$_id.studentId', result: '$result'}}}}",
+            "{$project: {_id: 0, testId: '$_id', testName: 1, students: 1}}"
+    })
+    List<TestResultsForClassroomResponse> getTestResultsForClassroom(String classroomId);
 
 }
