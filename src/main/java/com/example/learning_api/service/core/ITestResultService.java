@@ -3,6 +3,7 @@ package com.example.learning_api.service.core;
 import com.example.learning_api.dto.request.test.CreateTestResultRequest;
 import com.example.learning_api.dto.request.test.SaveProgressRequest;
 import com.example.learning_api.dto.request.test.UpdateTestResultRequest;
+import com.example.learning_api.dto.response.question.GetQuestionsResponse;
 import com.example.learning_api.dto.response.test.*;
 import com.example.learning_api.entity.sql.database.StudentEntity;
 
