@@ -495,4 +495,24 @@ public class TestController {
         }
     }
 
+    @GetMapping(path = "/result/score-distribution/{testId}")
+    public ResponseEntity<ResponseAPI<List<ScoreDistributionResponse>>> getScoreDistributionOfTest(@PathVariable String testId) {
+        try{
+            List<ScoreDistributionResponse> resData = testResultService.getScoreDistributionOfTest(testId);
+            ResponseAPI<List<ScoreDistributionResponse>> res = ResponseAPI.<List<ScoreDistributionResponse>>builder()
+                    .timestamp(new Date())
+                    .message("Get score distribution of test successfully")
+                    .data(resData)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<List<ScoreDistributionResponse>> res = ResponseAPI.<List<ScoreDistributionResponse>>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
 }

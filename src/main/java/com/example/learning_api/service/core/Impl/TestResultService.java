@@ -277,6 +277,34 @@ public class TestResultService implements ITestResultService {
         return data;
     }
 
+    @Override
+    public List<ScoreDistributionResponse> getScoreDistributionOfTest(String testId) {
+        validateTestId(testId);
+        List<TestResultOfTestResponse> results = testResultRepository.findHighestGradesByTestIdAndFinishedStateSortedAscending(testId);
+        return results.stream()
+                .map(this::mapToScoreDistributionResponse)
+                .collect(Collectors.toList());
+    }
+
+    private ScoreDistributionResponse mapToScoreDistributionResponse(TestResultOfTestResponse result) {
+        int totalCorrect = studentAnswerRepository.countCorrectAnswersByTestResultId(result.getResultId());
+        int totalQuestion = questionRepository.countByTestId(result.getTestId());
+        int totalAttempted = testResultRepository.countByStudentIdAndTestId(result.getStudentId(), result.getTestId());
+        TestEntity test = testRepository.findById(result.getTestId()).orElseThrow(() -> new IllegalArgumentException("Test does not exist"));
+        ScoreDistributionResponse response = new ScoreDistributionResponse();
+        StudentEntity student = studentRepository.findById(result.getStudentId()).orElseThrow(() -> new IllegalArgumentException("Student does not exist"));
+        response.setStudentId(student.getId());
+        response.setFullname(student.getUser().getFullname());
+        response.setEmail(student.getUser().getEmail());
+        response.setPhone(student.getPhone());
+        response.setTotalCorrect(totalCorrect);
+        response.setTotalIncorrect(totalQuestion - totalCorrect);
+        response.setTotalAttempted(totalAttempted);
+        response.setGrade(result.getGrade());
+        response.setAttemptLimit(test.getAttemptLimit());
+        return response;
+    }
+
     private void validateTestId(String testId) {
         if (testId == null) {
             throw new IllegalArgumentException("Test id must be provided");

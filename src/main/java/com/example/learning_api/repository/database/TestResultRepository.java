@@ -1,5 +1,6 @@
 package com.example.learning_api.repository.database;
 
+import com.example.learning_api.dto.response.test.ScoreDistributionResponse;
 import com.example.learning_api.dto.response.test.TestResultOfTestResponse;
 import com.example.learning_api.entity.sql.database.TestResultEntity;
 import org.springframework.data.mongodb.repository.Aggregation;
@@ -54,4 +55,25 @@ public interface TestResultRepository extends MongoRepository<TestResultEntity, 
             "{ $sort: { grade: 1 } }" // Sắp xếp kết quả cuối cùng theo grade tăng dần
     })
     List<TestResultOfTestResponse> findHighestGradesByTestIdAndFinishedStateSortedAscending(String testId);
+
+//    @Aggregation(pipeline = {
+//            "{ $match: { testId: ?0, state: 'FINISHED' } }",
+//            "{ $group: { " +
+//                    "_id: '$studentId', " +
+//                    "maxGrade: { $max: '$grade' } " +
+//                    "} }",
+//            "{ $bucket: { " +
+//                    "groupBy: '$maxGrade', " +
+//                    "boundaries: [-1,0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,11], " +
+//                    "default: 'Other', " +
+//                    "output: { " +
+//                    "count: { $sum: 1 }, " +
+//                    "students: { $push: '$_id' } " +
+//                    "} " +
+//                    "} }",
+//            "{ $sort: { _id: 1 } }"
+//    })
+//    List<ScoreDistributionResponse> getScoreDistribution(String testId);
+
+
 }

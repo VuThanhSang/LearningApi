@@ -19,4 +19,7 @@ public interface ITestResultService {
     OverviewResultResponse getOverviewOfTestResults(String testId);
     StatisticsResultResponse getStatisticsQuestionAndAnswerOfTest(String testId);
     List<StudentEntity> getStudentNotAttemptedTest(String testId);
+    List<ScoreDistributionResponse> getScoreDistributionOfTest(String testId);
+
+
 }

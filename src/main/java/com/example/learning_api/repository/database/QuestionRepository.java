@@ -13,4 +13,6 @@ public interface QuestionRepository extends MongoRepository<QuestionEntity, Stri
     Page<QuestionEntity> findByTestId(String search, Pageable pageable);
     void deleteByTestId(String testId);
     List<QuestionEntity> findByTestId(String testId);
+
+    int countByTestId(String testId);
 }
