@@ -8,14 +8,25 @@ import java.util.List;
 
 @Data
 public class ScoreDistributionResponse {
-    private String fullname;
-    private String studentId;
-    private String email;
-    private String phone;
-    private Integer totalCorrect;
-    private Integer totalIncorrect;
-    private Integer totalAttempted;
-    private Integer grade;
-    private Integer attemptLimit;
+    private Integer totalPage;
+    private Long totalElements;
+    private List<ScoreDistribution> scoreDistributions;
+    @Data
+    public static class ScoreDistribution{
+        private String fullname;
+        private String studentId;
+        private String email;
+        private String phone;
+        private Integer totalCorrect;
+        private Integer totalIncorrect;
+        private Integer totalAttempted;
+        private Integer grade;
+        private Integer attemptLimit;
+        private boolean isPassed;
+
+    }
+
+
+
 
 }

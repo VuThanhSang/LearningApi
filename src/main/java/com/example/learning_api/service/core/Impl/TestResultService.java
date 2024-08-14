@@ -16,9 +16,14 @@ import com.example.learning_api.service.core.ITestResultService;
 import com.example.learning_api.service.core.ITestService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -197,7 +202,6 @@ public class TestResultService implements ITestResultService {
         OverviewResultResponse response = new OverviewResultResponse();
 
         response.setTotalStudent(totalStudentInClass);
-        response.setTestResults(results);
 
         calculateAndSetStatistics(response, results, totalStudentInClass);
 
@@ -253,7 +257,7 @@ public class TestResultService implements ITestResultService {
 
         GetTestDetailResponse testDetail = testService.getTestDetail(testId);
         OverviewResultResponse overviewResult = getOverviewOfTestResults(testId);
-        List<TestResultOfTestResponse> results = overviewResult.getTestResults();
+        List<TestResultOfTestResponse> results = testResultRepository.findHighestGradesByTestIdAndFinishedStateSortedAscending(testId);
 
         StatisticsResultResponse response = new StatisticsResultResponse();
         List<StatisticsResultResponse.Question> processedQuestions = processQuestions(testDetail.getQuestions(), results);
@@ -278,20 +282,29 @@ public class TestResultService implements ITestResultService {
     }
 
     @Override
-    public List<ScoreDistributionResponse> getScoreDistributionOfTest(String testId) {
+    public ScoreDistributionResponse getScoreDistributionOfTest(String testId, String fullname, Integer minGrade, Integer maxGrade, Boolean passed, int page, int size) {
         validateTestId(testId);
-        List<TestResultOfTestResponse> results = testResultRepository.findHighestGradesByTestIdAndFinishedStateSortedAscending(testId);
-        return results.stream()
+        Pageable pageable =  PageRequest.of(page, size);;
+        List<TestResultOfTestResponse> allResults = testResultRepository.findHighestGradesByTestIdAndFilters(
+                testId, fullname, minGrade, maxGrade, passed);
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), allResults.size());
+        List<TestResultOfTestResponse> pageContent = allResults.subList(start, end);
+        List<ScoreDistributionResponse.ScoreDistribution> data= pageContent.stream()
                 .map(this::mapToScoreDistributionResponse)
                 .collect(Collectors.toList());
+        ScoreDistributionResponse response = new ScoreDistributionResponse();
+        response.setScoreDistributions(data);
+        response.setTotalElements((long) data.size());
+        return response;
     }
 
-    private ScoreDistributionResponse mapToScoreDistributionResponse(TestResultOfTestResponse result) {
+    private ScoreDistributionResponse.ScoreDistribution mapToScoreDistributionResponse(TestResultOfTestResponse result) {
         int totalCorrect = studentAnswerRepository.countCorrectAnswersByTestResultId(result.getResultId());
         int totalQuestion = questionRepository.countByTestId(result.getTestId());
         int totalAttempted = testResultRepository.countByStudentIdAndTestId(result.getStudentId(), result.getTestId());
         TestEntity test = testRepository.findById(result.getTestId()).orElseThrow(() -> new IllegalArgumentException("Test does not exist"));
-        ScoreDistributionResponse response = new ScoreDistributionResponse();
+        ScoreDistributionResponse.ScoreDistribution response = new ScoreDistributionResponse.ScoreDistribution();
         StudentEntity student = studentRepository.findById(result.getStudentId()).orElseThrow(() -> new IllegalArgumentException("Student does not exist"));
         response.setStudentId(student.getId());
         response.setFullname(student.getUser().getFullname());

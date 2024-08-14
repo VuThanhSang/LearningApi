@@ -19,7 +19,7 @@ public interface ITestResultService {
     OverviewResultResponse getOverviewOfTestResults(String testId);
     StatisticsResultResponse getStatisticsQuestionAndAnswerOfTest(String testId);
     List<StudentEntity> getStudentNotAttemptedTest(String testId);
-    List<ScoreDistributionResponse> getScoreDistributionOfTest(String testId);
+    ScoreDistributionResponse getScoreDistributionOfTest(String testId,String fullname,Integer minGrade,Integer maxGrade,Boolean passed, int page, int size);
 
 
 }

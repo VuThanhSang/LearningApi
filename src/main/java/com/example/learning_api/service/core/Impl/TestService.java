@@ -57,7 +57,7 @@ public class TestService implements ITestService {
     private final CloudinaryService cloudinaryService;
     private final StudentAnswersRepository studentAnswersRepository;
     private final TeacherRepository teacherRepository;
-
+    private final StudentAnswersRepository studentAnswerRepository;
     @Override
     public CreateTestResponse createTest(CreateTestRequest body) {
         try{
@@ -530,6 +530,8 @@ public class TestService implements ITestService {
                 }
 
                 TestResultResponse resData = new TestResultResponse();
+                int totalCorrect = studentAnswerRepository.countCorrectAnswersByTestResultId(testResultEntity.getId());
+                int totalQuestion = questionRepository.countByTestId(testResultEntity.getTestId());
                 resData.setTestId(testResultEntity.getTestId());
                 resData.setGrade(testResultEntity.getGrade());
                 resData.setPassed(testResultEntity.getGrade() >= 5);
@@ -539,7 +541,9 @@ public class TestService implements ITestService {
                 resData.setTestType("test");
                 updateSelectedAnswers(clonedQuestionResponses, studentAnswersEntities, testResultEntity.getId());
                 resData.setQuestions(clonedQuestionResponses);
-
+                resData.setTotalCorrect(totalCorrect);
+                resData.setTotalIncorrect(totalQuestion - totalCorrect);
+                resData.setTotalQuestions(totalQuestion);
                 return resData;
             }).collect(Collectors.toList());
         } catch (Exception e) {

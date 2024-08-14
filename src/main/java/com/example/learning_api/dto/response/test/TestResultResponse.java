@@ -15,6 +15,9 @@ public class TestResultResponse {
     private String attendedAt;
     private String createdAt;
     private String finishedAt;
+    private Integer totalCorrect;
+    private Integer totalIncorrect;
+    private Integer totalQuestions;
     private List<GetQuestionsResponse.QuestionResponse> questions;
 
 }

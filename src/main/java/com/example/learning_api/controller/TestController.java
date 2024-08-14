@@ -12,6 +12,7 @@ import com.example.learning_api.service.core.ITestService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -496,10 +497,17 @@ public class TestController {
     }
 
     @GetMapping(path = "/result/score-distribution/{testId}")
-    public ResponseEntity<ResponseAPI<List<ScoreDistributionResponse>>> getScoreDistributionOfTest(@PathVariable String testId) {
+    public ResponseEntity<ResponseAPI<ScoreDistributionResponse>> getScoreDistributionOfTest(@PathVariable String testId, @RequestParam(required = false) String fullname,
+     @RequestParam(required = false) Integer minGrade,
+     @RequestParam(required = false) Integer maxGrade,
+     @RequestParam(required = false) Boolean passed,
+     @RequestParam(defaultValue = "1") int page,
+     @RequestParam(defaultValue = "10") int size
+    ) {
         try{
-            List<ScoreDistributionResponse> resData = testResultService.getScoreDistributionOfTest(testId);
-            ResponseAPI<List<ScoreDistributionResponse>> res = ResponseAPI.<List<ScoreDistributionResponse>>builder()
+            if (fullname== null) fullname = "";
+            ScoreDistributionResponse resData = testResultService.getScoreDistributionOfTest(testId, fullname, minGrade, maxGrade, passed, page-1, size);
+            ResponseAPI<ScoreDistributionResponse> res = ResponseAPI.<ScoreDistributionResponse>builder()
                     .timestamp(new Date())
                     .message("Get score distribution of test successfully")
                     .data(resData)
@@ -507,7 +515,7 @@ public class TestController {
             return new ResponseEntity<>(res, StatusCode.OK);
         }
         catch (Exception e){
-            ResponseAPI<List<ScoreDistributionResponse>> res = ResponseAPI.<List<ScoreDistributionResponse>>builder()
+            ResponseAPI<ScoreDistributionResponse> res = ResponseAPI.<ScoreDistributionResponse>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();

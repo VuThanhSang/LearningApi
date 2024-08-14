@@ -26,6 +26,7 @@ public class UserEntity implements UserDetails  {
     private RoleEnum role;
     private List<RoleEnum> roleList;
     private UserStatus status;
+    private String avatar;
     private String authType;
     private Date createdAt;
     private Date updatedAt;
