@@ -6,7 +6,6 @@ import java.util.List;
 
 @Data
 public class OverviewResultResponse {
-    private List<TestResultOfTestResponse> testResults;
     private int totalStudent;
     private int totalPassed;
     private int totalFailed;
