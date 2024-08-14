@@ -12,7 +12,6 @@ public class StatisticsResultResponse {
     private Integer totalAttempted;
     private Integer totalNotAttempted;
     private List<Question> questionSortByIncorrectRate;
-    List<Question> questions;
 
     @Data
     public static class Question {
@@ -20,7 +19,6 @@ public class StatisticsResultResponse {
         private String content;
         private String description;
         private String source;
-        private String testId;
         private String type;
         private String createdAt;
         private String updatedAt;

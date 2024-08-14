@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -261,7 +262,6 @@ public class TestResultService implements ITestResultService {
 
         StatisticsResultResponse response = new StatisticsResultResponse();
         List<StatisticsResultResponse.Question> processedQuestions = processQuestions(testDetail.getQuestions(), results);
-        response.setQuestions(processedQuestions);
         response.setQuestionSortByIncorrectRate(sortQuestionsByIncorrectRate(processedQuestions));
         setOverviewStatistics(response, overviewResult);
 
@@ -297,6 +297,43 @@ public class TestResultService implements ITestResultService {
         response.setScoreDistributions(data);
         response.setTotalElements((long) data.size());
         return response;
+    }
+
+    @Override
+    public GetQuestionChoiceRateResponse getQuestionChoiceRate(String testId, String questionContent, Integer minCorrectCount, Integer maxCorrectCount, int page, int size) {
+        validateTestId(testId);
+
+        GetTestDetailResponse testDetail = testService.getTestDetail(testId);
+        List<TestResultOfTestResponse> results = testResultRepository.findHighestGradesByTestIdAndFinishedStateSortedAscending(testId);
+
+        List<StatisticsResultResponse.Question> processedQuestions = processQuestions(testDetail.getQuestions(), results);
+
+        // Apply filters
+        List<StatisticsResultResponse.Question> filteredQuestions = filterQuestions(processedQuestions, questionContent, minCorrectCount, maxCorrectCount);
+
+        // Apply pagination
+        List<StatisticsResultResponse.Question> paginatedQuestions = paginateQuestions(filteredQuestions, page, size);
+
+        GetQuestionChoiceRateResponse response = new GetQuestionChoiceRateResponse();
+        response.setQuestions(paginatedQuestions);
+        response.setTotalElements((long)filteredQuestions.size());
+        response.setTotalPage((int) Math.ceil((double) filteredQuestions.size() / size));
+        return response;
+    }
+    private List<StatisticsResultResponse.Question> filterQuestions(List<StatisticsResultResponse.Question> questions, String questionContent, Integer minCorrectCount, Integer maxCorrectCount) {
+        return questions.stream()
+                .filter(q -> questionContent == null || q.getContent().toLowerCase().contains(questionContent.toLowerCase()))
+                .filter(q -> minCorrectCount == null || q.getTotalCorrect() >= minCorrectCount)
+                .filter(q -> maxCorrectCount == null || q.getTotalCorrect() <= maxCorrectCount)
+                .collect(Collectors.toList());
+    }
+
+    private List<StatisticsResultResponse.Question> paginateQuestions(List<StatisticsResultResponse.Question> questions, int page, int size) {
+        int fromIndex = (page ) * size;
+        if (fromIndex >= questions.size()) {
+            return Collections.emptyList();
+        }
+        return questions.subList(fromIndex, Math.min(fromIndex + size, questions.size()));
     }
 
     private ScoreDistributionResponse.ScoreDistribution mapToScoreDistributionResponse(TestResultOfTestResponse result) {
@@ -340,7 +377,6 @@ public class TestResultService implements ITestResultService {
         int[] totals = calculateTotals(questionRes.getAnswers());
         questionRes.setTotalCorrect(totals[0]);
         questionRes.setTotalIncorrect(totals[1]);
-
         return questionRes;
     }
 
@@ -389,6 +425,7 @@ public class TestResultService implements ITestResultService {
                     double rate2 = calculateIncorrectRate(q2);
                     return Double.compare(rate2, rate1); // Sắp xếp giảm dần
                 })
+                .limit(5) // Giới hạn kết quả chỉ còn 5 phần tử
                 .collect(Collectors.toList());
     }
 

@@ -523,4 +523,31 @@ public class TestController {
         }
     }
 
+    @GetMapping(path = "/result/question-choice-rate/{testId}")
+    public ResponseEntity<ResponseAPI<GetQuestionChoiceRateResponse>> getQuestionChoiceRate(@PathVariable String testId
+        ,@RequestParam(required = false) String questionContent,
+        @RequestParam(required = false) Integer minCorrectCount,
+        @RequestParam(required = false) Integer maxCorrectCount,
+        @RequestParam(defaultValue = "1") int page,
+        @RequestParam(defaultValue = "10") int size
+    ) {
+        try{
+            if (questionContent== null) questionContent = "";
+            GetQuestionChoiceRateResponse resData = testResultService.getQuestionChoiceRate(testId, questionContent, minCorrectCount, maxCorrectCount, page-1, size);
+            ResponseAPI<GetQuestionChoiceRateResponse> res = ResponseAPI.<GetQuestionChoiceRateResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get question choice rate successfully")
+                    .data(resData)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetQuestionChoiceRateResponse> res = ResponseAPI.<GetQuestionChoiceRateResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
 }
