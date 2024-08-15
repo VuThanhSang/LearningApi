@@ -295,6 +295,7 @@ public class TestResultService implements ITestResultService {
                 .collect(Collectors.toList());
         ScoreDistributionResponse response = new ScoreDistributionResponse();
         response.setScoreDistributions(data);
+        response.setTotalPage((int) Math.ceil((double) allResults.size() / size));
         response.setTotalElements((long) data.size());
         return response;
     }

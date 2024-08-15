@@ -6,6 +6,7 @@ import com.example.learning_api.dto.request.test_feedback.CreateTestFeedbackAnsw
 import com.example.learning_api.dto.request.test_feedback.CreateTestFeedbackRequest;
 import com.example.learning_api.dto.request.test_feedback.UpdateTestFeedbackRequest;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
+import com.example.learning_api.dto.response.test_feedback.GetTestFeedBacksResponse;
 import com.example.learning_api.entity.sql.database.ForumEntity;
 import com.example.learning_api.entity.sql.database.TermsEntity;
 import com.example.learning_api.entity.sql.database.TestFeedbackAnswerEntity;
@@ -21,10 +22,15 @@ import com.example.learning_api.utils.ImageUtils;
 import com.example.learning_api.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -52,6 +58,7 @@ public class TestFeedbackService implements ITestFeedbackService {
             throw new RuntimeException("StudentId not found");
         }
         TestFeedbackEntity testFeedbackEntity = modelMapperService.mapClass(body, TestFeedbackEntity.class);
+        testFeedbackEntity.setSources(new ArrayList<>());
         progressSources(body.getSources(), body.getFeedback(), testFeedbackEntity);
         testFeedbackEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
         testFeedbackEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
@@ -141,5 +148,89 @@ public class TestFeedbackService implements ITestFeedbackService {
             throw new RuntimeException("TestFeedbackAnswer not found");
         }
         testFeedbackAnswerRepository.deleteById(testFeedbackAnswerId);
+    }
+
+    @Override
+    public TestFeedbackEntity getTestFeedbackById(String testFeedbackId) {
+        if (testFeedbackId == null) {
+            throw new RuntimeException("TestFeedbackId is required");
+        }
+        TestFeedbackEntity data= testFeedbackRepository.findById(testFeedbackId).orElseThrow(() -> new RuntimeException("TestFeedbackId not found"));
+        List<TestFeedbackAnswerEntity> answers = testFeedbackAnswerRepository.findByTestFeedbackId(testFeedbackId);
+        data.setAnswers(answers);
+        return data;
+    }
+
+    @Override
+    public List<TestFeedbackEntity> getTestFeedbacksByStudentIdAndTestId(String studentId, String testId) {
+        try {
+            if (studentId == null) {
+                throw new RuntimeException("StudentId is required");
+            }
+            if (testId == null) {
+                throw new RuntimeException("TestId is required");
+            }
+            if (studentRepository.findById(studentId).isEmpty()) {
+                throw new RuntimeException("StudentId not found");
+            }
+            if (testRepository.findById(testId).isEmpty()) {
+                throw new RuntimeException("TestId not found");
+            }
+            return testFeedbackRepository.findByStudentIdAndTestId(studentId, testId);
+        } catch (Exception e) {
+            log.error("Error getting test feedbacks: " + e.getMessage());
+            throw new RuntimeException("Error getting test feedbacks");
+        }
+    }
+
+    @Override
+    public GetTestFeedBacksResponse getTestFeedbacksByTestId(String testId, String sort, int page, int size) {
+        try {
+            if (testId == null) {
+                throw new RuntimeException("TestId is required");
+            }
+            if (testRepository.findById(testId).isEmpty()) {
+                throw new RuntimeException("TestId not found");
+            }
+
+            // Xử lý sắp xếp
+            Sort sortOrder = Sort.unsorted();
+            if (sort != null) {
+                if (sort.equalsIgnoreCase("asc")) {
+                    sortOrder = Sort.by(Sort.Direction.ASC, "createdAt");
+                } else if (sort.equalsIgnoreCase("desc")) {
+                    sortOrder = Sort.by(Sort.Direction.DESC, "createdAt");
+                }
+            }
+
+            Pageable pageable = PageRequest.of(page, size, sortOrder);
+            Page<TestFeedbackEntity> testFeedbackEntities = testFeedbackRepository.findByTestId(testId, pageable);
+
+            GetTestFeedBacksResponse response = new GetTestFeedBacksResponse();
+            response.setTestFeedbacks(testFeedbackEntities.getContent());
+            response.setTotalPage(testFeedbackEntities.getTotalPages());
+            response.setTotalElements(testFeedbackEntities.getTotalElements());
+            return response;
+        } catch (Exception e) {
+            log.error("Error getting test feedbacks: " + e.getMessage());
+            throw new RuntimeException("Error getting test feedbacks");
+        }
+    }
+
+
+    @Override
+    public List<TestFeedbackAnswerEntity> getTestFeedbackAnswersByFeedbackId(String testFeedbackId) {
+        try {
+            if (testFeedbackId == null) {
+                throw new RuntimeException("TestFeedbackId is required");
+            }
+            if (testFeedbackRepository.findById(testFeedbackId).isEmpty()) {
+                throw new RuntimeException("TestFeedbackId not found");
+            }
+            return testFeedbackAnswerRepository.findByTestFeedbackId(testFeedbackId);
+        } catch (Exception e) {
+            log.error("Error getting test feedback answers: " + e.getMessage());
+            throw new RuntimeException("Error getting test feedback answers");
+        }
     }
 }

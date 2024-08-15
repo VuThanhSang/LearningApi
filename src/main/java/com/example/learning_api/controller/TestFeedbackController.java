@@ -5,6 +5,9 @@ import com.example.learning_api.dto.request.test_feedback.CreateTestFeedbackAnsw
 import com.example.learning_api.dto.request.test_feedback.CreateTestFeedbackRequest;
 import com.example.learning_api.dto.request.test_feedback.UpdateTestFeedbackRequest;
 import com.example.learning_api.dto.response.test.CreateTestResponse;
+import com.example.learning_api.dto.response.test_feedback.GetTestFeedBacksResponse;
+import com.example.learning_api.entity.sql.database.TestFeedbackAnswerEntity;
+import com.example.learning_api.entity.sql.database.TestFeedbackEntity;
 import com.example.learning_api.model.ResponseAPI;
 import com.example.learning_api.service.core.ITestFeedbackService;
 import jakarta.validation.Valid;
@@ -16,11 +19,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping("/test-feedback")
+@RequestMapping("/api/v1/test-feedback")
 public class TestFeedbackController {
     private final ITestFeedbackService testFeedbackService;
 
@@ -81,6 +85,67 @@ public class TestFeedbackController {
         }
     }
 
+    @GetMapping(path = "/{testId}")
+    public ResponseEntity<ResponseAPI<TestFeedbackEntity>> getTestFeedbackById(@PathVariable String testId) {
+        try {
+            TestFeedbackEntity testFeedback = testFeedbackService.getTestFeedbackById(testId);
+            ResponseAPI<TestFeedbackEntity> res = ResponseAPI.<TestFeedbackEntity>builder()
+                    .timestamp(new Date())
+                    .data(testFeedback)
+                    .message("Get test feedback successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        } catch (Exception e) {
+            log.error("Error get test feedback: ", e);
+            ResponseAPI<TestFeedbackEntity> res = ResponseAPI.<TestFeedbackEntity>builder()
+                    .timestamp(new Date())
+                    .message("Error get test feedback")
+                    .build();
+            return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping(path = "/student/{studentId}/test/{testId}")
+    public ResponseEntity<ResponseAPI<List<TestFeedbackEntity>>> getTestFeedbacksByStudentIdAndTestId(@PathVariable String studentId, @PathVariable String testId) {
+        try {
+            List<TestFeedbackEntity> testFeedback = testFeedbackService.getTestFeedbacksByStudentIdAndTestId(studentId, testId);
+            ResponseAPI<List<TestFeedbackEntity>> res = ResponseAPI.<List<TestFeedbackEntity>>builder()
+                    .timestamp(new Date())
+                    .data(testFeedback)
+                    .message("Get test feedback successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        } catch (Exception e) {
+            log.error("Error get test feedback: ", e);
+            ResponseAPI<List<TestFeedbackEntity>> res = ResponseAPI.<List<TestFeedbackEntity>>builder()
+                    .timestamp(new Date())
+                    .message("Error get test feedback")
+                    .build();
+            return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping(path = "/test/{testId}")
+    public ResponseEntity<ResponseAPI<GetTestFeedBacksResponse>> getTestFeedbacksByTestId(@PathVariable String testId,
+          @RequestParam(defaultValue = "desc") String sort, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
+        try {
+            GetTestFeedBacksResponse testFeedbacks = testFeedbackService.getTestFeedbacksByTestId(testId, sort, page-1, size);
+            ResponseAPI<GetTestFeedBacksResponse> res = ResponseAPI.<GetTestFeedBacksResponse>builder()
+                    .timestamp(new Date())
+                    .data(testFeedbacks)
+                    .message("Get test feedbacks successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        } catch (Exception e) {
+            log.error("Error get test feedbacks: ", e);
+            ResponseAPI<GetTestFeedBacksResponse> res = ResponseAPI.<GetTestFeedBacksResponse>builder()
+                    .timestamp(new Date())
+                    .message("Error get test feedbacks")
+                    .build();
+            return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
+        }
+    }
+
     @PostMapping(path = "/answer")
     public ResponseEntity<ResponseAPI<String>> createTestFeedbackAnswer(@RequestBody @Valid CreateTestFeedbackAnswerRequest body) {
         try {
@@ -133,6 +198,26 @@ public class TestFeedbackController {
             ResponseAPI<String> res = ResponseAPI.<String>builder()
                     .timestamp(new Date())
                     .message("Error delete test feedback answer")
+                    .build();
+            return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping(path = "/{testFeedbackId}/answer")
+    public ResponseEntity<ResponseAPI<List<TestFeedbackAnswerEntity>>> getTestFeedbackAnswersByFeedbackId(@PathVariable String testFeedbackId) {
+        try {
+            List<TestFeedbackAnswerEntity> testFeedback = testFeedbackService.getTestFeedbackAnswersByFeedbackId(testFeedbackId);
+            ResponseAPI<List<TestFeedbackAnswerEntity>> res = ResponseAPI.<List<TestFeedbackAnswerEntity>>builder()
+                    .timestamp(new Date())
+                    .data(testFeedback)
+                    .message("Get test feedback successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        } catch (Exception e) {
+            log.error("Error get test feedback: ", e);
+            ResponseAPI<List<TestFeedbackAnswerEntity>> res = ResponseAPI.<List<TestFeedbackAnswerEntity>>builder()
+                    .timestamp(new Date())
+                    .message("Error get test feedback")
                     .build();
             return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
         }
