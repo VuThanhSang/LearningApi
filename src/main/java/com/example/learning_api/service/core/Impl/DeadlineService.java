@@ -7,7 +7,10 @@ import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.classroom.ClassroomDeadlineResponse;
 import com.example.learning_api.dto.response.deadline.GetDeadlinesResponse;
 import com.example.learning_api.dto.response.deadline.UpcomingDeadlinesResponse;
+import com.example.learning_api.entity.sql.database.ClassRoomEntity;
 import com.example.learning_api.entity.sql.database.DeadlineEntity;
+import com.example.learning_api.entity.sql.database.LessonEntity;
+import com.example.learning_api.entity.sql.database.SectionEntity;
 import com.example.learning_api.enums.DeadlineStatus;
 import com.example.learning_api.enums.DeadlineType;
 import com.example.learning_api.repository.database.*;
@@ -25,6 +28,8 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +42,7 @@ public class DeadlineService implements IDeadlineService {
     private final StudentEnrollmentsRepository studentEnrollmentsRepository;
     private final StudentRepository studentRepository;
     private final ClassRoomRepository classroomRepository;
-
+    private final SectionRepository sectionRepository;
     @Override
     public void createDeadline(CreateDeadlineRequest body) {
         try {
@@ -61,6 +66,12 @@ public class DeadlineService implements IDeadlineService {
                 );
                 deadlineEntity.setAttachment(response.getSecureUrl());
             }
+            LessonEntity lessonEntity = lessonRepository.findById(body.getLessonId()).orElse(null);
+
+            SectionEntity sectionEntity = sectionRepository.findById(lessonEntity.getSectionId()).orElse(null);
+            ClassRoomEntity classRoomEntity = classroomRepository.findById(sectionEntity.getClassRoomId()).orElse(null);
+            deadlineEntity.setClassroomId(classRoomEntity.getId());
+            deadlineEntity.setTeacherId(classRoomEntity.getTeacherId());
             deadlineEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
             deadlineEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             deadlineEntity.setStatus(DeadlineStatus.UPCOMING);
@@ -148,20 +159,20 @@ public class DeadlineService implements IDeadlineService {
     }
 
     @Override
-    public GetDeadlinesResponse getDeadlinesByClassroomId(String lessonId, Integer page, Integer size) {
+    public GetDeadlinesResponse getDeadlinesByLessonId(String lessonId, Integer page, Integer size) {
         try{
-            Pageable pageAble = PageRequest.of(page, size);
-            Page<DeadlineEntity> deadlineEntities = deadlineRepository.findAllByLessonId(lessonId, pageAble);
-            GetDeadlinesResponse response = new GetDeadlinesResponse();
+            Pageable pageable = PageRequest.of(page, size);
+            Page<DeadlineEntity> deadlineEntities = deadlineRepository.findAllByLessonId(lessonId, pageable);
             List<GetDeadlinesResponse.DeadlineResponse> deadlineResponses = new ArrayList<>();
             for (DeadlineEntity deadlineEntity : deadlineEntities){
                 GetDeadlinesResponse.DeadlineResponse deadlineResponse = GetDeadlinesResponse.DeadlineResponse.fromDeadlineEntity(deadlineEntity);
                 deadlineResponses.add(deadlineResponse);
             }
-            response.setTotalElements(deadlineEntities.getTotalElements());
-            response.setTotalPage(deadlineEntities.getTotalPages());
-            response.setDeadlines(deadlineResponses);
-            return response;
+            return GetDeadlinesResponse.builder()
+                    .totalElements(deadlineEntities.getTotalElements())
+                    .totalPage(deadlineEntities.getTotalPages())
+                    .deadlines(deadlineResponses)
+                    .build();
 
         }
         catch (Exception e) {
@@ -169,6 +180,7 @@ public class DeadlineService implements IDeadlineService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
+
 
     @Override
     public List<UpcomingDeadlinesResponse> getUpcomingDeadlineByStudentId(String studentId, String date) {
@@ -186,18 +198,87 @@ public class DeadlineService implements IDeadlineService {
     }
 
     @Override
-    public List<ClassroomDeadlineResponse> getClassroomDeadlinesByClassroomId(String classroomId) {
-        try{
-            if (classroomRepository.findById(classroomId) == null){
+    public ClassroomDeadlineResponse getClassroomDeadlinesByClassroomId(String classroomId, Integer page, Integer size) {
+        try {
+            if (!classroomRepository.existsById(classroomId)) {
                 throw new IllegalArgumentException("ClassroomId is not found");
             }
-            List<ClassroomDeadlineResponse> classroomDeadlineResponses = classroomRepository.getDeadlinesForClassroom(classroomId);
-            return classroomDeadlineResponses;
-        }
-        catch (Exception e) {
-            log.error("Error in convertToDeadlineRequest: ", e);
+
+            int skip = page * size;
+            List<ClassroomDeadlineResponse.DeadlineResponse> content = classroomRepository.getDeadlinesForClassroom(classroomId, skip, size);
+
+            long totalElements = classroomRepository.countDeadlinesForClassroom(classroomId);
+            int totalPages = (int) Math.ceil((double) totalElements / size);
+
+            return ClassroomDeadlineResponse.builder()
+                    .totalElements(totalElements)
+                    .totalPage(totalPages)
+                    .deadlines(mapDeadlineResponses(content))
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Error in getClassroomDeadlinesByClassroomId: ", e);
             throw new IllegalArgumentException(e.getMessage());
         }
+    }
+
+    @Override
+    public GetDeadlinesResponse getDeadlinesByTeacherId(String teacherId, String search, String status, String startDate, String endDate, Integer page, Integer size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+
+
+            // Xử lý chuỗi tìm kiếm
+            String processedSearch = (search == null || search.trim().isEmpty()) ? ".*" : Pattern.quote(search.trim());
+
+            Page<DeadlineEntity> deadlineEntities = deadlineRepository.findByTeacherIdWithFilters(
+                    teacherId,
+                    processedSearch,
+                    status,
+                    startDate,
+                    endDate,
+                    pageable);
+
+            List<GetDeadlinesResponse.DeadlineResponse> deadlineResponses = deadlineEntities.getContent().stream()
+                    .map(GetDeadlinesResponse.DeadlineResponse::fromDeadlineEntity)
+                    .collect(Collectors.toList());
+
+            return GetDeadlinesResponse.builder()
+                    .totalElements(deadlineEntities.getTotalElements())
+                    .totalPage(deadlineEntities.getTotalPages())
+                    .deadlines(deadlineResponses)
+                    .build();
+        } catch (NumberFormatException e) {
+            log.error("Error parsing date in getDeadlinesByTeacherId: ", e);
+            throw new IllegalArgumentException("Invalid date format. Expected timestamp.");
+        } catch (Exception e) {
+            log.error("Error in getDeadlinesByTeacherId: ", e);
+            throw new RuntimeException("Error retrieving deadlines: " + e.getMessage());
+        }
+    }
+    private List<ClassroomDeadlineResponse.DeadlineResponse> mapDeadlineResponses(List<ClassroomDeadlineResponse.DeadlineResponse> content) {
+        return content.stream()
+                .map(this::mapDeadlineResponse)
+                .collect(Collectors.toList());
+    }
+
+    private ClassroomDeadlineResponse.DeadlineResponse mapDeadlineResponse(ClassroomDeadlineResponse.DeadlineResponse source) {
+        return ClassroomDeadlineResponse.DeadlineResponse.builder()
+                .id(source.getId())
+                .title(source.getTitle())
+                .description(source.getDescription())
+                .type(source.getType())
+                .status(source.getStatus())
+                .attachment(source.getAttachment())
+                .startDate(source.getStartDate())
+                .endDate(source.getEndDate())
+                .lessonName(source.getLessonName())
+                .lessonDescription(source.getLessonDescription())
+                .sectionName(source.getSectionName())
+                .sectionDescription(source.getSectionDescription())
+                .classroomName(source.getClassroomName())
+                .classroomDescription(source.getClassroomDescription())
+                .build();
     }
 
 

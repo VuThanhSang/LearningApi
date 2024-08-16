@@ -15,7 +15,8 @@ public interface IDeadlineService {
     void updateDeadline(UpdateDeadlineRequest updateDeadlineRequest);
     void deleteDeadline(String deadlineId);
     DeadlineEntity getDeadline(String deadlineId);
-    GetDeadlinesResponse getDeadlinesByClassroomId(String classroomId, Integer page, Integer size);
+    GetDeadlinesResponse getDeadlinesByLessonId(String classroomId, Integer page, Integer size);
     List<UpcomingDeadlinesResponse> getUpcomingDeadlineByStudentId(String studentId,String date);
-    List<ClassroomDeadlineResponse> getClassroomDeadlinesByClassroomId(String classroomId);
+    ClassroomDeadlineResponse getClassroomDeadlinesByClassroomId(String classroomId, Integer page, Integer size);
+    GetDeadlinesResponse getDeadlinesByTeacherId(String teacherId, String search,String status,String startDate,String enDate,Integer page, Integer size);
 }

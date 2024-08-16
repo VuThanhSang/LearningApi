@@ -12,4 +12,5 @@ import org.springframework.data.mongodb.repository.Query;
 public interface SectionRepository extends MongoRepository<SectionEntity, String> {
     @Query("{'classRoomId': ?0}")
     Page<SectionEntity> findByClassRoomId(String classRoomId, Pageable pageable);
+
 }

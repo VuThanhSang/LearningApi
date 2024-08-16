@@ -16,6 +16,8 @@ public class DeadlineEntity {
     @Id
     private String id;
     private String lessonId;
+    private String classroomId;
+    private String teacherId;
     private String title;
     private String description;
     private DeadlineType type;

@@ -3,12 +3,14 @@ package com.example.learning_api.dto.response.deadline;
 import com.example.learning_api.entity.sql.database.DeadlineEntity;
 import com.example.learning_api.enums.DeadlineStatus;
 import com.example.learning_api.enums.DeadlineType;
+import lombok.Builder;
 import lombok.Data;
 
 import java.util.Date;
 import java.util.List;
 
 @Data
+@Builder
 public class GetDeadlinesResponse {
     private Integer totalPage;
     private Long totalElements;
