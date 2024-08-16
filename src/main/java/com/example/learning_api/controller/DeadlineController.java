@@ -1,10 +1,7 @@
 package com.example.learning_api.controller;
 
 import com.example.learning_api.constant.StatusCode;
-import com.example.learning_api.dto.request.deadline.CreateDeadlineRequest;
-import com.example.learning_api.dto.request.deadline.CreateDeadlineSubmissionsRequest;
-import com.example.learning_api.dto.request.deadline.UpdateDeadlineRequest;
-import com.example.learning_api.dto.request.deadline.UpdateDeadlineSubmissionsRequest;
+import com.example.learning_api.dto.request.deadline.*;
 import com.example.learning_api.dto.response.classroom.ClassroomDeadlineResponse;
 import com.example.learning_api.dto.response.deadline.GetDeadlineSubmissionsResponse;
 import com.example.learning_api.dto.response.deadline.GetDeadlinesResponse;
@@ -249,6 +246,26 @@ public class DeadlineController {
         }
     }
 
+    @PostMapping(path = "/{deadlineId}/submissions/{submissionId}/grade")
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
+    public ResponseEntity<ResponseAPI<String>> gradeDeadlineSubmissions(@PathVariable String submissionId, @RequestBody @Valid GradeSubmissionRequest body) {
+        try{
+            deadlineSubmissionsService.GradeDeadlineSubmissions(submissionId, body.getGrade(), body.getFeedback());
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message("Grade deadline submissions successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
     @PatchMapping(path = "/{deadlineId}/submissions/{submissionId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ResponseAPI<String>> updateDeadlineSubmissions(@ModelAttribute @Valid UpdateDeadlineSubmissionsRequest body, @PathVariable String submissionId) {
         try{

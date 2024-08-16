@@ -364,6 +364,18 @@ public class TestService implements ITestService {
         TestEntity testEntity = getTestEntityById(id);
         GetTestDetailResponse response = mapTestEntityToResponse(testEntity);
         List<GetQuestionsResponse.QuestionResponse> questionResponses = getQuestionResponses(id);
+
+        if (testEntity.getType() == null || !testEntity.getType().equals(TestShowResultType.SHOW_RESULT_IMMEDIATELY)) {
+            for (GetQuestionsResponse.QuestionResponse questionResponse : questionResponses) {
+                List<GetQuestionsResponse.AnswerResponse> answerResponses = questionResponse.getAnswers();
+                List<GetQuestionsResponse.AnswerResponse> newAnswerResponses = new ArrayList<>();
+                for (GetQuestionsResponse.AnswerResponse answerResponse : answerResponses) {
+                    newAnswerResponses.add(answerResponse.withoutIsCorrect());
+                }
+                questionResponse.setAnswers(newAnswerResponses);
+            }
+        }
+
         response.setQuestions(questionResponses);
         response.setTotalQuestions(questionResponses.size());
         return response;
@@ -730,7 +742,7 @@ public class TestService implements ITestService {
         TestSubmitResponse.AnswerResponse answerResponse = new TestSubmitResponse.AnswerResponse();
         answerResponse.setId(answer.getId());
         answerResponse.setContent(answer.getContent());
-        answerResponse.setCorrect(answer.isCorrect());
+        answerResponse.setCorrect(answer.getIsCorrect());
         answerResponse.setSource(answer.getSource());
         answerResponse.setQuestionId(answer.getQuestionId());
         return answerResponse;
@@ -750,7 +762,7 @@ public class TestService implements ITestService {
         studentAnswer.setTestResultId(testResult.getId());
         studentAnswer.setCreatedAt(String.valueOf(System.currentTimeMillis()));
         studentAnswer.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
-        studentAnswer.setCorrect(answer.isCorrect());
+        studentAnswer.setCorrect(answer.getIsCorrect());
 
         studentAnswersRepository.save(studentAnswer);
     }
