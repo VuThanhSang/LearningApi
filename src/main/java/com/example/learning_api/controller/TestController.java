@@ -510,7 +510,7 @@ public class TestController {
     ) {
         try {
             if (fullname == null) fullname = "";
-            ScoreDistributionResponse resData = testResultService.getScoreDistributionOfTest(testId, fullname, minGrade, maxGrade, passed, page, size, sortBy, sortOrder);
+            ScoreDistributionResponse resData = testResultService.getScoreDistributionOfTest(testId, fullname, minGrade, maxGrade, passed, page-1, size, sortBy, sortOrder);
             ResponseAPI<ScoreDistributionResponse> res = ResponseAPI.<ScoreDistributionResponse>builder()
                     .timestamp(new Date())
                     .message("Get score distribution of test successfully")
@@ -539,7 +539,7 @@ public class TestController {
     ) {
         try {
             if (questionContent == null) questionContent = "";
-            GetQuestionChoiceRateResponse resData = testResultService.getQuestionChoiceRate(testId, questionContent, minCorrectCount, maxCorrectCount, page, size, sortBy, sortOrder);
+            GetQuestionChoiceRateResponse resData = testResultService.getQuestionChoiceRate(testId, questionContent, minCorrectCount, maxCorrectCount, page-1, size, sortBy, sortOrder);
             ResponseAPI<GetQuestionChoiceRateResponse> res = ResponseAPI.<GetQuestionChoiceRateResponse>builder()
                     .timestamp(new Date())
                     .message("Get question choice rate successfully")

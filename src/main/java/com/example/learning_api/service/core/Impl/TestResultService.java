@@ -321,9 +321,13 @@ public class TestResultService implements ITestResultService {
 
         // Apply pagination
         int start = page * size;
-        int end = Math.min((start + size), data.size());
-        List<ScoreDistributionResponse.ScoreDistribution> pageContent = data.subList(start, end);
-
+        int end = Math.min(start + size, data.size());
+        List<ScoreDistributionResponse.ScoreDistribution> pageContent;
+        if (start >= data.size()) {
+            pageContent = Collections.emptyList();
+        } else {
+            pageContent = data.subList(start, end);
+        }
         ScoreDistributionResponse response = new ScoreDistributionResponse();
         response.setScoreDistributions(pageContent);
         response.setTotalPage((int) Math.ceil((double) data.size() / size));

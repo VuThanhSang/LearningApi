@@ -75,6 +75,9 @@ public class DeadlineSubmissionsService implements IDeadlineSubmissionsService {
                 }
             }
             deadlineSubmissionsEntity.setAttachments(attachments);
+            deadlineSubmissionsEntity.setGrade("0");
+            deadlineSubmissionsEntity.setStatus(DeadlineSubmissionStatus.SUBMITTED);
+            deadlineSubmissionsEntity.setFeedback("");
             deadlineSubmissionsEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
             deadlineSubmissionsEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             deadlineSubmissionsRepository.save(deadlineSubmissionsEntity);
@@ -144,6 +147,24 @@ public class DeadlineSubmissionsService implements IDeadlineSubmissionsService {
     }
 
     @Override
+    public void GradeDeadlineSubmissions(String id, String grade, String feedback) {
+        try {
+            DeadlineSubmissionsEntity deadlineSubmissionsEntity = deadlineSubmissionsRepository.findById(id).orElse(null);
+            if (deadlineSubmissionsEntity == null) {
+                throw new IllegalArgumentException("DeadlineSubmissionsId is not found");
+            }
+            deadlineSubmissionsEntity.setGrade(grade);
+            deadlineSubmissionsEntity.setFeedback(feedback);
+            deadlineSubmissionsEntity.setStatus(DeadlineSubmissionStatus.GRADED);
+            deadlineSubmissionsEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+            deadlineSubmissionsRepository.save(deadlineSubmissionsEntity);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
     public DeadlineSubmissionsEntity GetDeadlineSubmissions(String id) {
         try {
             DeadlineSubmissionsEntity deadlineSubmissionsEntity = deadlineSubmissionsRepository.findById(id).orElse(null);
@@ -167,6 +188,7 @@ public class DeadlineSubmissionsService implements IDeadlineSubmissionsService {
             for (DeadlineSubmissionsEntity deadlineSubmissionsEntity : deadlineSubmissionsEntities) {
                 GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse deadlineSubmissionResponse = GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse.fromDeadlineSubmissionEntity(deadlineSubmissionsEntity);
                 deadlineSubmissionResponses.add(deadlineSubmissionResponse);
+
             }
             response.setDeadlineSubmissions(deadlineSubmissionResponses);
             response.setTotalElements(deadlineSubmissionsEntities.getTotalElements());

@@ -37,7 +37,7 @@ public class GetQuestionsResponse {
     public static class AnswerResponse {
         private String id;
         private String content;
-        private boolean isCorrect;
+        private Boolean isCorrect;
         private String questionId;
         private String source;
         private boolean isSelected;
@@ -47,11 +47,21 @@ public class GetQuestionsResponse {
             AnswerResponse answerResponse = new AnswerResponse();
             answerResponse.setId(answerEntity.getId());
             answerResponse.setContent(answerEntity.getContent());
-            answerResponse.setCorrect(answerEntity.isCorrect());
+            answerResponse.setIsCorrect(answerEntity.isCorrect());
             answerResponse.setQuestionId(answerEntity.getQuestionId());
             answerResponse.setSource(answerEntity.getSource());
             answerResponse.setCreatedAt(answerEntity.getCreatedAt().toString());
             answerResponse.setUpdatedAt(answerEntity.getUpdatedAt().toString());
+            return answerResponse;
+        }
+        public AnswerResponse withoutIsCorrect(){
+            AnswerResponse answerResponse = new AnswerResponse();
+            answerResponse.setId(this.id);
+            answerResponse.setContent(this.content);
+            answerResponse.setQuestionId(this.questionId);
+            answerResponse.setSource(this.source);
+            answerResponse.setCreatedAt(this.createdAt);
+            answerResponse.setUpdatedAt(this.updatedAt);
             return answerResponse;
         }
     }

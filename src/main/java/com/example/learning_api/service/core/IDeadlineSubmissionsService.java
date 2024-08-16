@@ -9,7 +9,9 @@ public interface IDeadlineSubmissionsService {
     void CreateDeadlineSubmissions(CreateDeadlineSubmissionsRequest body);
     void UpdateDeadlineSubmissions(UpdateDeadlineSubmissionsRequest body);
     void DeleteDeadlineSubmissions(String id);
+    void GradeDeadlineSubmissions(String id, String grade,String feedback);
     DeadlineSubmissionsEntity GetDeadlineSubmissions(String id);
     GetDeadlineSubmissionsResponse GetDeadlineSubmissionsByDeadlineId(String deadlineId, Integer page, Integer size);
     GetDeadlineSubmissionsResponse GetDeadlineSubmissionsByStudentId(String studentId,String deadlineId, Integer page, Integer size);
+
 }

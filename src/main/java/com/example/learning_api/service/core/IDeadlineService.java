@@ -19,4 +19,5 @@ public interface IDeadlineService {
     List<UpcomingDeadlinesResponse> getUpcomingDeadlineByStudentId(String studentId,String date);
     ClassroomDeadlineResponse getClassroomDeadlinesByClassroomId(String classroomId, Integer page, Integer size);
     GetDeadlinesResponse getDeadlinesByTeacherId(String teacherId, String search,String status,String startDate,String enDate,Integer page, Integer size);
+
 }
