@@ -176,7 +176,12 @@ public class TestFeedbackService implements ITestFeedbackService {
             if (testRepository.findById(testId).isEmpty()) {
                 throw new RuntimeException("TestId not found");
             }
-            return testFeedbackRepository.findByStudentIdAndTestId(studentId, testId);
+            List<TestFeedbackEntity> data= testFeedbackRepository.findByStudentIdAndTestId(studentId, testId);
+            for (TestFeedbackEntity testFeedbackEntity : data) {
+                List<TestFeedbackAnswerEntity> answers = testFeedbackAnswerRepository.findByTestFeedbackId(testFeedbackEntity.getId());
+                testFeedbackEntity.setAnswers(answers);
+            }
+            return data;
         } catch (Exception e) {
             log.error("Error getting test feedbacks: " + e.getMessage());
             throw new RuntimeException("Error getting test feedbacks");
@@ -205,7 +210,10 @@ public class TestFeedbackService implements ITestFeedbackService {
 
             Pageable pageable = PageRequest.of(page, size, sortOrder);
             Page<TestFeedbackEntity> testFeedbackEntities = testFeedbackRepository.findByTestId(testId, pageable);
-
+            for (TestFeedbackEntity testFeedbackEntity : testFeedbackEntities) {
+                List<TestFeedbackAnswerEntity> answers = testFeedbackAnswerRepository.findByTestFeedbackId(testFeedbackEntity.getId());
+                testFeedbackEntity.setAnswers(answers);
+            }
             GetTestFeedBacksResponse response = new GetTestFeedBacksResponse();
             response.setTestFeedbacks(testFeedbackEntities.getContent());
             response.setTotalPage(testFeedbackEntities.getTotalPages());

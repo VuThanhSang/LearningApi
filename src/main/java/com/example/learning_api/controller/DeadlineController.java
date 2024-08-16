@@ -17,6 +17,7 @@ import com.example.learning_api.service.core.IDeadlineSubmissionsService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -126,7 +127,7 @@ public class DeadlineController {
             @RequestParam(defaultValue = "10") int size,
             @PathVariable String lessonId)  {
         try{
-            GetDeadlinesResponse data =  deadlineService.getDeadlinesByClassroomId(lessonId, page-1, size);
+            GetDeadlinesResponse data =  deadlineService.getDeadlinesByLessonId(lessonId, page-1, size);
             ResponseAPI<GetDeadlinesResponse> res = ResponseAPI.<GetDeadlinesResponse>builder()
                     .timestamp(new Date())
                     .message("Get deadlines successfully")
@@ -168,10 +169,13 @@ public class DeadlineController {
     }
 
     @GetMapping(path="/classroom/{classroomId}")
-    public ResponseEntity<ResponseAPI<List<ClassroomDeadlineResponse>>> getClassroomDeadlinesByClassroomId(@PathVariable String classroomId){
+    public ResponseEntity<ResponseAPI<ClassroomDeadlineResponse>> getClassroomDeadlinesByClassroomId(@PathVariable String classroomId,
+    @RequestParam(defaultValue = "1") int page,
+    @RequestParam(defaultValue = "10") int size
+    ){
         try{
-            List<ClassroomDeadlineResponse> data = deadlineService.getClassroomDeadlinesByClassroomId(classroomId);
-            ResponseAPI<List<ClassroomDeadlineResponse>> res = ResponseAPI.<List<ClassroomDeadlineResponse>>builder()
+            ClassroomDeadlineResponse data = deadlineService.getClassroomDeadlinesByClassroomId(classroomId, page-1, size);
+            ResponseAPI<ClassroomDeadlineResponse> res = ResponseAPI.<ClassroomDeadlineResponse>builder()
                     .timestamp(new Date())
                     .message("Get classroom deadlines successfully")
                     .data(data)
@@ -179,11 +183,48 @@ public class DeadlineController {
             return new ResponseEntity<>(res, StatusCode.OK);
         }
         catch (Exception e){
-            ResponseAPI<List<ClassroomDeadlineResponse>> res = ResponseAPI.<List<ClassroomDeadlineResponse>>builder()
+            ResponseAPI<ClassroomDeadlineResponse> res = ResponseAPI.<ClassroomDeadlineResponse>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();
             return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping(path = "/teacher/{teacherId}")
+    public ResponseEntity<ResponseAPI<GetDeadlinesResponse>> getDeadlinesByTeacherId(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @PathVariable String teacherId,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate
+    )  {
+        try {
+            if (search== "") search = null;
+            if (status == "") status = null;
+            if (startDate == "") startDate = null;
+            if (endDate == "") endDate = null;
+            GetDeadlinesResponse data = deadlineService.getDeadlinesByTeacherId(teacherId, search, status, startDate, endDate, page, size);
+            ResponseAPI<GetDeadlinesResponse> res = ResponseAPI.<GetDeadlinesResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get deadlines by teacherId successfully")
+                    .data(data)
+                    .build();
+            return ResponseEntity.ok(res);
+        } catch (IllegalArgumentException e) {
+            ResponseAPI<GetDeadlinesResponse> res = ResponseAPI.<GetDeadlinesResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return ResponseEntity.badRequest().body(res);
+        } catch (Exception e) {
+            ResponseAPI<GetDeadlinesResponse> res = ResponseAPI.<GetDeadlinesResponse>builder()
+                    .timestamp(new Date())
+                    .message("An unexpected error occurred: " + e.getMessage())
+                    .build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(res);
         }
     }
 

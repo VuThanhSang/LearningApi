@@ -280,28 +280,58 @@ public class TestResultService implements ITestResultService {
         }
         return data;
     }
-
     @Override
-    public ScoreDistributionResponse getScoreDistributionOfTest(String testId, String fullname, Integer minGrade, Integer maxGrade, Boolean passed, int page, int size) {
+    public ScoreDistributionResponse getScoreDistributionOfTest(String testId, String fullname, Integer minGrade, Integer maxGrade, Boolean passed, int page, int size, String sortBy, String sortOrder) {
         validateTestId(testId);
-        Pageable pageable =  PageRequest.of(page, size);;
+
         List<TestResultOfTestResponse> allResults = testResultRepository.findHighestGradesByTestIdAndFilters(
                 testId, fullname, minGrade, maxGrade, passed);
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), allResults.size());
-        List<TestResultOfTestResponse> pageContent = allResults.subList(start, end);
-        List<ScoreDistributionResponse.ScoreDistribution> data= pageContent.stream()
+
+        List<ScoreDistributionResponse.ScoreDistribution> data = allResults.stream()
                 .map(this::mapToScoreDistributionResponse)
                 .collect(Collectors.toList());
+
+        // Apply sorting
+        data.sort((d1, d2) -> {
+            switch (sortBy.toLowerCase()) {
+                case "fullname":
+                    return sortOrder.equalsIgnoreCase("desc") ?
+                            d2.getFullname().compareTo(d1.getFullname()) :
+                            d1.getFullname().compareTo(d2.getFullname());
+                case "grade":
+                    return sortOrder.equalsIgnoreCase("desc") ?
+                            Double.compare(d2.getGrade(), d1.getGrade()) :
+                            Double.compare(d1.getGrade(), d2.getGrade());
+                case "totalcorrect":
+                    return sortOrder.equalsIgnoreCase("desc") ?
+                            Integer.compare(d2.getTotalCorrect(), d1.getTotalCorrect()) :
+                            Integer.compare(d1.getTotalCorrect(), d2.getTotalCorrect());
+                case "totalincorrect":
+                    return sortOrder.equalsIgnoreCase("desc") ?
+                            Integer.compare(d2.getTotalIncorrect(), d1.getTotalIncorrect()) :
+                            Integer.compare(d1.getTotalIncorrect(), d2.getTotalIncorrect());
+                case "totalattempted":
+                    return sortOrder.equalsIgnoreCase("desc") ?
+                            Integer.compare(d2.getTotalAttempted(), d1.getTotalAttempted()) :
+                            Integer.compare(d1.getTotalAttempted(), d2.getTotalAttempted());
+                default:
+                    return 0;
+            }
+        });
+
+        // Apply pagination
+        int start = page * size;
+        int end = Math.min((start + size), data.size());
+        List<ScoreDistributionResponse.ScoreDistribution> pageContent = data.subList(start, end);
+
         ScoreDistributionResponse response = new ScoreDistributionResponse();
-        response.setScoreDistributions(data);
-        response.setTotalPage((int) Math.ceil((double) allResults.size() / size));
+        response.setScoreDistributions(pageContent);
+        response.setTotalPage((int) Math.ceil((double) data.size() / size));
         response.setTotalElements((long) data.size());
         return response;
     }
-
     @Override
-    public GetQuestionChoiceRateResponse getQuestionChoiceRate(String testId, String questionContent, Integer minCorrectCount, Integer maxCorrectCount, int page, int size) {
+    public GetQuestionChoiceRateResponse getQuestionChoiceRate(String testId, String questionContent, Integer minCorrectCount, Integer maxCorrectCount, int page, int size, String sortBy, String sortOrder) {
         validateTestId(testId);
 
         GetTestDetailResponse testDetail = testService.getTestDetail(testId);
@@ -309,8 +339,27 @@ public class TestResultService implements ITestResultService {
 
         List<StatisticsResultResponse.Question> processedQuestions = processQuestions(testDetail.getQuestions(), results);
 
-        // Apply filters
         List<StatisticsResultResponse.Question> filteredQuestions = filterQuestions(processedQuestions, questionContent, minCorrectCount, maxCorrectCount);
+
+        // Apply sorting
+        filteredQuestions.sort((q1, q2) -> {
+            switch (sortBy.toLowerCase()) {
+                case "totalcorrect":
+                    return sortOrder.equalsIgnoreCase("desc") ?
+                            Integer.compare(q2.getTotalCorrect(), q1.getTotalCorrect()) :
+                            Integer.compare(q1.getTotalCorrect(), q2.getTotalCorrect());
+                case "totalincorrect":
+                    return sortOrder.equalsIgnoreCase("desc") ?
+                            Integer.compare(q2.getTotalIncorrect(), q1.getTotalIncorrect()) :
+                            Integer.compare(q1.getTotalIncorrect(), q2.getTotalIncorrect());
+                case "content":
+                    return sortOrder.equalsIgnoreCase("desc") ?
+                            q2.getContent().compareTo(q1.getContent()) :
+                            q1.getContent().compareTo(q2.getContent());
+                default:
+                    return 0;
+            }
+        });
 
         // Apply pagination
         List<StatisticsResultResponse.Question> paginatedQuestions = paginateQuestions(filteredQuestions, page, size);
@@ -321,6 +370,7 @@ public class TestResultService implements ITestResultService {
         response.setTotalPage((int) Math.ceil((double) filteredQuestions.size() / size));
         return response;
     }
+
     private List<StatisticsResultResponse.Question> filterQuestions(List<StatisticsResultResponse.Question> questions, String questionContent, Integer minCorrectCount, Integer maxCorrectCount) {
         return questions.stream()
                 .filter(q -> questionContent == null || q.getContent().toLowerCase().contains(questionContent.toLowerCase()))

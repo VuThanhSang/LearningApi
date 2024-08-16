@@ -497,24 +497,27 @@ public class TestController {
     }
 
     @GetMapping(path = "/result/score-distribution/{testId}")
-    public ResponseEntity<ResponseAPI<ScoreDistributionResponse>> getScoreDistributionOfTest(@PathVariable String testId, @RequestParam(required = false) String fullname,
-     @RequestParam(required = false) Integer minGrade,
-     @RequestParam(required = false) Integer maxGrade,
-     @RequestParam(required = false) Boolean passed,
-     @RequestParam(defaultValue = "1") int page,
-     @RequestParam(defaultValue = "10") int size
+    public ResponseEntity<ResponseAPI<ScoreDistributionResponse>> getScoreDistributionOfTest(
+            @PathVariable String testId,
+            @RequestParam(required = false) String fullname,
+            @RequestParam(required = false) Integer minGrade,
+            @RequestParam(required = false) Integer maxGrade,
+            @RequestParam(required = false) Boolean passed,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "grade") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortOrder
     ) {
-        try{
-            if (fullname== null) fullname = "";
-            ScoreDistributionResponse resData = testResultService.getScoreDistributionOfTest(testId, fullname, minGrade, maxGrade, passed, page-1, size);
+        try {
+            if (fullname == null) fullname = "";
+            ScoreDistributionResponse resData = testResultService.getScoreDistributionOfTest(testId, fullname, minGrade, maxGrade, passed, page, size, sortBy, sortOrder);
             ResponseAPI<ScoreDistributionResponse> res = ResponseAPI.<ScoreDistributionResponse>builder()
                     .timestamp(new Date())
                     .message("Get score distribution of test successfully")
                     .data(resData)
                     .build();
             return new ResponseEntity<>(res, StatusCode.OK);
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             ResponseAPI<ScoreDistributionResponse> res = ResponseAPI.<ScoreDistributionResponse>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
@@ -524,24 +527,26 @@ public class TestController {
     }
 
     @GetMapping(path = "/result/question-choice-rate/{testId}")
-    public ResponseEntity<ResponseAPI<GetQuestionChoiceRateResponse>> getQuestionChoiceRate(@PathVariable String testId
-        ,@RequestParam(required = false) String questionContent,
-        @RequestParam(required = false) Integer minCorrectCount,
-        @RequestParam(required = false) Integer maxCorrectCount,
-        @RequestParam(defaultValue = "1") int page,
-        @RequestParam(defaultValue = "10") int size
+    public ResponseEntity<ResponseAPI<GetQuestionChoiceRateResponse>> getQuestionChoiceRate(
+            @PathVariable String testId,
+            @RequestParam(required = false) String questionContent,
+            @RequestParam(required = false) Integer minCorrectCount,
+            @RequestParam(required = false) Integer maxCorrectCount,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "totalCorrect") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortOrder
     ) {
-        try{
-            if (questionContent== null) questionContent = "";
-            GetQuestionChoiceRateResponse resData = testResultService.getQuestionChoiceRate(testId, questionContent, minCorrectCount, maxCorrectCount, page-1, size);
+        try {
+            if (questionContent == null) questionContent = "";
+            GetQuestionChoiceRateResponse resData = testResultService.getQuestionChoiceRate(testId, questionContent, minCorrectCount, maxCorrectCount, page, size, sortBy, sortOrder);
             ResponseAPI<GetQuestionChoiceRateResponse> res = ResponseAPI.<GetQuestionChoiceRateResponse>builder()
                     .timestamp(new Date())
                     .message("Get question choice rate successfully")
                     .data(resData)
                     .build();
             return new ResponseEntity<>(res, StatusCode.OK);
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             ResponseAPI<GetQuestionChoiceRateResponse> res = ResponseAPI.<GetQuestionChoiceRateResponse>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())

@@ -19,7 +19,7 @@ public interface ITestResultService {
     OverviewResultResponse getOverviewOfTestResults(String testId);
     StatisticsResultResponse getStatisticsQuestionAndAnswerOfTest(String testId);
     List<StudentEntity> getStudentNotAttemptedTest(String testId);
-    ScoreDistributionResponse getScoreDistributionOfTest(String testId,String fullname,Integer minGrade,Integer maxGrade,Boolean passed, int page, int size);
-    GetQuestionChoiceRateResponse getQuestionChoiceRate(String testId,String questionContent,Integer minCorrectCount,Integer maxCorrectCount, int page, int size);
+    ScoreDistributionResponse getScoreDistributionOfTest(String testId,String fullname,Integer minGrade,Integer maxGrade,Boolean passed, int page, int size,String sortBy, String sortOrder);
+    GetQuestionChoiceRateResponse getQuestionChoiceRate(String testId,String questionContent,Integer minCorrectCount,Integer maxCorrectCount, int page, int size,String sortBy, String sortOrder);
 
 }
