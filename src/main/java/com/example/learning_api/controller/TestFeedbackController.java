@@ -6,6 +6,7 @@ import com.example.learning_api.dto.request.test_feedback.CreateTestFeedbackRequ
 import com.example.learning_api.dto.request.test_feedback.UpdateTestFeedbackRequest;
 import com.example.learning_api.dto.response.test.CreateTestResponse;
 import com.example.learning_api.dto.response.test_feedback.GetTestFeedBacksResponse;
+import com.example.learning_api.dto.response.test_feedback.TestFeedbackAnswerResponse;
 import com.example.learning_api.entity.sql.database.TestFeedbackAnswerEntity;
 import com.example.learning_api.entity.sql.database.TestFeedbackEntity;
 import com.example.learning_api.model.ResponseAPI;
@@ -204,10 +205,10 @@ public class TestFeedbackController {
     }
 
     @GetMapping(path = "/{testFeedbackId}/answer")
-    public ResponseEntity<ResponseAPI<List<TestFeedbackAnswerEntity>>> getTestFeedbackAnswersByFeedbackId(@PathVariable String testFeedbackId) {
+    public ResponseEntity<ResponseAPI<List<TestFeedbackAnswerResponse>>> getTestFeedbackAnswersByFeedbackId(@PathVariable String testFeedbackId) {
         try {
-            List<TestFeedbackAnswerEntity> testFeedback = testFeedbackService.getTestFeedbackAnswersByFeedbackId(testFeedbackId);
-            ResponseAPI<List<TestFeedbackAnswerEntity>> res = ResponseAPI.<List<TestFeedbackAnswerEntity>>builder()
+            List<TestFeedbackAnswerResponse> testFeedback = testFeedbackService.getTestFeedbackAnswersByFeedbackId(testFeedbackId);
+            ResponseAPI<List<TestFeedbackAnswerResponse>> res = ResponseAPI.<List<TestFeedbackAnswerResponse>>builder()
                     .timestamp(new Date())
                     .data(testFeedback)
                     .message("Get test feedback successfully")
@@ -215,7 +216,7 @@ public class TestFeedbackController {
             return new ResponseEntity<>(res, StatusCode.OK);
         } catch (Exception e) {
             log.error("Error get test feedback: ", e);
-            ResponseAPI<List<TestFeedbackAnswerEntity>> res = ResponseAPI.<List<TestFeedbackAnswerEntity>>builder()
+            ResponseAPI<List<TestFeedbackAnswerResponse>> res = ResponseAPI.<List<TestFeedbackAnswerResponse>>builder()
                     .timestamp(new Date())
                     .message("Error get test feedback")
                     .build();

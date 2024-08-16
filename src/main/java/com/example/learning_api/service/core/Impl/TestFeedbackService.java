@@ -7,14 +7,9 @@ import com.example.learning_api.dto.request.test_feedback.CreateTestFeedbackRequ
 import com.example.learning_api.dto.request.test_feedback.UpdateTestFeedbackRequest;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.test_feedback.GetTestFeedBacksResponse;
-import com.example.learning_api.entity.sql.database.ForumEntity;
-import com.example.learning_api.entity.sql.database.TermsEntity;
-import com.example.learning_api.entity.sql.database.TestFeedbackAnswerEntity;
-import com.example.learning_api.entity.sql.database.TestFeedbackEntity;
-import com.example.learning_api.repository.database.StudentRepository;
-import com.example.learning_api.repository.database.TestFeedbackAnswerRepository;
-import com.example.learning_api.repository.database.TestFeedbackRepository;
-import com.example.learning_api.repository.database.TestRepository;
+import com.example.learning_api.dto.response.test_feedback.TestFeedbackAnswerResponse;
+import com.example.learning_api.entity.sql.database.*;
+import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
 import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.ITestFeedbackService;
@@ -43,6 +38,7 @@ public class TestFeedbackService implements ITestFeedbackService {
     private final StudentRepository studentRepository;
     private final TestRepository testRepository;
     private final CloudinaryService cloudinaryService;
+    private final TeacherRepository teacherRepository;
     @Override
     public void createTestFeedback(CreateTestFeedbackRequest body) {
         if (body.getTestId() == null) {
@@ -157,6 +153,7 @@ public class TestFeedbackService implements ITestFeedbackService {
         }
         TestFeedbackEntity data= testFeedbackRepository.findById(testFeedbackId).orElseThrow(() -> new RuntimeException("TestFeedbackId not found"));
         List<TestFeedbackAnswerEntity> answers = testFeedbackAnswerRepository.findByTestFeedbackId(testFeedbackId);
+        data.setStudent(studentRepository.findById(data.getStudentId()).orElse(null));
         data.setAnswers(answers);
         return data;
     }
@@ -179,6 +176,7 @@ public class TestFeedbackService implements ITestFeedbackService {
             List<TestFeedbackEntity> data= testFeedbackRepository.findByStudentIdAndTestId(studentId, testId);
             for (TestFeedbackEntity testFeedbackEntity : data) {
                 List<TestFeedbackAnswerEntity> answers = testFeedbackAnswerRepository.findByTestFeedbackId(testFeedbackEntity.getId());
+                testFeedbackEntity.setStudent(studentRepository.findById(testFeedbackEntity.getStudentId()).orElse(null));
                 testFeedbackEntity.setAnswers(answers);
             }
             return data;
@@ -212,6 +210,7 @@ public class TestFeedbackService implements ITestFeedbackService {
             Page<TestFeedbackEntity> testFeedbackEntities = testFeedbackRepository.findByTestId(testId, pageable);
             for (TestFeedbackEntity testFeedbackEntity : testFeedbackEntities) {
                 List<TestFeedbackAnswerEntity> answers = testFeedbackAnswerRepository.findByTestFeedbackId(testFeedbackEntity.getId());
+                testFeedbackEntity.setStudent(studentRepository.findById(testFeedbackEntity.getStudentId()).orElse(null));
                 testFeedbackEntity.setAnswers(answers);
             }
             GetTestFeedBacksResponse response = new GetTestFeedBacksResponse();
@@ -227,15 +226,19 @@ public class TestFeedbackService implements ITestFeedbackService {
 
 
     @Override
-    public List<TestFeedbackAnswerEntity> getTestFeedbackAnswersByFeedbackId(String testFeedbackId) {
+    public List<TestFeedbackAnswerResponse> getTestFeedbackAnswersByFeedbackId(String testFeedbackId) {
         try {
             if (testFeedbackId == null) {
                 throw new RuntimeException("TestFeedbackId is required");
             }
-            if (testFeedbackRepository.findById(testFeedbackId).isEmpty()) {
-                throw new RuntimeException("TestFeedbackId not found");
+
+           List<TestFeedbackAnswerEntity> data =  testFeedbackAnswerRepository.findByTestFeedbackId(testFeedbackId);
+            List<TestFeedbackAnswerResponse> response = new ArrayList<>();
+            for (TestFeedbackAnswerEntity testFeedbackAnswerEntity : data) {
+                TestFeedbackAnswerResponse answerResponse = modelMapperService.mapClass(testFeedbackAnswerEntity, TestFeedbackAnswerResponse.class);
+                response.add(answerResponse);
             }
-            return testFeedbackAnswerRepository.findByTestFeedbackId(testFeedbackId);
+            return response;
         } catch (Exception e) {
             log.error("Error getting test feedback answers: " + e.getMessage());
             throw new RuntimeException("Error getting test feedback answers");

@@ -19,6 +19,9 @@ public class GetDeadlineSubmissionsResponse {
         private String title;
         private String deadlineId;
         private String studentId;
+        private String studentName;
+        private String studentEmail;
+        private String studentAvatar;
         private List<FileDto> attachment;
         private String submission;
         private String grade;

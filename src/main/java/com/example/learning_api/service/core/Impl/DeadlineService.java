@@ -20,12 +20,12 @@ import com.example.learning_api.service.core.IDeadlineService;
 import com.example.learning_api.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.bson.Document;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -256,6 +256,65 @@ public class DeadlineService implements IDeadlineService {
             throw new RuntimeException("Error retrieving deadlines: " + e.getMessage());
         }
     }
+    private Document convertSortToDocument(Sort sort) {
+        Document sortDoc = new Document();
+        for (Sort.Order order : sort) {
+            sortDoc.put(order.getProperty(), order.getDirection() == Sort.Direction.ASC ? 1 : -1);
+        }
+        return sortDoc;
+    }
+    @Override
+    public GetDeadlinesResponse getDeadlinesByStudentId(
+            String studentId, String search, String status, String startDate, String endDate,
+            String classroomId, Integer page, Integer size, String sortBy, Sort.Direction sortDirection) {
+        try {
+            // Validate and sanitize sortBy
+            List<String> allowedSortFields = Arrays.asList("startDate", "endDate", "title", "status");
+            if (!allowedSortFields.contains(sortBy)) {
+                sortBy = "startDate";  // Default to startDate if invalid field is provided
+            }
+
+            Sort sort = Sort.by(sortDirection, sortBy);
+            Pageable pageable = PageRequest.of(page, size, sort);
+
+            // Ensure parameters are not null
+            search = (search == null) ? "" : search.trim();
+            status = (status == null) ? "" : status.trim();
+            startDate = (startDate == null) ? "" : startDate.trim();
+            endDate = (endDate == null) ? "" : endDate.trim();
+            classroomId = (classroomId == null) ? "" : classroomId.trim();
+
+            Document sortDoc = convertSortToDocument(sort);
+            Slice<GetDeadlinesResponse.DeadlineResponse> deadlineSlice = studentEnrollmentsRepository.getStudentDeadlines(
+                    studentId, status, search, startDate, endDate, classroomId, sortDoc, pageable);
+
+            List<GetDeadlinesResponse.DeadlineResponse> deadlineResponses = deadlineSlice.getContent().stream()
+                    .map(this::convertToDeadlineResponse)
+                    .collect(Collectors.toList());
+
+            return GetDeadlinesResponse.builder()
+                    .totalElements((long) deadlineSlice.getNumberOfElements())
+                    .totalPage(deadlineSlice.getNumberOfElements() > 0 ? (deadlineSlice.getNumberOfElements() + size - 1) / size : 0)
+                    .deadlines(deadlineResponses)
+                    .build();
+        } catch (Exception e) {
+            log.error("Error in getDeadlinesByStudentId: ", e);
+            throw new RuntimeException("Error retrieving deadlines: " + e.getMessage());
+        }
+    }
+    private GetDeadlinesResponse.DeadlineResponse convertToDeadlineResponse(GetDeadlinesResponse.DeadlineResponse deadlineResponse) {
+        return GetDeadlinesResponse.DeadlineResponse.builder()
+                .id(deadlineResponse.getId())
+                .title(deadlineResponse.getTitle())
+                .description(deadlineResponse.getDescription())
+                .type(deadlineResponse.getType())
+                .status(deadlineResponse.getStatus())
+                .startDate(deadlineResponse.getStartDate())
+                .endDate(deadlineResponse.getEndDate())
+                .classroomId(deadlineResponse.getClassroomId())
+                .build();
+    }
+
     private List<ClassroomDeadlineResponse.DeadlineResponse> mapDeadlineResponses(List<ClassroomDeadlineResponse.DeadlineResponse> content) {
         return content.stream()
                 .map(this::mapDeadlineResponse)
