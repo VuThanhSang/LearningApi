@@ -21,4 +21,6 @@ public class TestFeedbackEntity {
      private String updatedAt;
      @DBRef
      private List<TestFeedbackAnswerEntity> answers;
+     @DBRef
+     private StudentEntity student;
 }

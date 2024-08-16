@@ -16,6 +16,7 @@ public class GetDeadlinesResponse {
     private Long totalElements;
     private List<DeadlineResponse> deadlines;
     @Data
+    @Builder
     public static class DeadlineResponse {
         private String id;
         private String lessonId;
@@ -24,24 +25,26 @@ public class GetDeadlinesResponse {
         private DeadlineType type;
         private DeadlineStatus status;
         private String attachment;
-        private String StartDate;
-        private String EndDate;
+        private String startDate;
+        private String endDate;
         private String createdAt;
         private String updatedAt;
+        private String classroomId;
         public static DeadlineResponse fromDeadlineEntity(DeadlineEntity deadlineEntity){
-            DeadlineResponse deadlineResponse = new DeadlineResponse();
-            deadlineResponse.setId(deadlineEntity.getId());
-            deadlineResponse.setLessonId(deadlineEntity.getLessonId());
-            deadlineResponse.setTitle(deadlineEntity.getTitle());
-            deadlineResponse.setDescription(deadlineEntity.getDescription());
-            deadlineResponse.setType(deadlineEntity.getType());
-            deadlineResponse.setStatus(deadlineEntity.getStatus());
-            deadlineResponse.setAttachment(deadlineEntity.getAttachment());
-            deadlineResponse.setStartDate(deadlineEntity.getStartDate());
-            deadlineResponse.setEndDate(deadlineEntity.getEndDate());
-            deadlineResponse.setCreatedAt(deadlineEntity.getCreatedAt());
-            deadlineResponse.setUpdatedAt(deadlineEntity.getUpdatedAt());
-            return deadlineResponse;
+            return DeadlineResponse.builder()
+                    .id(deadlineEntity.getId())
+                    .lessonId(deadlineEntity.getLessonId())
+                    .title(deadlineEntity.getTitle())
+                    .description(deadlineEntity.getDescription())
+                    .type(deadlineEntity.getType())
+                    .status(deadlineEntity.getStatus())
+                    .attachment(deadlineEntity.getAttachment())
+                    .startDate(deadlineEntity.getStartDate())
+                    .endDate(deadlineEntity.getEndDate())
+                    .createdAt(deadlineEntity.getCreatedAt())
+                    .updatedAt(deadlineEntity.getUpdatedAt())
+                    .classroomId(deadlineEntity.getClassroomId())
+                    .build();
 
         }
     }

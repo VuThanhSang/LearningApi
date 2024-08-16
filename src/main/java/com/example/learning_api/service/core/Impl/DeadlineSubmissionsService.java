@@ -7,6 +7,7 @@ import com.example.learning_api.dto.request.deadline.UpdateDeadlineSubmissionsRe
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.deadline.GetDeadlineSubmissionsResponse;
 import com.example.learning_api.entity.sql.database.DeadlineSubmissionsEntity;
+import com.example.learning_api.entity.sql.database.StudentEntity;
 import com.example.learning_api.enums.DeadlineSubmissionStatus;
 import com.example.learning_api.repository.database.DeadlineRepository;
 import com.example.learning_api.repository.database.DeadlineSubmissionsRepository;
@@ -187,6 +188,12 @@ public class DeadlineSubmissionsService implements IDeadlineSubmissionsService {
             List<GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse> deadlineSubmissionResponses = new ArrayList<>();
             for (DeadlineSubmissionsEntity deadlineSubmissionsEntity : deadlineSubmissionsEntities) {
                 GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse deadlineSubmissionResponse = GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse.fromDeadlineSubmissionEntity(deadlineSubmissionsEntity);
+                StudentEntity studentEntity = studentRepository.findById(deadlineSubmissionsEntity.getStudentId()).orElse(null);
+                if (studentEntity != null) {
+                    deadlineSubmissionResponse.setStudentName(studentEntity.getUser().getFullname());
+                    deadlineSubmissionResponse.setStudentEmail(studentEntity.getUser().getEmail());
+                    deadlineSubmissionResponse.setStudentAvatar(studentEntity.getUser().getAvatar());
+                }
                 deadlineSubmissionResponses.add(deadlineSubmissionResponse);
 
             }

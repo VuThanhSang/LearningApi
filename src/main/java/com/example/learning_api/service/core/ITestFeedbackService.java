@@ -4,6 +4,7 @@ import com.example.learning_api.dto.request.test_feedback.CreateTestFeedbackAnsw
 import com.example.learning_api.dto.request.test_feedback.CreateTestFeedbackRequest;
 import com.example.learning_api.dto.request.test_feedback.UpdateTestFeedbackRequest;
 import com.example.learning_api.dto.response.test_feedback.GetTestFeedBacksResponse;
+import com.example.learning_api.dto.response.test_feedback.TestFeedbackAnswerResponse;
 import com.example.learning_api.entity.sql.database.TestFeedbackAnswerEntity;
 import com.example.learning_api.entity.sql.database.TestFeedbackEntity;
 
@@ -19,6 +20,6 @@ public interface ITestFeedbackService {
     TestFeedbackEntity getTestFeedbackById(String testFeedbackId);
     List<TestFeedbackEntity> getTestFeedbacksByStudentIdAndTestId(String studentId, String testId);
     GetTestFeedBacksResponse getTestFeedbacksByTestId(String testId, String sort, int page, int size);
-    List<TestFeedbackAnswerEntity> getTestFeedbackAnswersByFeedbackId(String testFeedbackId);
+    List<TestFeedbackAnswerResponse> getTestFeedbackAnswersByFeedbackId(String testFeedbackId);
 
 }

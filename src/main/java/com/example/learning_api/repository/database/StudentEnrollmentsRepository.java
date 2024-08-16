@@ -2,11 +2,14 @@ package com.example.learning_api.repository.database;
 
 import com.example.learning_api.dto.response.classroom.GetClassRoomRecentResponse;
 import com.example.learning_api.dto.response.classroom.GetScheduleResponse;
+import com.example.learning_api.dto.response.deadline.DeadlineResponse;
+import com.example.learning_api.dto.response.deadline.GetDeadlinesResponse;
 import com.example.learning_api.dto.response.deadline.UpcomingDeadlinesResponse;
 import com.example.learning_api.dto.response.test.TestResultForStudentResponse;
 import com.example.learning_api.dto.response.test.TestResultsForClassroomResponse;
 import com.example.learning_api.entity.sql.database.ClassRoomEntity;
 import com.example.learning_api.entity.sql.database.StudentEnrollmentsEntity;
+import org.bson.Document;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -94,4 +97,44 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
             "{$project: {_id: 0, studentId: 1}}"
     })
     List<String> findStudentsNotTakenTest(String classroomId, String testId);
+
+    @Aggregation(pipeline = {
+            "{ $match: { studentId: ?0 } }",
+            "{ $lookup: { from: 'deadlines', localField: 'classroomId', foreignField: 'classroomId', as: 'deadlines' } }",
+            "{ $unwind: '$deadlines' }",
+            "{ $match: { $and: [ " +
+                    "{ $or: [ { 'deadlines.status': ?1 }, { $expr: { $eq: [?1, ''] } } ] }, " +
+                    "{ $or: [ " +
+                    "{ $and: [ " +
+                    "{ $expr: { $ne: [?2, ''] } }, " +
+                    "{ 'deadlines.title': { $regex: ?2, $options: 'i' } } " +
+                    "] }, " +
+                    "{ $expr: { $eq: [?2, ''] } } " +
+                    "] }, " +
+                    "{ $or: [ { 'deadlines.startDate': { $gte: ?3 } }, { $expr: { $eq: [?3, ''] } } ] }, " +
+                    "{ $or: [ { 'deadlines.endDate': { $lte: ?4 } }, { $expr: { $eq: [?4, ''] } } ] }, " +
+                    "{ $or: [ { 'deadlines.classroomId': ?5 }, { $expr: { $eq: [?5, ''] } } ] } " +
+                    "] } }",
+            "{ $project: { " +
+                    "_id: '$deadlines._id', " +
+                    "title: '$deadlines.title', " +
+                    "description: '$deadlines.description', " +
+                    "type: '$deadlines.type', " +
+                    "status: '$deadlines.status', " +
+                    "startDate: '$deadlines.startDate', " +
+                    "endDate: '$deadlines.endDate', " +
+                    "classroomId: '$deadlines.classroomId' " +
+                    "} }",
+            "{ $sort: ?6 }"  // Dynamic sort stage
+    })
+    Slice<GetDeadlinesResponse.DeadlineResponse> getStudentDeadlines(
+            String studentId,
+            String status,
+            String title,
+            String startDate,
+            String endDate,
+            String classroomId,
+            Document sort,  // MongoDB Document representing sort order
+            Pageable pageable
+    );
 }
