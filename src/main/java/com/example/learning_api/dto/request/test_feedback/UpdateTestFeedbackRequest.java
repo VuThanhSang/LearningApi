@@ -10,4 +10,5 @@ public class UpdateTestFeedbackRequest {
     private String id;
     private List<MultipartFile> sources;
     private String feedback;
+    private String title;
 }
