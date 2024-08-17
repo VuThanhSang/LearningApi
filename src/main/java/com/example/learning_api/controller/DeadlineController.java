@@ -352,29 +352,45 @@ public class DeadlineController {
         }
 
     }
-
     @GetMapping(path = "/{deadlineId}/submissions")
     public ResponseEntity<ResponseAPI<GetDeadlineSubmissionsResponse>> getDeadlineSubmissionsByDeadlineId(
-            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @PathVariable String deadlineId)  {
-        try{
-            GetDeadlineSubmissionsResponse data =  deadlineSubmissionsService.GetDeadlineSubmissionsByDeadlineId(deadlineId, page-1, size);
+            @PathVariable String deadlineId,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false, defaultValue = "asc") String sortOrder)  {
+        try {
+            Sort.Direction direction = sortOrder.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+
+            // Convert empty strings, "," or null to null
+            search = (search == null || search.trim().isEmpty() || search.equals(",")) ? null : search.trim();
+            status = (status == null || status.trim().isEmpty() || status.equals(",")) ? null : status.trim();
+            sortBy = (sortBy == null || sortBy.trim().isEmpty() || sortBy.equals(",")) ? null : sortBy.trim();
+
+            GetDeadlineSubmissionsResponse data = deadlineSubmissionsService.GetDeadlineSubmissionsByDeadlineId(
+                    deadlineId, page, size, search, status, sortBy, direction);
+
             ResponseAPI<GetDeadlineSubmissionsResponse> res = ResponseAPI.<GetDeadlineSubmissionsResponse>builder()
                     .timestamp(new Date())
                     .message("Get deadline submissions by deadlineId successfully")
                     .data(data)
                     .build();
-            return new ResponseEntity<>(res, StatusCode.OK);
-        }
-        catch (Exception e){
+            return new ResponseEntity<>(res, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
             ResponseAPI<GetDeadlineSubmissionsResponse> res = ResponseAPI.<GetDeadlineSubmissionsResponse>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();
-            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+            return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            ResponseAPI<GetDeadlineSubmissionsResponse> res = ResponseAPI.<GetDeadlineSubmissionsResponse>builder()
+                    .timestamp(new Date())
+                    .message("An unexpected error occurred: " + e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
     }
     @GetMapping(path = "/student/{studentId}")
     public ResponseEntity<ResponseAPI<GetDeadlinesResponse>> getDeadlinesByStudentId(

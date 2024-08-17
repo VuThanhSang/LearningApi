@@ -21,10 +21,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -178,32 +180,54 @@ public class DeadlineSubmissionsService implements IDeadlineSubmissionsService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
-
     @Override
-    public GetDeadlineSubmissionsResponse GetDeadlineSubmissionsByDeadlineId(String deadlineId, Integer page, Integer size) {
+    public GetDeadlineSubmissionsResponse GetDeadlineSubmissionsByDeadlineId(
+            String deadlineId, Integer page, Integer size, String search, String status,
+            String sortBy, Sort.Direction sortDirection) {
         try {
-            Pageable pageAble = PageRequest.of(page, size);
-            Page<DeadlineSubmissionsEntity> deadlineSubmissionsEntities = deadlineSubmissionsRepository.findAllByDeadlineId(deadlineId, pageAble);
+            if (status=="," || status==null){
+                status=null;
+            }
+            // Validate and sanitize sortBy
+            List<String> allowedSortFields = Arrays.asList("createdAt", "updatedAt", "studentName", "status");
+            if (sortBy == null || !allowedSortFields.contains(sortBy)) {
+                sortBy = "createdAt";  // Default to createdAt if invalid or null
+            }
+
+            Sort sort = Sort.by(sortDirection, sortBy);
+            Pageable pageable = PageRequest.of(page, size, sort);
+
+            // Ensure search is never null
+            search = (search == null) ? "" : search;
+
+            // Use a single query method that can handle null parameters
+            Page<DeadlineSubmissionsEntity> deadlineSubmissionsEntities = deadlineSubmissionsRepository
+                    .findAllByDeadlineIdWithFilters(deadlineId, search, status, pageable);
+
+
             GetDeadlineSubmissionsResponse response = new GetDeadlineSubmissionsResponse();
             List<GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse> deadlineSubmissionResponses = new ArrayList<>();
-            for (DeadlineSubmissionsEntity deadlineSubmissionsEntity : deadlineSubmissionsEntities) {
-                GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse deadlineSubmissionResponse = GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse.fromDeadlineSubmissionEntity(deadlineSubmissionsEntity);
-                StudentEntity studentEntity = studentRepository.findById(deadlineSubmissionsEntity.getStudentId()).orElse(null);
-                if (studentEntity != null) {
-                    deadlineSubmissionResponse.setStudentName(studentEntity.getUser().getFullname());
-                    deadlineSubmissionResponse.setStudentEmail(studentEntity.getUser().getEmail());
-                    deadlineSubmissionResponse.setStudentAvatar(studentEntity.getUser().getAvatar());
-                }
-                deadlineSubmissionResponses.add(deadlineSubmissionResponse);
 
+            for (DeadlineSubmissionsEntity entity : deadlineSubmissionsEntities) {
+                GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse submissionResponse =
+                        GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse.fromDeadlineSubmissionEntity(entity);
+
+                StudentEntity studentEntity = studentRepository.findById(entity.getStudentId()).orElse(null);
+                if (studentEntity != null) {
+                    submissionResponse.setStudentName(studentEntity.getUser().getFullname());
+                    submissionResponse.setStudentEmail(studentEntity.getUser().getEmail());
+                    submissionResponse.setStudentAvatar(studentEntity.getUser().getAvatar());
+                }
+                deadlineSubmissionResponses.add(submissionResponse);
             }
+
             response.setDeadlineSubmissions(deadlineSubmissionResponses);
             response.setTotalElements(deadlineSubmissionsEntities.getTotalElements());
             response.setTotalPage(deadlineSubmissionsEntities.getTotalPages());
             return response;
         } catch (Exception e) {
-            log.error(e.getMessage());
-            throw new IllegalArgumentException(e.getMessage());
+            log.error("Error in GetDeadlineSubmissionsByDeadlineId: ", e);
+            throw new IllegalArgumentException("Error retrieving deadline submissions: " + e.getMessage());
         }
     }
 
