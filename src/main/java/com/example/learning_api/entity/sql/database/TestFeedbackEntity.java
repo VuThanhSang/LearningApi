@@ -16,6 +16,7 @@ public class TestFeedbackEntity {
      private String testId;
      private String studentId;
      private List<String> sources;
+     private String title;
      private String feedback;
      private String createdAt;
      private String updatedAt;

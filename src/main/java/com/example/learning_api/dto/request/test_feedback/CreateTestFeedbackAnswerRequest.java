@@ -6,4 +6,5 @@ import lombok.Data;
 public class CreateTestFeedbackAnswerRequest {
     private String testFeedbackId;
     private String answer;
+    private String teacherId;
 }

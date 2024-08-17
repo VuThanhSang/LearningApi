@@ -89,14 +89,21 @@ public class TestFeedbackService implements ITestFeedbackService {
 
     @Override
     public void updateTestFeedback(UpdateTestFeedbackRequest body) {
-        if (body.getId() == null) {
+            if (body.getId() == null) {
             throw new RuntimeException("Id is required");
+        }
+        if (testFeedbackRepository.findById(body.getId()).isEmpty()) {
+            throw new RuntimeException("TestFeedback not found");
         }
         TestFeedbackEntity testFeedbackEntity = testFeedbackRepository.findById(body.getId()).orElseThrow(() -> new RuntimeException("TestFeedback not found"));
         if (body.getSources() != null) {
             testFeedbackEntity.getSources().clear();
             progressSources(body.getSources(), body.getFeedback(), testFeedbackEntity);
         }
+        if (body.getTitle() != null)
+            testFeedbackEntity.setTitle(body.getTitle());
+        if (body.getFeedback() != null)
+            testFeedbackEntity.setFeedback(body.getFeedback());
         testFeedbackEntity.setFeedback(body.getFeedback());
         testFeedbackEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
         testFeedbackRepository.save(testFeedbackEntity);
@@ -132,7 +139,8 @@ public class TestFeedbackService implements ITestFeedbackService {
             throw new RuntimeException("TestFeedbackAnswer not found");
         }
         TestFeedbackAnswerEntity testFeedbackAnswerEntity = testFeedbackAnswerRepository.findById(testFeedbackAnswerId).orElseThrow(() -> new RuntimeException("TestFeedbackAnswer not found"));
-        testFeedbackAnswerEntity.setAnswer(answer);
+        if (answer != null)
+            testFeedbackAnswerEntity.setAnswer(answer);
         testFeedbackAnswerEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
         testFeedbackAnswerRepository.save(testFeedbackAnswerEntity);
     }
@@ -153,6 +161,9 @@ public class TestFeedbackService implements ITestFeedbackService {
         }
         TestFeedbackEntity data= testFeedbackRepository.findById(testFeedbackId).orElseThrow(() -> new RuntimeException("TestFeedbackId not found"));
         List<TestFeedbackAnswerEntity> answers = testFeedbackAnswerRepository.findByTestFeedbackId(testFeedbackId);
+        for (TestFeedbackAnswerEntity testFeedbackAnswerEntity : answers) {
+            testFeedbackAnswerEntity.setTeacher(teacherRepository.findById(testFeedbackAnswerEntity.getTeacherId()).orElse(null));
+        }
         data.setStudent(studentRepository.findById(data.getStudentId()).orElse(null));
         data.setAnswers(answers);
         return data;
@@ -176,6 +187,9 @@ public class TestFeedbackService implements ITestFeedbackService {
             List<TestFeedbackEntity> data= testFeedbackRepository.findByStudentIdAndTestId(studentId, testId);
             for (TestFeedbackEntity testFeedbackEntity : data) {
                 List<TestFeedbackAnswerEntity> answers = testFeedbackAnswerRepository.findByTestFeedbackId(testFeedbackEntity.getId());
+                for (TestFeedbackAnswerEntity testFeedbackAnswerEntity : answers) {
+                    testFeedbackAnswerEntity.setTeacher(teacherRepository.findById(testFeedbackAnswerEntity.getTeacherId()).orElse(null));
+                }
                 testFeedbackEntity.setStudent(studentRepository.findById(testFeedbackEntity.getStudentId()).orElse(null));
                 testFeedbackEntity.setAnswers(answers);
             }
@@ -210,6 +224,9 @@ public class TestFeedbackService implements ITestFeedbackService {
             Page<TestFeedbackEntity> testFeedbackEntities = testFeedbackRepository.findByTestId(testId, pageable);
             for (TestFeedbackEntity testFeedbackEntity : testFeedbackEntities) {
                 List<TestFeedbackAnswerEntity> answers = testFeedbackAnswerRepository.findByTestFeedbackId(testFeedbackEntity.getId());
+                for (TestFeedbackAnswerEntity testFeedbackAnswerEntity : answers) {
+                    testFeedbackAnswerEntity.setTeacher(teacherRepository.findById(testFeedbackAnswerEntity.getTeacherId()).orElse(null));
+                }
                 testFeedbackEntity.setStudent(studentRepository.findById(testFeedbackEntity.getStudentId()).orElse(null));
                 testFeedbackEntity.setAnswers(answers);
             }
@@ -233,6 +250,9 @@ public class TestFeedbackService implements ITestFeedbackService {
             }
 
            List<TestFeedbackAnswerEntity> data =  testFeedbackAnswerRepository.findByTestFeedbackId(testFeedbackId);
+            for (TestFeedbackAnswerEntity testFeedbackAnswerEntity : data) {
+                testFeedbackAnswerEntity.setTeacher(teacherRepository.findById(testFeedbackAnswerEntity.getTeacherId()).orElse(null));
+            }
             List<TestFeedbackAnswerResponse> response = new ArrayList<>();
             for (TestFeedbackAnswerEntity testFeedbackAnswerEntity : data) {
                 TestFeedbackAnswerResponse answerResponse = modelMapperService.mapClass(testFeedbackAnswerEntity, TestFeedbackAnswerResponse.class);

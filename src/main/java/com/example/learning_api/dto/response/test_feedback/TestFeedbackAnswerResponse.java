@@ -8,6 +8,8 @@ public class TestFeedbackAnswerResponse {
     private String id;
     private String testFeedbackId;
     private String answer;
+    private String teacherId;
+    private TeacherEntity teacher;
     private String createdAt;
     private String updatedAt;
 }

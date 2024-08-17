@@ -47,8 +47,8 @@ public class TestFeedbackController {
             return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
         }
     }
-    @PatchMapping(path = "/{testFeedbackId}")
-    public ResponseEntity<ResponseAPI<String>> updateTestFeedback(@PathVariable String testFeedbackId, @RequestBody @Valid UpdateTestFeedbackRequest body) {
+    @PatchMapping(path = "/{testFeedbackId}",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ResponseAPI<String>> updateTestFeedback(@PathVariable String testFeedbackId, @ModelAttribute @Valid UpdateTestFeedbackRequest body) {
         try {
             body.setId(testFeedbackId);
             testFeedbackService.updateTestFeedback( body);
@@ -58,10 +58,9 @@ public class TestFeedbackController {
                     .build();
             return new ResponseEntity<>(res, StatusCode.OK);
         } catch (Exception e) {
-            log.error("Error update test feedback: ", e);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
                     .timestamp(new Date())
-                    .message("Error update test feedback")
+                    .message(e.getMessage())
                     .build();
             return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
         }
@@ -80,7 +79,7 @@ public class TestFeedbackController {
             log.error("Error delete test feedback: ", e);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
                     .timestamp(new Date())
-                    .message("Error delete test feedback")
+                    .message(e.getMessage())
                     .build();
             return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
         }
@@ -100,7 +99,7 @@ public class TestFeedbackController {
             log.error("Error get test feedback: ", e);
             ResponseAPI<TestFeedbackEntity> res = ResponseAPI.<TestFeedbackEntity>builder()
                     .timestamp(new Date())
-                    .message("Error get test feedback")
+                    .message(e.getMessage())
                     .build();
             return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
         }
@@ -120,7 +119,7 @@ public class TestFeedbackController {
             log.error("Error get test feedback: ", e);
             ResponseAPI<List<TestFeedbackEntity>> res = ResponseAPI.<List<TestFeedbackEntity>>builder()
                     .timestamp(new Date())
-                    .message("Error get test feedback")
+                    .message(e.getMessage())
                     .build();
             return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
         }
@@ -141,15 +140,16 @@ public class TestFeedbackController {
             log.error("Error get test feedbacks: ", e);
             ResponseAPI<GetTestFeedBacksResponse> res = ResponseAPI.<GetTestFeedBacksResponse>builder()
                     .timestamp(new Date())
-                    .message("Error get test feedbacks")
+                    .message(e.getMessage())
                     .build();
             return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
         }
     }
 
-    @PostMapping(path = "/answer")
-    public ResponseEntity<ResponseAPI<String>> createTestFeedbackAnswer(@RequestBody @Valid CreateTestFeedbackAnswerRequest body) {
+    @PostMapping(path = "/{testFeedbackId}/answer")
+    public ResponseEntity<ResponseAPI<String>> createTestFeedbackAnswer(@PathVariable String  testFeedbackId,@RequestBody @Valid CreateTestFeedbackAnswerRequest body) {
         try {
+            body.setTestFeedbackId(testFeedbackId);
             testFeedbackService.createTestFeedbackAnswer(body);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
                     .timestamp(new Date())
@@ -160,7 +160,7 @@ public class TestFeedbackController {
             log.error("Error create test feedback answer: ", e);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
                     .timestamp(new Date())
-                    .message("Error create test feedback answer")
+                    .message(e.getMessage())
                     .build();
             return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
         }
@@ -185,7 +185,7 @@ public class TestFeedbackController {
         }
     }
 
-    @DeleteMapping(path = "/{testFeedbackId}/answer")
+    @DeleteMapping(path = "/answer/{testFeedbackId}")
     public ResponseEntity<ResponseAPI<String>> deleteTestFeedbackAnswer(@PathVariable String testFeedbackId) {
         try {
             testFeedbackService.deleteTestFeedbackAnswer(testFeedbackId);

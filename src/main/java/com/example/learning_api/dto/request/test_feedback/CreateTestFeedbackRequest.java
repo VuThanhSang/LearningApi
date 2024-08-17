@@ -11,4 +11,5 @@ public class CreateTestFeedbackRequest {
     private String studentId;
     private List<MultipartFile> sources;
     private String feedback;
+    private String title;
 }
