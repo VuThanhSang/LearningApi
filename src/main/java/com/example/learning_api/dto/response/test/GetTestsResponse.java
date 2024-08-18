@@ -1,5 +1,6 @@
 package com.example.learning_api.dto.response.test;
 
+import com.example.learning_api.entity.sql.database.FileEntity;
 import com.example.learning_api.entity.sql.database.QuestionEntity;
 import com.example.learning_api.entity.sql.database.TestEntity;
 import lombok.Builder;
@@ -21,6 +22,7 @@ public class GetTestsResponse {
         private List<QuestionEntity> questions;
         private String startTime;
         private String endTime;
+        private FileEntity source;
         private String classroomId;
         private String showResultType;
         private int attemptLimit;

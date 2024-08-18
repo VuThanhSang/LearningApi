@@ -7,11 +7,13 @@ import com.example.learning_api.dto.response.classroom.TotalClassroomOfDayDto;
 import com.example.learning_api.enums.RoleEnum;
 import com.example.learning_api.enums.UserStatus;
 import com.example.learning_api.repository.database.*;
+import com.example.learning_api.service.common.CloudinaryService;
 import com.example.learning_api.service.core.IAdminService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -25,6 +27,8 @@ public class AdminService implements IAdminService {
     private final TestRepository testRepository;
     private final StudentRepository studentRepository;
     private final TeacherRepository teacherRepository;
+    private final FileRepository fileRepository;
+    private final CloudinaryService cloudinaryService;
 
     @Override
     public void changeRole(ChangeRoleRequest body) {
@@ -46,6 +50,24 @@ public class AdminService implements IAdminService {
             userRepository.findById(userId).ifPresent(userEntity -> {
                 userEntity.setStatus(UserStatus.BLOCKED);
                 userRepository.save(userEntity);
+            });
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+
+        }
+
+    }
+
+    @Override
+    public void removeFile(String fileId) {
+        try {
+            fileRepository.findById(fileId).ifPresent(fileEntity -> {
+                try {
+                    cloudinaryService.deleteImage(fileEntity.getUrl());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                fileRepository.delete(fileEntity);
             });
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
@@ -123,4 +145,8 @@ public class AdminService implements IAdminService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
+
+
+
+
 }

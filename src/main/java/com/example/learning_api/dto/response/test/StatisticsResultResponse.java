@@ -1,5 +1,6 @@
 package com.example.learning_api.dto.response.test;
 
+import com.example.learning_api.entity.sql.database.FileEntity;
 import lombok.Data;
 
 import java.util.List;
@@ -18,7 +19,7 @@ public class StatisticsResultResponse {
         private String id;
         private String content;
         private String description;
-        private String source;
+        private List<FileEntity> source;
         private String type;
         private String createdAt;
         private String updatedAt;
@@ -32,7 +33,7 @@ public class StatisticsResultResponse {
         private String content;
         private boolean isCorrect;
         private String questionId;
-        private String source;
+        private FileEntity source;
         private Integer totalSelected;
         private String createdAt;
         private String updatedAt;

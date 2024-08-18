@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @Data
 public class CreateQuestionRequest {
     @NotBlank
@@ -13,7 +15,7 @@ public class CreateQuestionRequest {
     private String description;
     @NotBlank
     private String type;
-    private MultipartFile source;
+    private List<MultipartFile> sources;
     private String createdBy;
     private String updatedBy;
 }

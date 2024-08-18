@@ -15,13 +15,5 @@ public class QuestionAnswersDTO {
     private String type;
 
     private List<TestSubmitResponse.AnswerResponse> answers;
-    public static TestSubmitResponse.QuestionResponse formQuestionEntity(QuestionEntity questionEntity){
-        TestSubmitResponse.QuestionResponse questionResponse = new TestSubmitResponse.QuestionResponse();
-        questionResponse.setId(questionEntity.getId());
-        questionResponse.setContent(questionEntity.getContent());
-        questionResponse.setDescription(questionEntity.getDescription());
-        questionResponse.setSource(questionEntity.getSource());
-        questionResponse.setType(questionEntity.getType().name());
-        return questionResponse;
-    }
+
 }

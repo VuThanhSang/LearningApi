@@ -21,7 +21,6 @@ public class QuestionEntity {
     private String content;
     private String testId;
     private String description;
-    private String source;
     private QuestionType type;
     private QuestionStatus status;
     private String createdAt;

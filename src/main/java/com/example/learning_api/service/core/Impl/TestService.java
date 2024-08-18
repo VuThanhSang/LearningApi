@@ -11,10 +11,7 @@ import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.question.GetQuestionsResponse;
 import com.example.learning_api.dto.response.test.*;
 import com.example.learning_api.entity.sql.database.*;
-import com.example.learning_api.enums.ImportType;
-import com.example.learning_api.enums.TestShowResultType;
-import com.example.learning_api.enums.TestState;
-import com.example.learning_api.enums.TestStatus;
+import com.example.learning_api.enums.*;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
@@ -58,75 +55,100 @@ public class TestService implements ITestService {
     private final StudentAnswersRepository studentAnswersRepository;
     private final TeacherRepository teacherRepository;
     private final StudentAnswersRepository studentAnswerRepository;
+    private final FileRepository fileRepository;
     @Override
-    public CreateTestResponse createTest(CreateTestRequest body) {
-        try{
-            TeacherEntity userEntity = teacherRepository.findById(body.getTeacherId())
-                    .orElseThrow(() -> new IllegalArgumentException("Teacher not found"));
+    public CreateTestResponse createTest(CreateTestRequest request) {
+        validateCreateTestRequest(request);
+        TestEntity testEntity = createTestEntity(request);
+        FileEntity fileEntity = createFileEntity(request, testEntity);
 
-            if (body.getTeacherId()==null){
-                throw new IllegalArgumentException("TeacherID is required");
-            }
-            if (userEntity==null){
-                throw new IllegalArgumentException("TeacherID is not found");
-            }
-            if (body.getClassroomId() == null){
-                throw new IllegalArgumentException("ClassroomId is required");
-            }
-            if (classRoomRepository.findById(body.getClassroomId()).isEmpty()){
-                throw new IllegalArgumentException("ClassroomId is not found");
-            }
-            if (body.getAttemptLimit()==null){
-                throw new IllegalArgumentException("AttemptLimit is required");
-            }
-            CreateTestResponse resData = new CreateTestResponse();
-            TestEntity testEntity = modelMapperService.mapClass(body, TestEntity.class);
-            if(body.getSource()!=null){
-                if (!ImageUtils.isValidImageFile(body.getSource()) && body.getSource()!=null) {
-                    throw new CustomException(ErrorConstant.IMAGE_INVALID);
-                }
-                byte[] originalImage = new byte[0];
-                originalImage = body.getSource().getBytes();
-                byte[] newImage = ImageUtils.resizeImage(originalImage, 200, 200);
-                CloudinaryUploadResponse imageUploaded = cloudinaryService.uploadFileToFolder(
-                        CloudinaryConstant.CLASSROOM_PATH,
-                        StringUtils.generateFileName(body.getName(), "tests"),
-                        newImage,
-                        "image"
-                );
-                testEntity.setSource(imageUploaded.getUrl());
-            }
-            testEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+        testRepository.save(testEntity);
+        fileRepository.save(fileEntity);
 
-            testEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
-            testRepository.save(testEntity);
-            resData.setTeacherId(body.getTeacherId());
-            resData.setCreatedAt(testEntity.getCreatedAt().toString());
-            resData.setDescription(body.getDescription());
-            resData.setDuration(body.getDuration());
-            resData.setId(testEntity.getId());
-            resData.setSource(testEntity.getSource());
-            resData.setName(body.getName());
-            resData.setUpdatedAt(testEntity.getUpdatedAt().toString());
-            resData.setStartTime(testEntity.getStartTime());
-            resData.setEndTime(testEntity.getEndTime());
-            resData.setClassroomId(body.getClassroomId());
-            resData.setShowResultType(body.getShowResultType());
-            resData.setStatus(body.getStatus());
-            if (body.getAttemptLimit()==null){
-                resData.setAttemptLimit(1);
-            }
-            else{
-                resData.setAttemptLimit(body.getAttemptLimit());
-            }
-            return resData;
+        return createTestResponse(testEntity, fileEntity);
+    }
 
+    private void validateCreateTestRequest(CreateTestRequest request) {
+        if (request.getTeacherId() == null) {
+            throw new IllegalArgumentException("TeacherID is required");
         }
-        catch (Exception e){
-            throw new IllegalArgumentException(e.getMessage());
+        TeacherEntity teacher = teacherRepository.findById(request.getTeacherId())
+                .orElseThrow(() -> new IllegalArgumentException("Teacher not found"));
+
+        if (request.getClassroomId() == null) {
+            throw new IllegalArgumentException("ClassroomId is required");
+        }
+        if (classRoomRepository.findById(request.getClassroomId()).isEmpty()) {
+            throw new IllegalArgumentException("ClassroomId is not found");
+        }
+
+        if (request.getAttemptLimit() == null) {
+            throw new IllegalArgumentException("AttemptLimit is required");
         }
     }
 
+    private TestEntity createTestEntity(CreateTestRequest request) {
+        TestEntity testEntity = modelMapperService.mapClass(request, TestEntity.class);
+        testEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+        testEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+        return testEntity;
+    }
+
+    private FileEntity createFileEntity(CreateTestRequest request, TestEntity testEntity) {
+        FileEntity fileEntity = new FileEntity();
+        fileEntity.setOwnerType(FileOwnerType.TEST);
+        fileEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+        fileEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+
+        if (request.getSource() != null) {
+            processAndUploadImage(request, fileEntity);
+        }
+
+        fileEntity.setOwnerId(testEntity.getId());
+        return fileEntity;
+    }
+
+    private void processAndUploadImage(CreateTestRequest request, FileEntity fileEntity) {
+        if (!ImageUtils.isValidImageFile(request.getSource())) {
+            throw new CustomException(ErrorConstant.IMAGE_INVALID);
+        }
+
+        try {
+            byte[] originalImage = request.getSource().getBytes();
+            byte[] resizedImage = ImageUtils.resizeImage(originalImage, 200, 200);
+            CloudinaryUploadResponse imageUploaded = cloudinaryService.uploadFileToFolder(
+                    CloudinaryConstant.CLASSROOM_PATH,
+                    StringUtils.generateFileName(request.getName(), "tests"),
+                    resizedImage,
+                    "image"
+            );
+
+            fileEntity.setUrl(imageUploaded.getUrl());
+            fileEntity.setType("image");
+        } catch (IOException e) {
+            throw new CustomException("Failed to process image", e.toString());
+        }
+    }
+
+    private CreateTestResponse createTestResponse(TestEntity testEntity, FileEntity fileEntity) {
+        CreateTestResponse response = new CreateTestResponse();
+        // Set all the fields from testEntity and fileEntity
+        response.setTeacherId(testEntity.getTeacherId());
+        response.setCreatedAt(testEntity.getCreatedAt());
+        response.setDescription(testEntity.getDescription());
+        response.setDuration(testEntity.getDuration());
+        response.setId(testEntity.getId());
+        response.setSource(fileEntity.getUrl());
+        response.setName(testEntity.getName());
+        response.setUpdatedAt(testEntity.getUpdatedAt());
+        response.setStartTime(testEntity.getStartTime());
+        response.setEndTime(testEntity.getEndTime());
+        response.setClassroomId(testEntity.getClassroomId());
+        response.setShowResultType(testEntity.getShowResultType().name());
+        response.setStatus(testEntity.getStatus().name());
+        response.setAttemptLimit(testEntity.getAttemptLimit() != null ? testEntity.getAttemptLimit() : 1);
+        return response;
+    }
     @Override
     public void updateTest(UpdateTestRequest body) {
         try{
@@ -152,6 +174,7 @@ public class TestService implements ITestService {
                 if (!ImageUtils.isValidImageFile(body.getSource())) {
                     throw new CustomException(ErrorConstant.IMAGE_INVALID);
                 }
+                fileRepository.deleteByOwnerIdAndOwnerType(testEntity.getId(), FileOwnerType.TEST.name());
                 byte[] originalImage = new byte[0];
                 originalImage = body.getSource().getBytes();
                 byte[] newImage = ImageUtils.resizeImage(originalImage, 200, 200);
@@ -161,7 +184,14 @@ public class TestService implements ITestService {
                         newImage,
                         "image"
                 );
-                testEntity.setSource(imageUploaded.getUrl());
+                FileEntity fileEntity = new FileEntity();
+                fileEntity.setUrl(imageUploaded.getUrl());
+                fileEntity.setType("image");
+                fileEntity.setOwnerId(testEntity.getId());
+                fileEntity.setOwnerType(FileOwnerType.TEST);
+                fileEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+                fileEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+                fileRepository.save(fileEntity);
             }
             if (body.getImage()!=null){
                 testEntity.setStartTime(body.getStartTime());
@@ -195,7 +225,11 @@ public class TestService implements ITestService {
         try{
             TestEntity testEntity = testRepository.findById(id)
                     .orElseThrow(() -> new IllegalArgumentException("Test not found"));
-            cloudinaryService.deleteImage(testEntity.getSource());
+            List<FileEntity> fileEntities = fileRepository.findByOwnerIdAndOwnerType(testEntity.getId(), FileOwnerType.TEST.name());
+            for (FileEntity fileEntity : fileEntities){
+                cloudinaryService.deleteImage(fileEntity.getUrl());
+                fileEntities.remove(fileEntity);
+            }
             List<QuestionEntity> questionEntities = questionRepository.findByTestId(id);
             for (QuestionEntity questionEntity : questionEntities){
                 answerRepository.deleteByQuestionId(questionEntity.getId());
@@ -219,6 +253,10 @@ public class TestService implements ITestService {
             List<GetTestsResponse.TestResponse> testResponses = new ArrayList<>();
             for (TestEntity testEntity : testEntities){
                 GetTestsResponse.TestResponse testResponse = modelMapperService.mapClass(testEntity, GetTestsResponse.TestResponse.class);
+                testResponse.setSource(fileRepository.findByOwnerIdAndOwnerType(testEntity.getId(), FileOwnerType.TEST.name())
+                        .stream()
+                        .findFirst()
+                        .orElse(null));
                 if (testEntity.getAttemptLimit()==null){
                     testResponse.setAttemptLimit(1);
                 }
@@ -315,7 +353,6 @@ public class TestService implements ITestService {
         QuestionEntity question = new QuestionEntity();
         question.setContent(questionText);
         question.setTestId(testId);
-        question.setSource("");
         question.setCreatedAt(String.valueOf(System.currentTimeMillis()));
         question.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
         return question;
@@ -341,7 +378,6 @@ public class TestService implements ITestService {
         AnswerEntity answer = new AnswerEntity();
         answer.setContent(answerText);
         answer.setQuestionId(questionId);
-        answer.setSource("");
         answer.setCreatedAt(String.valueOf(System.currentTimeMillis()));
         answer.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
         answer.setCorrect(isCorrect);
@@ -364,12 +400,14 @@ public class TestService implements ITestService {
         TestEntity testEntity = getTestEntityById(id);
         GetTestDetailResponse response = mapTestEntityToResponse(testEntity);
         List<GetQuestionsResponse.QuestionResponse> questionResponses = getQuestionResponses(id);
-
         if (testEntity.getType() == null || !testEntity.getType().equals(TestShowResultType.SHOW_RESULT_IMMEDIATELY)) {
             for (GetQuestionsResponse.QuestionResponse questionResponse : questionResponses) {
+                questionResponse.setSource(fileRepository.findByOwnerIdAndOwnerType(questionResponse.getId(), FileOwnerType.QUESTION.name())
+                        );
                 List<GetQuestionsResponse.AnswerResponse> answerResponses = questionResponse.getAnswers();
                 List<GetQuestionsResponse.AnswerResponse> newAnswerResponses = new ArrayList<>();
                 for (GetQuestionsResponse.AnswerResponse answerResponse : answerResponses) {
+                    answerResponse.setSource(fileRepository.findByOwnerIdAndOwnerType(answerResponse.getId(), FileOwnerType.ANSWER.name()).stream().findFirst().orElse(null));
                     newAnswerResponses.add(answerResponse.withoutIsCorrect());
                 }
                 questionResponse.setAnswers(newAnswerResponses);
@@ -388,11 +426,19 @@ public class TestService implements ITestService {
 
     private GetTestDetailResponse mapTestEntityToResponse(TestEntity testEntity) {
         GetTestDetailResponse response = new GetTestDetailResponse();
+        FileEntity fileEntity = fileRepository.findByOwnerIdAndOwnerType(testEntity.getId(), FileOwnerType.TEST.name())
+                .stream()
+                .findFirst()
+                .orElse(null);
         response.setId(testEntity.getId());
         response.setName(testEntity.getName());
         response.setDescription(testEntity.getDescription());
         response.setDuration(testEntity.getDuration());
-        response.setSource(testEntity.getSource());
+        if (fileEntity == null) {
+            response.setSource(null);
+        } else {
+            response.setSource(fileEntity);
+        }
         response.setTeacherId(testEntity.getTeacherId());
         if (testEntity.getAttemptLimit()==null){
             response.setAttemptLimit(1);
@@ -417,6 +463,8 @@ public class TestService implements ITestService {
 
     private GetQuestionsResponse.QuestionResponse mapQuestionEntityToResponse(QuestionEntity questionEntity) {
         GetQuestionsResponse.QuestionResponse questionResponse = modelMapperService.mapClass(questionEntity, GetQuestionsResponse.QuestionResponse.class);
+        questionResponse.setSource(fileRepository.findByOwnerIdAndOwnerType(questionEntity.getId(), FileOwnerType.QUESTION.name())
+                );
         List<GetQuestionsResponse.AnswerResponse> answerResponses = getAnswerResponses(questionEntity.getId());
         questionResponse.setAnswers(answerResponses);
         return questionResponse;
@@ -425,11 +473,15 @@ public class TestService implements ITestService {
     private List<GetQuestionsResponse.AnswerResponse> getAnswerResponses(String questionId) {
         List<AnswerEntity> answerEntities = answerRepository.findByQuestionId(questionId);
         return answerEntities.stream()
-                .map(answerEntity -> modelMapperService.mapClass(answerEntity, GetQuestionsResponse.AnswerResponse.class))
+                .map(this::mapAnswerEntityToResponse)
                 .collect(Collectors.toList());
     }
 
-
+    private GetQuestionsResponse.AnswerResponse mapAnswerEntityToResponse(AnswerEntity answerEntity) {
+        GetQuestionsResponse.AnswerResponse answerResponse = modelMapperService.mapClass(answerEntity, GetQuestionsResponse.AnswerResponse.class);
+        answerResponse.setSource(fileRepository.findByOwnerIdAndOwnerType(answerEntity.getId(), FileOwnerType.ANSWER.name()).stream().findFirst().orElse(null));
+        return answerResponse;
+    }
 
 
     @Override
@@ -441,6 +493,10 @@ public class TestService implements ITestService {
             List<GetTestsResponse.TestResponse> testResponses = new ArrayList<>();
             for (TestEntity testEntity : testEntities){
                 GetTestsResponse.TestResponse testResponse = modelMapperService.mapClass(testEntity, GetTestsResponse.TestResponse.class);
+                testResponse.setSource(fileRepository.findByOwnerIdAndOwnerType(testEntity.getId(), FileOwnerType.TEST.name())
+                        .stream()
+                        .findFirst()
+                        .orElse(null));
                 if (testEntity.getAttemptLimit()==null){
                     testResponse.setAttemptLimit(1);
                 }
@@ -701,7 +757,7 @@ public class TestService implements ITestService {
         questionResponse.setId(question.getId());
         questionResponse.setContent(question.getContent());
         questionResponse.setDescription(question.getDescription());
-        questionResponse.setSource(question.getSource());
+        questionResponse.setSource(fileRepository.findByOwnerIdAndOwnerType(question.getId(), FileOwnerType.QUESTION.name()));
         questionResponse.setType(question.getType());
         return questionResponse;
     }
@@ -743,7 +799,6 @@ public class TestService implements ITestService {
         answerResponse.setId(answer.getId());
         answerResponse.setContent(answer.getContent());
         answerResponse.setCorrect(answer.getIsCorrect());
-        answerResponse.setSource(answer.getSource());
         answerResponse.setQuestionId(answer.getQuestionId());
         return answerResponse;
     }
