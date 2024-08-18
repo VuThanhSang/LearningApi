@@ -195,17 +195,26 @@ public class TestResultService implements ITestResultService {
         validateTestIdf(testId);
         List<TestResultOfTestResponse> results = testResultRepository.findHighestGradesByTestIdAndFinishedStateSortedAscending(testId);
 
-        if (results.isEmpty()) {
-            throw new IllegalStateException("No test results found for the given test ID");
-        }
 
+        if (results.isEmpty()) {
+            OverviewResultResponse response = new OverviewResultResponse();
+            response.setTotalStudent(0);
+            response.setTotalPassed(0);
+            response.setTotalFailed(0);
+            response.setTotalNotAttended(0);
+            response.setTotalGrade(0);
+            response.setMaxGrade(0);
+            response.setMinGrade(0);
+            response.setAverageGrade(0);
+            return response;
+        }
         int totalStudentInClass = getTotalStudentsInClass(results.get(0).getTestInfo().getClassroomId());
         OverviewResultResponse response = new OverviewResultResponse();
 
         response.setTotalStudent(totalStudentInClass);
 
-        calculateAndSetStatistics(response, results, totalStudentInClass);
 
+        calculateAndSetStatistics(response, results, totalStudentInClass);
         return response;
     }
 
@@ -384,6 +393,9 @@ public class TestResultService implements ITestResultService {
     }
 
     private List<StatisticsResultResponse.Question> paginateQuestions(List<StatisticsResultResponse.Question> questions, int page, int size) {
+        if (page==-1){
+            page=0;
+        }
         int fromIndex = (page ) * size;
         if (fromIndex >= questions.size()) {
             return Collections.emptyList();

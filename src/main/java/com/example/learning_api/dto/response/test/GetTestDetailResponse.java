@@ -1,6 +1,7 @@
 package com.example.learning_api.dto.response.test;
 
 import com.example.learning_api.dto.response.question.GetQuestionsResponse;
+import com.example.learning_api.entity.sql.database.FileEntity;
 import lombok.Data;
 
 import java.util.List;
@@ -10,7 +11,7 @@ public class GetTestDetailResponse {
     private int totalQuestions;
     private String name;
     private String description;
-    private String source;
+    private FileEntity source;
     private String id;
     private int duration;
     private String startTime;

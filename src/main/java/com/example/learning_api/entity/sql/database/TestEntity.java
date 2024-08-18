@@ -23,7 +23,6 @@ public class TestEntity {
     private Integer duration;
     private String classroomId;
     private String teacherId;
-    private String source;
     private String startTime;
     private String endTime;
     private TestType type;
@@ -32,5 +31,4 @@ public class TestEntity {
     private Integer attemptLimit;
     private String createdAt;
     private String updatedAt;
-
 }

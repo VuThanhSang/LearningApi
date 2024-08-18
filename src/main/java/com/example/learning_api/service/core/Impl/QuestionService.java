@@ -7,11 +7,15 @@ import com.example.learning_api.dto.request.question.UpdateQuestionRequest;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.question.CreateQuestionResponse;
 import com.example.learning_api.dto.response.question.GetQuestionsResponse;
+import com.example.learning_api.entity.sql.database.FileEntity;
 import com.example.learning_api.entity.sql.database.QuestionEntity;
 import com.example.learning_api.entity.sql.database.TestEntity;
+import com.example.learning_api.entity.sql.database.TestFeedbackEntity;
+import com.example.learning_api.enums.FileOwnerType;
 import com.example.learning_api.enums.QuestionType;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.AnswerRepository;
+import com.example.learning_api.repository.database.FileRepository;
 import com.example.learning_api.repository.database.QuestionRepository;
 import com.example.learning_api.repository.database.TestRepository;
 import com.example.learning_api.service.common.CloudinaryService;
@@ -25,7 +29,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -40,6 +46,37 @@ public class QuestionService implements IQuestionService {
     private final TestRepository testRepository;
     private final CloudinaryService cloudinaryService;
     private final AnswerRepository answerRepository;
+    private final FileRepository fileRepository;
+    public void progressSources(List<MultipartFile> sources, String content, FileEntity fileEntity, QuestionEntity questionEntity){
+        if (sources == null) {
+            return;
+
+        }
+        for (MultipartFile source : sources) {
+            try {
+                String sourceDto = processSource(source, content);
+                fileEntity.setUrl(sourceDto);
+                fileEntity.setType("image");
+                fileEntity.setOwnerType(FileOwnerType.QUESTION);
+                fileEntity.setOwnerId(questionEntity.getId());
+                fileEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+                fileEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+                fileRepository.save(fileEntity);
+            } catch (IOException e) {
+                log.error("Error processing source: " + e.getMessage());
+                throw new IllegalArgumentException("Error processing source");
+            }
+        }
+
+    }
+    private String processSource(MultipartFile source, String question) throws IOException {
+        byte[] fileBytes = source.getBytes();
+        String fileName = StringUtils.generateFileName(question, "forum");
+        CloudinaryUploadResponse response;
+        byte[] resizedImage = ImageUtils.resizeImage(fileBytes, 400, 400);
+        response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName, resizedImage, "image");
+        return response.getUrl();
+    }
     @Override
     public CreateQuestionResponse createQuestion(CreateQuestionRequest body) {
         try{
@@ -54,21 +91,12 @@ public class QuestionService implements IQuestionService {
             }
             CreateQuestionResponse resData = new CreateQuestionResponse();
             QuestionEntity questionEntity = modelMapperService.mapClass(body, QuestionEntity.class);
-            if(body.getSource()!=null){
-                byte[] originalImage = new byte[0];
-                originalImage = body.getSource().getBytes();
-                byte[] newImage = ImageUtils.resizeImage(originalImage, 200, 200);
-                CloudinaryUploadResponse imageUploaded = cloudinaryService.uploadFileToFolder(
-                        CloudinaryConstant.CLASSROOM_PATH,
-                        StringUtils.generateFileName(body.getContent(), "questions"),
-                        newImage,
-                        "image"
-                );
-                questionEntity.setSource(imageUploaded.getUrl());
-            }
+            FileEntity fileEntity = new FileEntity();
+
             questionEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
             questionEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             questionRepository.save(questionEntity);
+            progressSources(body.getSources(), body.getContent(), fileEntity, questionEntity);
             resData.setTestId(body.getTestId());
             resData.setCreatedAt(questionEntity.getCreatedAt().toString());
             resData.setContent(body.getContent());
@@ -99,18 +127,7 @@ public class QuestionService implements IQuestionService {
                 questionEntity.setContent(body.getContent());
             if(body.getDescription()!=null)
                 questionEntity.setDescription(body.getDescription());
-            if (body.getSource()!=null){
-                byte[] originalImage = new byte[0];
-                originalImage = body.getSource().getBytes();
-                byte[] newImage = ImageUtils.resizeImage(originalImage, 200, 200);
-                CloudinaryUploadResponse imageUploaded = cloudinaryService.uploadFileToFolder(
-                        CloudinaryConstant.CLASSROOM_PATH,
-                        StringUtils.generateFileName(body.getContent(), "questions"),
-                        newImage,
-                        "image"
-                );
-                questionEntity.setSource(imageUploaded.getUrl());
-            }
+            progressSources(body.getSources(), body.getContent(), new FileEntity(), questionEntity);
             if(body.getType()!=null)
                 questionEntity.setType(QuestionType.valueOf(body.getType()));
             questionEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));

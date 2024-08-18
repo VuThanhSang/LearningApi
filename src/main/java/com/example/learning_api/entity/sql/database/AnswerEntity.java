@@ -19,7 +19,6 @@ public class AnswerEntity {
     private String content;
     private boolean isCorrect;
     private String questionId;
-    private String source;
     private String createdAt;
     private String updatedAt;
 }

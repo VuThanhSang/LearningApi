@@ -2,6 +2,7 @@ package com.example.learning_api.dto.response.test;
 
 import com.example.learning_api.dto.response.answer.CreateAnswerResponse;
 import com.example.learning_api.dto.response.question.GetQuestionsResponse;
+import com.example.learning_api.entity.sql.database.FileEntity;
 import com.example.learning_api.entity.sql.database.QuestionEntity;
 import lombok.Builder;
 import lombok.Data;
@@ -27,19 +28,11 @@ public class TestSubmitResponse {
         private String id;
         private String content;
         private String description;
-        private String source;
+        private List<FileEntity> source;
         private String type;
 
         private List<AnswerResponse> answers;
-        public static QuestionResponse formQuestionEntity(QuestionEntity questionEntity){
-            QuestionResponse questionResponse = new QuestionResponse();
-            questionResponse.setId(questionEntity.getId());
-            questionResponse.setContent(questionEntity.getContent());
-            questionResponse.setDescription(questionEntity.getDescription());
-            questionResponse.setSource(questionEntity.getSource());
-            questionResponse.setType(questionEntity.getType().name());
-            return questionResponse;
-        }
+
 
     }
     @Data

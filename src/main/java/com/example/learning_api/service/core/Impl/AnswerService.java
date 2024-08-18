@@ -7,9 +7,12 @@ import com.example.learning_api.dto.request.answer.UpdateAnswerRequest;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.answer.CreateAnswerResponse;
 import com.example.learning_api.entity.sql.database.AnswerEntity;
+import com.example.learning_api.entity.sql.database.FileEntity;
 import com.example.learning_api.entity.sql.database.QuestionEntity;
+import com.example.learning_api.enums.FileOwnerType;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.AnswerRepository;
+import com.example.learning_api.repository.database.FileRepository;
 import com.example.learning_api.repository.database.QuestionRepository;
 import com.example.learning_api.service.common.CloudinaryService;
 import com.example.learning_api.service.common.ModelMapperService;
@@ -30,6 +33,7 @@ public class AnswerService implements IAnswerService {
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
     private final CloudinaryService cloudinaryService;
+    private final FileRepository fileRepository;
 
     @Override
     public CreateAnswerResponse createAnswer(CreateAnswerRequest body) {
@@ -45,6 +49,7 @@ public class AnswerService implements IAnswerService {
             }
             CreateAnswerResponse resData = new CreateAnswerResponse();
             AnswerEntity answerEntity = modelMapperService.mapClass(body, AnswerEntity.class);
+            FileEntity fileEntity = new FileEntity();
             if(body.getSource()!=null){
                 byte[] originalImage = new byte[0];
                 originalImage = body.getSource().getBytes();
@@ -55,18 +60,24 @@ public class AnswerService implements IAnswerService {
                         newImage,
                         "image"
                 );
-                answerEntity.setSource(imageUploaded.getUrl());
+                fileEntity.setUrl(imageUploaded.getUrl());
+                fileEntity.setType("image");
+                fileEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+                fileEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+                fileEntity.setOwnerType(FileOwnerType.ANSWER);
             }
             answerEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
             answerEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             answerRepository.save(answerEntity);
+            fileEntity.setOwnerId(answerEntity.getId());
+            fileRepository.save(fileEntity);
             resData.setQuestionId(body.getQuestionId());
             resData.setCreatedAt(answerEntity.getCreatedAt().toString());
             resData.setContent(body.getContent());
             resData.setId(answerEntity.getId());
             resData.setCorrect(body.isCorrect());
             resData.setUpdatedAt(answerEntity.getUpdatedAt().toString());
-            resData.setSource(answerEntity.getSource());
+            resData.setSource(fileEntity.getUrl());
             return resData;
 
         }
@@ -90,6 +101,7 @@ public class AnswerService implements IAnswerService {
                 answerEntity.setContent(body.getContent());
               answerEntity.setCorrect(body.isCorrect());
               if (body.getSource()!=null){
+                  fileRepository.deleteByOwnerIdAndOwnerType(body.getId(), FileOwnerType.ANSWER.name());
                 byte[] originalImage = new byte[0];
                 originalImage = body.getSource().getBytes();
                 byte[] newImage = ImageUtils.resizeImage(originalImage, 200, 200);
@@ -99,7 +111,14 @@ public class AnswerService implements IAnswerService {
                         newImage,
                         "image"
                 );
-                answerEntity.setSource(imageUploaded.getUrl());
+                FileEntity fileEntity = new FileEntity();
+                fileEntity.setUrl(imageUploaded.getUrl());
+                fileEntity.setType("image");
+                fileEntity.setOwnerId(body.getId());
+                fileEntity.setOwnerType(FileOwnerType.ANSWER);
+                fileEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+                fileEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+                fileRepository.save(fileEntity);
               }
               answerEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
               answerRepository.save(answerEntity);
