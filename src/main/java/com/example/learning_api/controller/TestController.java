@@ -71,6 +71,26 @@ public class TestController {
         }
     }
 
+    @GetMapping(path = "/teacher/{teacherId}/{testId}")
+    public ResponseEntity<ResponseAPI<GetTestDetailResponse>> getTestDetailForTeacher(@PathVariable String testId, @PathVariable String teacherId) {
+        try{
+            GetTestDetailResponse resData = testService.getTestDetailForTeacher(testId, teacherId);
+            ResponseAPI<GetTestDetailResponse> res = ResponseAPI.<GetTestDetailResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get test detail for teacher successfully")
+                    .data(resData)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetTestDetailResponse> res = ResponseAPI.<GetTestDetailResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
     @PostMapping(path = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<CreateTestResponse>> createTest(@ModelAttribute @Valid CreateTestRequest body) {
