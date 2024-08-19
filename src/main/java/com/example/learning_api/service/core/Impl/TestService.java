@@ -419,6 +419,34 @@ public class TestService implements ITestService {
         return response;
     }
 
+    @Override
+    public GetTestDetailResponse getTestDetailForTeacher(String id, String teacherId) {
+        TestEntity testEntity = getTestEntityById(id);
+        if(testEntity.getTeacherId()!=teacherId){
+            throw new IllegalArgumentException("Teacher does not have permission to view this test");
+        }
+        GetTestDetailResponse response = mapTestEntityToResponse(testEntity);
+        List<GetQuestionsResponse.QuestionResponse> questionResponses = getQuestionResponses(id);
+        if (testEntity.getType() == null || !testEntity.getType().equals(TestShowResultType.SHOW_RESULT_IMMEDIATELY)) {
+            for (GetQuestionsResponse.QuestionResponse questionResponse : questionResponses) {
+                questionResponse.setSource(fileRepository.findByOwnerIdAndOwnerType(questionResponse.getId(), FileOwnerType.QUESTION.name())
+                );
+                   List<GetQuestionsResponse.AnswerResponse> answerResponses = questionResponse.getAnswers();
+                List<GetQuestionsResponse.AnswerResponse> newAnswerResponses = new ArrayList<>();
+                for (GetQuestionsResponse.AnswerResponse answerResponse : answerResponses) {
+                    answerResponse.setSource(fileRepository.findByOwnerIdAndOwnerType(answerResponse.getId(), FileOwnerType.ANSWER.name()).stream().findFirst().orElse(null));
+                    answerResponse.setIsCorrect(answerRepository.findById(answerResponse.getId()).get().isCorrect());
+                    newAnswerResponses.add(answerResponse);
+                }
+
+            }
+        }
+
+        response.setQuestions(questionResponses);
+        response.setTotalQuestions(questionResponses.size());
+        return response;
+    }
+
     private TestEntity getTestEntityById(String id) {
         return testRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Test not found with id: " + id));
