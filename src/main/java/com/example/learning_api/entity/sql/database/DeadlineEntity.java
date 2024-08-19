@@ -22,7 +22,6 @@ public class DeadlineEntity {
     private String description;
     private DeadlineType type;
     private DeadlineStatus status;
-    private String attachment;
     private String startDate;
     private String endDate;
     private String createdAt;

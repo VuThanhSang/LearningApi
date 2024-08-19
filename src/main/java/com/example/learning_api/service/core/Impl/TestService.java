@@ -124,6 +124,13 @@ public class TestService implements ITestService {
             );
 
             fileEntity.setUrl(imageUploaded.getUrl());
+            fileEntity.setExtension("jpg");
+            fileEntity.setName(request.getSource().getOriginalFilename());
+
+            fileEntity.setSize(String.valueOf(request.getSource().getSize()));
+            fileEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+            fileEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+
             fileEntity.setType("image");
         } catch (IOException e) {
             throw new CustomException("Failed to process image", e.toString());
@@ -402,7 +409,7 @@ public class TestService implements ITestService {
         List<GetQuestionsResponse.QuestionResponse> questionResponses = getQuestionResponses(id);
         if (testEntity.getType() == null || !testEntity.getType().equals(TestShowResultType.SHOW_RESULT_IMMEDIATELY)) {
             for (GetQuestionsResponse.QuestionResponse questionResponse : questionResponses) {
-                questionResponse.setSource(fileRepository.findByOwnerIdAndOwnerType(questionResponse.getId(), FileOwnerType.QUESTION.name())
+                questionResponse.setSources(fileRepository.findByOwnerIdAndOwnerType(questionResponse.getId(), FileOwnerType.QUESTION.name())
                         );
                 List<GetQuestionsResponse.AnswerResponse> answerResponses = questionResponse.getAnswers();
                 List<GetQuestionsResponse.AnswerResponse> newAnswerResponses = new ArrayList<>();
@@ -422,14 +429,14 @@ public class TestService implements ITestService {
     @Override
     public GetTestDetailResponse getTestDetailForTeacher(String id, String teacherId) {
         TestEntity testEntity = getTestEntityById(id);
-        if(testEntity.getTeacherId()!=teacherId){
+        if(!testEntity.getTeacherId().equals(teacherId)){
             throw new IllegalArgumentException("Teacher does not have permission to view this test");
         }
         GetTestDetailResponse response = mapTestEntityToResponse(testEntity);
         List<GetQuestionsResponse.QuestionResponse> questionResponses = getQuestionResponses(id);
         if (testEntity.getType() == null || !testEntity.getType().equals(TestShowResultType.SHOW_RESULT_IMMEDIATELY)) {
             for (GetQuestionsResponse.QuestionResponse questionResponse : questionResponses) {
-                questionResponse.setSource(fileRepository.findByOwnerIdAndOwnerType(questionResponse.getId(), FileOwnerType.QUESTION.name())
+                questionResponse.setSources(fileRepository.findByOwnerIdAndOwnerType(questionResponse.getId(), FileOwnerType.QUESTION.name())
                 );
                    List<GetQuestionsResponse.AnswerResponse> answerResponses = questionResponse.getAnswers();
                 List<GetQuestionsResponse.AnswerResponse> newAnswerResponses = new ArrayList<>();
@@ -491,7 +498,7 @@ public class TestService implements ITestService {
 
     private GetQuestionsResponse.QuestionResponse mapQuestionEntityToResponse(QuestionEntity questionEntity) {
         GetQuestionsResponse.QuestionResponse questionResponse = modelMapperService.mapClass(questionEntity, GetQuestionsResponse.QuestionResponse.class);
-        questionResponse.setSource(fileRepository.findByOwnerIdAndOwnerType(questionEntity.getId(), FileOwnerType.QUESTION.name())
+        questionResponse.setSources(fileRepository.findByOwnerIdAndOwnerType(questionEntity.getId(), FileOwnerType.QUESTION.name())
                 );
         List<GetQuestionsResponse.AnswerResponse> answerResponses = getAnswerResponses(questionEntity.getId());
         questionResponse.setAnswers(answerResponses);

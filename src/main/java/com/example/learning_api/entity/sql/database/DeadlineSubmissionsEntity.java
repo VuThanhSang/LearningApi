@@ -22,7 +22,6 @@ public class DeadlineSubmissionsEntity {
     private String title;
     private String deadlineId;
     private String studentId;
-    private List<FileDto> attachments;
     private String submission;
     private String grade;
     private String feedback;

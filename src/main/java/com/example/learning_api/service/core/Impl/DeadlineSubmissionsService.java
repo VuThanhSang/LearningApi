@@ -2,19 +2,26 @@ package com.example.learning_api.service.core.Impl;
 
 import com.example.learning_api.constant.CloudinaryConstant;
 import com.example.learning_api.dto.common.FileDto;
+import com.example.learning_api.dto.common.SourceUploadDto;
 import com.example.learning_api.dto.request.deadline.CreateDeadlineSubmissionsRequest;
 import com.example.learning_api.dto.request.deadline.UpdateDeadlineSubmissionsRequest;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
+import com.example.learning_api.dto.response.deadline.DeadlineSubmissionResponse;
 import com.example.learning_api.dto.response.deadline.GetDeadlineSubmissionsResponse;
 import com.example.learning_api.entity.sql.database.DeadlineSubmissionsEntity;
+import com.example.learning_api.entity.sql.database.FAQEntity;
+import com.example.learning_api.entity.sql.database.FileEntity;
 import com.example.learning_api.entity.sql.database.StudentEntity;
 import com.example.learning_api.enums.DeadlineSubmissionStatus;
+import com.example.learning_api.enums.FileOwnerType;
 import com.example.learning_api.repository.database.DeadlineRepository;
 import com.example.learning_api.repository.database.DeadlineSubmissionsRepository;
+import com.example.learning_api.repository.database.FileRepository;
 import com.example.learning_api.repository.database.StudentRepository;
 import com.example.learning_api.service.common.CloudinaryService;
 import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.IDeadlineSubmissionsService;
+import com.example.learning_api.utils.ImageUtils;
 import com.example.learning_api.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +32,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -39,6 +47,63 @@ public class DeadlineSubmissionsService implements IDeadlineSubmissionsService {
     private final StudentRepository studentRepository;
     private final DeadlineRepository deadlineRepository;
     private final CloudinaryService cloudinaryService;
+    private final FileRepository fileRepository;
+    public void processFiles (List<SourceUploadDto> files,String title, DeadlineSubmissionsEntity deadlineSubmissionsEntity) {
+        if (files == null) {
+            return;
+        }
+        for (SourceUploadDto file : files) {
+            try {
+                FileEntity fileEntity = new FileEntity();
+                FAQEntity.SourceDto fileDto = processFile(file, deadlineSubmissionsEntity.getTitle());
+                fileEntity.setUrl(fileDto.getPath());
+                fileEntity.setType(fileDto.getType().toString());
+                fileEntity.setExtension(fileDto.getPath().substring(fileDto.getPath().lastIndexOf(".") + 1));
+                fileEntity.setName(title);
+                fileEntity.setSize(String.valueOf(file.getPath().getSize()));
+                fileEntity.setOwnerType(FileOwnerType.DEADLINE_SUBMISSION);
+                fileEntity.setOwnerId(deadlineSubmissionsEntity.getId());
+                fileEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+                fileEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+                fileRepository.save(fileEntity);
+            } catch (IOException e) {
+                log.error(e.getMessage());
+                throw new IllegalArgumentException(e.getMessage());
+            }
+        }
+
+
+
+    }
+    public FAQEntity.SourceDto processFile(SourceUploadDto file, String title) throws IOException {
+        byte[] fileBytes = file.getPath().getBytes();
+        String fileName = StringUtils.generateFileName(title, "deadline");
+        CloudinaryUploadResponse response;
+        switch (file.getType()) {
+            case IMAGE:
+                byte[] resizedImage = ImageUtils.resizeImage(fileBytes, 400, 400);
+                response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName, resizedImage, "image");
+                break;
+            case VIDEO:
+                String videoFileType = getFileExtension(file.getPath().getOriginalFilename());
+                response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + videoFileType, fileBytes, "video");
+                break;
+            case DOCUMENT:
+                String docFileType = getFileExtension(file.getPath().getOriginalFilename());
+                response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + docFileType, fileBytes, "raw");
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported source type");
+        }
+        return FAQEntity.SourceDto.builder()
+                .path(response.getSecureUrl())
+                .type(file.getType())
+                .build();
+
+    }
+    private String getFileExtension(String filename) {
+        return filename.substring(filename.lastIndexOf("."));
+    }
 
     @Override
     public void CreateDeadlineSubmissions(CreateDeadlineSubmissionsRequest body) {
@@ -57,33 +122,15 @@ public class DeadlineSubmissionsService implements IDeadlineSubmissionsService {
             }
             DeadlineSubmissionsEntity deadlineSubmissionsEntity = modelMapperService.mapClass(body, DeadlineSubmissionsEntity.class);
 
-            List<FileDto> attachments = new ArrayList<>();
-            if (body.getFile() != null && !body.getFile().isEmpty()) {
-                for (MultipartFile file : body.getFile()) {
-                    byte[] fileBytes = file.getBytes();
-                    String fileType = file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf("."));
-                    CloudinaryUploadResponse response = cloudinaryService.uploadFileToFolder(
-                            CloudinaryConstant.CLASSROOM_PATH,
-                            StringUtils.generateFileName(body.getTitle(), "Resource") + fileType,
-                            fileBytes,
-                            "raw"
-                    );
-                    FileDto fileDto = new FileDto();
-                    fileDto.setFilePath(response.getSecureUrl());
-                    fileDto.setFileName(file.getOriginalFilename());
-                    fileDto.setFileExtension(fileType);
-                    fileDto.setFileSize(file.getSize() + " bytes");
-                    attachments.add(fileDto);
 
-                }
-            }
-            deadlineSubmissionsEntity.setAttachments(attachments);
+
             deadlineSubmissionsEntity.setGrade("0");
             deadlineSubmissionsEntity.setStatus(DeadlineSubmissionStatus.SUBMITTED);
             deadlineSubmissionsEntity.setFeedback("");
             deadlineSubmissionsEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
             deadlineSubmissionsEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             deadlineSubmissionsRepository.save(deadlineSubmissionsEntity);
+            processFiles(body.getFiles(), body.getTitle(), deadlineSubmissionsEntity);
         } catch (Exception e) {
             log.error(e.getMessage());
             throw new IllegalArgumentException(e.getMessage());
@@ -105,28 +152,7 @@ public class DeadlineSubmissionsService implements IDeadlineSubmissionsService {
             if (body.getStatus() != null) {
                 deadlineSubmissionsEntity.setStatus(DeadlineSubmissionStatus.valueOf(body.getStatus()));
             }
-
-            List<FileDto> attachments = new ArrayList<>();
-            if (body.getFile() != null && !body.getFile().isEmpty()) {
-                for (MultipartFile file : body.getFile()) {
-                    byte[] fileBytes = file.getBytes();
-                    String fileType = file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf("."));
-                    CloudinaryUploadResponse response = cloudinaryService.uploadFileToFolder(
-                            CloudinaryConstant.CLASSROOM_PATH,
-                            StringUtils.generateFileName(body.getTitle(), "Resource") + fileType,
-                            fileBytes,
-                            "raw"
-                    );
-                    FileDto fileDto = new FileDto();
-                    fileDto.setFilePath(response.getSecureUrl());
-                    fileDto.setFileName(file.getOriginalFilename());
-                    fileDto.setFileExtension(fileType);
-                    fileDto.setFileSize(file.getSize() + " bytes");
-                    attachments.add(fileDto);
-
-                }
-            deadlineSubmissionsEntity.setAttachments(attachments);
-            }
+            processFiles(body.getFiles(), body.getTitle(), deadlineSubmissionsEntity);
             deadlineSubmissionsEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             deadlineSubmissionsRepository.save(deadlineSubmissionsEntity);
         } catch (Exception e) {
@@ -168,13 +194,15 @@ public class DeadlineSubmissionsService implements IDeadlineSubmissionsService {
     }
 
     @Override
-    public DeadlineSubmissionsEntity GetDeadlineSubmissions(String id) {
+    public DeadlineSubmissionResponse GetDeadlineSubmissions(String id) {
         try {
             DeadlineSubmissionsEntity deadlineSubmissionsEntity = deadlineSubmissionsRepository.findById(id).orElse(null);
+            DeadlineSubmissionResponse deadlineSubmissionResponse = modelMapperService.mapClass(deadlineSubmissionsEntity, DeadlineSubmissionResponse.class);
+            deadlineSubmissionResponse.setFiles(fileRepository.findByOwnerIdAndOwnerType(id, FileOwnerType.DEADLINE_SUBMISSION.name()));
             if (deadlineSubmissionsEntity == null) {
                 throw new IllegalArgumentException("DeadlineSubmissionsId is not found");
             }
-            return deadlineSubmissionsEntity;
+            return deadlineSubmissionResponse;
         } catch (Exception e) {
             log.error(e.getMessage());
             throw new IllegalArgumentException(e.getMessage());
@@ -210,7 +238,7 @@ public class DeadlineSubmissionsService implements IDeadlineSubmissionsService {
 
             for (DeadlineSubmissionsEntity entity : deadlineSubmissionsEntities) {
                 GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse submissionResponse =
-                        GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse.fromDeadlineSubmissionEntity(entity);
+                        fromDeadlineSubmissionEntity(entity);
 
                 StudentEntity studentEntity = studentRepository.findById(entity.getStudentId()).orElse(null);
                 if (studentEntity != null) {
@@ -229,8 +257,24 @@ public class DeadlineSubmissionsService implements IDeadlineSubmissionsService {
             log.error("Error in GetDeadlineSubmissionsByDeadlineId: ", e);
             throw new IllegalArgumentException("Error retrieving deadline submissions: " + e.getMessage());
         }
-    }
 
+
+    }
+    public GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse fromDeadlineSubmissionEntity(DeadlineSubmissionsEntity entity) {
+        GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse response = new GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse();
+        response.setFiles(fileRepository.findByOwnerIdAndOwnerType(entity.getId(), FileOwnerType.DEADLINE_SUBMISSION.name()));
+        response.setId(entity.getId());
+        response.setTitle(entity.getTitle());
+        response.setDeadlineId(entity.getDeadlineId());
+        response.setStudentId(entity.getStudentId());
+        response.setSubmission(entity.getSubmission());
+        response.setGrade(entity.getGrade());
+        response.setFeedback(entity.getFeedback());
+        response.setStatus(entity.getStatus().name());
+        response.setCreatedAt(entity.getCreatedAt());
+        response.setUpdatedAt(entity.getUpdatedAt());
+        return response;
+    }
     @Override
     public GetDeadlineSubmissionsResponse GetDeadlineSubmissionsByStudentId(String studentId,String deadlineId, Integer page, Integer size) {
         try {
@@ -239,7 +283,7 @@ public class DeadlineSubmissionsService implements IDeadlineSubmissionsService {
             GetDeadlineSubmissionsResponse response = new GetDeadlineSubmissionsResponse();
             List<GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse> deadlineSubmissionResponses = new ArrayList<>();
             for (DeadlineSubmissionsEntity deadlineSubmissionsEntity : deadlineSubmissionsEntities) {
-                GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse deadlineSubmissionResponse = GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse.fromDeadlineSubmissionEntity(deadlineSubmissionsEntity);
+                GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse deadlineSubmissionResponse = fromDeadlineSubmissionEntity(deadlineSubmissionsEntity);
                 deadlineSubmissionResponses.add(deadlineSubmissionResponse);
             }
             response.setDeadlineSubmissions(deadlineSubmissionResponses);

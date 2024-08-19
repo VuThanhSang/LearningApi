@@ -1,17 +1,26 @@
 package com.example.learning_api.dto.response.deadline;
 
+import com.example.learning_api.entity.sql.database.FileEntity;
+import com.example.learning_api.enums.DeadlineStatus;
+import com.example.learning_api.enums.DeadlineType;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
-@Builder
 public class DeadlineResponse {
     private String id;
+    private String lessonId;
+    private String classroomId;
+    private String teacherId;
     private String title;
     private String description;
-    private String type;
-    private String status;
+    private DeadlineType type;
+    private DeadlineStatus status;
+    private List<FileEntity> files;
     private String startDate;
     private String endDate;
-    private String classroomId;
+    private String createdAt;
+    private String updatedAt;
 }

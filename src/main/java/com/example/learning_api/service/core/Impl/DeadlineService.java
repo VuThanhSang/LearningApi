@@ -1,29 +1,32 @@
 package com.example.learning_api.service.core.Impl;
 
 import com.example.learning_api.constant.CloudinaryConstant;
+import com.example.learning_api.dto.common.SourceUploadDto;
 import com.example.learning_api.dto.request.deadline.CreateDeadlineRequest;
 import com.example.learning_api.dto.request.deadline.UpdateDeadlineRequest;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.classroom.ClassroomDeadlineResponse;
+import com.example.learning_api.dto.response.deadline.DeadlineResponse;
 import com.example.learning_api.dto.response.deadline.GetDeadlinesResponse;
 import com.example.learning_api.dto.response.deadline.UpcomingDeadlinesResponse;
-import com.example.learning_api.entity.sql.database.ClassRoomEntity;
-import com.example.learning_api.entity.sql.database.DeadlineEntity;
-import com.example.learning_api.entity.sql.database.LessonEntity;
-import com.example.learning_api.entity.sql.database.SectionEntity;
+import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.DeadlineStatus;
 import com.example.learning_api.enums.DeadlineType;
+import com.example.learning_api.enums.FileOwnerType;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
 import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.IDeadlineService;
+import com.example.learning_api.utils.ImageUtils;
 import com.example.learning_api.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -43,6 +46,62 @@ public class DeadlineService implements IDeadlineService {
     private final StudentRepository studentRepository;
     private final ClassRoomRepository classroomRepository;
     private final SectionRepository sectionRepository;
+    private final FileRepository fileRepository;
+    public void processFiles (List<SourceUploadDto> files,String title, DeadlineEntity deadlineEntity){
+        if (files == null) {
+            return;
+        }
+        for (SourceUploadDto file : files) {
+            try {
+                FAQEntity.SourceDto fileDto = processFile(file, title);
+                FileEntity fileEntity = new FileEntity();
+                fileEntity.setUrl(fileDto.getPath());
+                fileEntity.setType(fileDto.getType().name());
+                fileEntity.setOwnerType(FileOwnerType.DEADLINE);
+                fileEntity.setOwnerId(deadlineEntity.getId());
+                fileEntity.setExtension(fileDto.getPath().substring(fileDto.getPath().lastIndexOf(".") + 1));
+                fileEntity.setName(title);
+                fileEntity.setSize(String.valueOf(file.getPath().getSize()));
+                fileEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+                fileEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+                fileRepository.save(fileEntity);
+            } catch (IOException e) {
+                log.error("Error processing file: ", e);
+                throw new IllegalArgumentException("Error processing file: " + e.getMessage());
+            }
+        }
+    }
+
+    public FAQEntity.SourceDto processFile(SourceUploadDto file, String title) throws IOException {
+        byte[] fileBytes = file.getPath().getBytes();
+        String fileName = StringUtils.generateFileName(title, "deadline");
+        CloudinaryUploadResponse response;
+        switch (file.getType()) {
+            case IMAGE:
+                byte[] resizedImage = ImageUtils.resizeImage(fileBytes, 400, 400);
+                response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName, resizedImage, "image");
+                break;
+            case VIDEO:
+                String videoFileType = getFileExtension(file.getPath().getOriginalFilename());
+                response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + videoFileType, fileBytes, "video");
+                break;
+            case DOCUMENT:
+                String docFileType = getFileExtension(file.getPath().getOriginalFilename());
+                response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + docFileType, fileBytes, "raw");
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported source type");
+        }
+        return FAQEntity.SourceDto.builder()
+                .path(response.getSecureUrl())
+                .type(file.getType())
+                .build();
+
+    }
+    private String getFileExtension(String filename) {
+        return filename.substring(filename.lastIndexOf("."));
+    }
+
     @Override
     public void createDeadline(CreateDeadlineRequest body) {
         try {
@@ -55,17 +114,7 @@ public class DeadlineService implements IDeadlineService {
 
 
             DeadlineEntity deadlineEntity = modelMapperService.mapClass(body, DeadlineEntity.class);
-            if (body.getFile()!=null){
-                byte[] fileBytes = body.getFile().getBytes();
-                String fileType = body.getFile().getOriginalFilename().substring(body.getFile().getOriginalFilename().lastIndexOf("."));
-                CloudinaryUploadResponse response = cloudinaryService.uploadFileToFolder(
-                        CloudinaryConstant.CLASSROOM_PATH,
-                        StringUtils.generateFileName(body.getTitle(), "Resource") + fileType,
-                        fileBytes,
-                        "raw"
-                );
-                deadlineEntity.setAttachment(response.getSecureUrl());
-            }
+
             LessonEntity lessonEntity = lessonRepository.findById(body.getLessonId()).orElse(null);
 
             SectionEntity sectionEntity = sectionRepository.findById(lessonEntity.getSectionId()).orElse(null);
@@ -76,6 +125,8 @@ public class DeadlineService implements IDeadlineService {
             deadlineEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             deadlineEntity.setStatus(DeadlineStatus.UPCOMING);
             deadlineRepository.save(deadlineEntity);
+
+            processFiles(body.getFiles(),body.getTitle(),deadlineEntity);
         } catch (Exception e) {
             log.error("Error in createDeadline: ", e);
             throw new IllegalArgumentException(e.getMessage());
@@ -108,17 +159,7 @@ public class DeadlineService implements IDeadlineService {
                 deadlineEntity.setStatus(DeadlineStatus.valueOf(body.getStatus()));
             }
 
-            if (body.getFile()!=null){
-                byte[] fileBytes = body.getFile().getBytes();
-                String fileType = body.getFile().getOriginalFilename().substring(body.getFile().getOriginalFilename().lastIndexOf("."));
-                CloudinaryUploadResponse response = cloudinaryService.uploadFileToFolder(
-                        CloudinaryConstant.CLASSROOM_PATH,
-                        StringUtils.generateFileName(body.getTitle(), "Resource") + fileType,
-                        fileBytes,
-                        "raw"
-                );
-                deadlineEntity.setAttachment(response.getSecureUrl());
-            }
+            processFiles(body.getFiles(),body.getTitle(),deadlineEntity);
             deadlineEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             deadlineRepository.save(deadlineEntity);
         }
@@ -144,13 +185,16 @@ public class DeadlineService implements IDeadlineService {
     }
 
     @Override
-    public DeadlineEntity getDeadline(String deadlineId) {
+    public DeadlineResponse getDeadline(String deadlineId) {
         try{
             DeadlineEntity deadlineEntity = deadlineRepository.findById(deadlineId).orElse(null);
             if (deadlineEntity == null){
                 throw new IllegalArgumentException("DeadlineId is not found");
             }
-            return deadlineEntity;
+            DeadlineResponse deadlineResponse = modelMapperService.mapClass(deadlineEntity, DeadlineResponse.class);
+            List<FileEntity> fileEntities = fileRepository.findByOwnerIdAndOwnerType(deadlineId, FileOwnerType.DEADLINE.name());
+            deadlineResponse.setFiles(fileEntities);
+            return deadlineResponse;
         }
         catch (Exception e) {
             log.error("Error in getDeadline: ", e);
@@ -166,6 +210,7 @@ public class DeadlineService implements IDeadlineService {
             List<GetDeadlinesResponse.DeadlineResponse> deadlineResponses = new ArrayList<>();
             for (DeadlineEntity deadlineEntity : deadlineEntities){
                 GetDeadlinesResponse.DeadlineResponse deadlineResponse = GetDeadlinesResponse.DeadlineResponse.fromDeadlineEntity(deadlineEntity);
+                deadlineResponse.setFiles(fileRepository.findByOwnerIdAndOwnerType(deadlineEntity.getId(), FileOwnerType.DEADLINE.name()));
                 deadlineResponses.add(deadlineResponse);
             }
             return GetDeadlinesResponse.builder()
@@ -240,7 +285,7 @@ public class DeadlineService implements IDeadlineService {
                     pageable);
 
             List<GetDeadlinesResponse.DeadlineResponse> deadlineResponses = deadlineEntities.getContent().stream()
-                    .map(GetDeadlinesResponse.DeadlineResponse::fromDeadlineEntity)
+                    .map(this::convertToDeadlineResponse)
                     .collect(Collectors.toList());
 
             return GetDeadlinesResponse.builder()
@@ -255,6 +300,24 @@ public class DeadlineService implements IDeadlineService {
             log.error("Error in getDeadlinesByTeacherId: ", e);
             throw new RuntimeException("Error retrieving deadlines: " + e.getMessage());
         }
+    }
+
+    private GetDeadlinesResponse.DeadlineResponse convertToDeadlineResponse(DeadlineEntity deadlineEntity) {
+        List<FileEntity> files = fileRepository.findByOwnerIdAndOwnerType(deadlineEntity.getId(), FileOwnerType.DEADLINE.name());
+        return GetDeadlinesResponse.DeadlineResponse.builder()
+                .id(deadlineEntity.getId())
+                .lessonId(deadlineEntity.getLessonId())
+                .title(deadlineEntity.getTitle())
+                .description(deadlineEntity.getDescription())
+                .type(deadlineEntity.getType())
+                .status(deadlineEntity.getStatus())
+                .files(files)
+                .startDate(deadlineEntity.getStartDate())
+                .endDate(deadlineEntity.getEndDate())
+                .createdAt(deadlineEntity.getCreatedAt())
+                .updatedAt(deadlineEntity.getUpdatedAt())
+                .classroomId(deadlineEntity.getClassroomId())
+                .build();
     }
     private Document convertSortToDocument(Sort sort) {
         Document sortDoc = new Document();
@@ -303,11 +366,13 @@ public class DeadlineService implements IDeadlineService {
         }
     }
     private GetDeadlinesResponse.DeadlineResponse convertToDeadlineResponse(GetDeadlinesResponse.DeadlineResponse deadlineResponse) {
+        List<FileEntity> files = fileRepository.findByOwnerIdAndOwnerType(deadlineResponse.getId(), FileOwnerType.DEADLINE.name());
         return GetDeadlinesResponse.DeadlineResponse.builder()
                 .id(deadlineResponse.getId())
                 .title(deadlineResponse.getTitle())
                 .description(deadlineResponse.getDescription())
                 .type(deadlineResponse.getType())
+                .files(files)
                 .status(deadlineResponse.getStatus())
                 .startDate(deadlineResponse.getStartDate())
                 .endDate(deadlineResponse.getEndDate())

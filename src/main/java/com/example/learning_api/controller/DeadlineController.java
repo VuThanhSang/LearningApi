@@ -3,9 +3,7 @@ package com.example.learning_api.controller;
 import com.example.learning_api.constant.StatusCode;
 import com.example.learning_api.dto.request.deadline.*;
 import com.example.learning_api.dto.response.classroom.ClassroomDeadlineResponse;
-import com.example.learning_api.dto.response.deadline.GetDeadlineSubmissionsResponse;
-import com.example.learning_api.dto.response.deadline.GetDeadlinesResponse;
-import com.example.learning_api.dto.response.deadline.UpcomingDeadlinesResponse;
+import com.example.learning_api.dto.response.deadline.*;
 import com.example.learning_api.entity.sql.database.DeadlineEntity;
 import com.example.learning_api.entity.sql.database.DeadlineSubmissionsEntity;
 import com.example.learning_api.model.ResponseAPI;
@@ -99,10 +97,10 @@ public class DeadlineController {
     }
 
     @GetMapping(path = "/{deadlineId}")
-    public ResponseEntity<ResponseAPI<DeadlineEntity>> getDeadline(@PathVariable String deadlineId) {
+    public ResponseEntity<ResponseAPI<DeadlineResponse>> getDeadline(@PathVariable String deadlineId) {
         try{
-           DeadlineEntity data =  deadlineService.getDeadline(deadlineId);
-            ResponseAPI<DeadlineEntity> res = ResponseAPI.<DeadlineEntity>builder()
+           DeadlineResponse data =  deadlineService.getDeadline(deadlineId);
+            ResponseAPI<DeadlineResponse> res = ResponseAPI.<DeadlineResponse>builder()
                     .timestamp(new Date())
                     .message("Get deadline successfully")
                     .data(data)
@@ -110,7 +108,7 @@ public class DeadlineController {
             return new ResponseEntity<>(res, StatusCode.OK);
         }
         catch (Exception e){
-            ResponseAPI<DeadlineEntity> res = ResponseAPI.<DeadlineEntity>builder()
+            ResponseAPI<DeadlineResponse> res = ResponseAPI.<DeadlineResponse>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();
@@ -309,10 +307,10 @@ public class DeadlineController {
     }
 
     @GetMapping(path = "/{deadlineId}/submissions/{submissionId}")
-    public ResponseEntity<ResponseAPI<DeadlineSubmissionsEntity>> getDeadlineSubmissions(@PathVariable String submissionId) {
+    public ResponseEntity<ResponseAPI<DeadlineSubmissionResponse>> getDeadlineSubmissions(@PathVariable String submissionId) {
         try{
-            DeadlineSubmissionsEntity data =  deadlineSubmissionsService.GetDeadlineSubmissions(submissionId);
-            ResponseAPI<DeadlineSubmissionsEntity> res = ResponseAPI.<DeadlineSubmissionsEntity>builder()
+            DeadlineSubmissionResponse data =  deadlineSubmissionsService.GetDeadlineSubmissions(submissionId);
+            ResponseAPI<DeadlineSubmissionResponse> res = ResponseAPI.<DeadlineSubmissionResponse>builder()
                     .timestamp(new Date())
                     .message("Get deadline submissions successfully")
                     .data(data)
@@ -320,7 +318,7 @@ public class DeadlineController {
             return new ResponseEntity<>(res, StatusCode.OK);
         }
         catch (Exception e){
-            ResponseAPI<DeadlineSubmissionsEntity> res = ResponseAPI.<DeadlineSubmissionsEntity>builder()
+            ResponseAPI<DeadlineSubmissionResponse> res = ResponseAPI.<DeadlineSubmissionResponse>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();
