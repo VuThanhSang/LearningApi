@@ -9,6 +9,6 @@ public class UpdateAnswerRequest {
     @NotBlank
     private String id;
     private String content;
-    private boolean isCorrect;
+    private Boolean isCorrect;
     private MultipartFile source;
 }
