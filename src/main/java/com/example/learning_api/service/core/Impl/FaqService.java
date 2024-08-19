@@ -85,8 +85,7 @@ public class FaqService implements IFaqService {
     }
 
     private FAQEntity.SourceDto processSource(SourceUploadDto source, String question) throws IOException {
-        FAQEntity.SourceDto sourceDto = new FAQEntity.SourceDto();
-        sourceDto.setType(source.getType());
+
 
         byte[] fileBytes = source.getPath().getBytes();
         String fileName = StringUtils.generateFileName(question, "Faq");
@@ -109,8 +108,10 @@ public class FaqService implements IFaqService {
                 throw new IllegalArgumentException("Unsupported source type");
         }
 
-        sourceDto.setPath(response.getUrl() );
-        return sourceDto;
+        return FAQEntity.SourceDto.builder()
+                .type(FaqSourceType.valueOf(source.getType().name()))
+                .path(response.getUrl())
+                .build();
     }
 
     private String getFileExtension(String filename) {

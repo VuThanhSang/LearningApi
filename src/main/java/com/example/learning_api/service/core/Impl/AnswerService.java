@@ -62,6 +62,9 @@ public class AnswerService implements IAnswerService {
                 );
                 fileEntity.setUrl(imageUploaded.getUrl());
                 fileEntity.setType("image");
+                fileEntity.setExtension("jpg");
+                fileEntity.setName(body.getContent());
+                fileEntity.setSize(String.valueOf(body.getSource().getSize()));
                 fileEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
                 fileEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
                 fileEntity.setOwnerType(FileOwnerType.ANSWER);

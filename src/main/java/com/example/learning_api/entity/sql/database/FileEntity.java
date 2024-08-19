@@ -16,6 +16,9 @@ public class FileEntity {
     private String type; // Loại file (ví dụ: image, document, etc.)
     private String ownerId; // ID của đối tượng sở hữu file (ví dụ: ID của ForumEntity hoặc UserEntity)
     private FileOwnerType ownerType; // Loại đối tượng sở hữu file (ví dụ: "forum", "user", etc.)
+    private String extension; // Phần mở rộng của file (ví dụ: jpg, png, pdf, etc.)
+    private String size; // Kích thước file (ví dụ: 1MB, 2MB, etc.)
+    private String name; // Tên file
     private String createdAt;
     private String updatedAt;
 }

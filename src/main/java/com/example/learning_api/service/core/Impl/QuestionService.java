@@ -57,6 +57,9 @@ public class QuestionService implements IQuestionService {
                 String sourceDto = processSource(source, content);
                 fileEntity.setUrl(sourceDto);
                 fileEntity.setType("image");
+                fileEntity.setExtension("jpg");
+                fileEntity.setSize(String.valueOf(source.getSize()));
+                fileEntity.setName(content);
                 fileEntity.setOwnerType(FileOwnerType.QUESTION);
                 fileEntity.setOwnerId(questionEntity.getId());
                 fileEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));

@@ -1,13 +1,16 @@
 package com.example.learning_api.dto.response.deadline;
 
 import com.example.learning_api.entity.sql.database.DeadlineEntity;
+import com.example.learning_api.entity.sql.database.FileEntity;
 import com.example.learning_api.enums.DeadlineStatus;
 import com.example.learning_api.enums.DeadlineType;
+import com.example.learning_api.repository.database.FileRepository;
 import lombok.Builder;
 import lombok.Data;
 
 import java.util.Date;
 import java.util.List;
+
 
 @Data
 @Builder
@@ -24,7 +27,7 @@ public class GetDeadlinesResponse {
         private String description;
         private DeadlineType type;
         private DeadlineStatus status;
-        private String attachment;
+        private List<FileEntity> files;
         private String startDate;
         private String endDate;
         private String createdAt;
@@ -38,7 +41,6 @@ public class GetDeadlinesResponse {
                     .description(deadlineEntity.getDescription())
                     .type(deadlineEntity.getType())
                     .status(deadlineEntity.getStatus())
-                    .attachment(deadlineEntity.getAttachment())
                     .startDate(deadlineEntity.getStartDate())
                     .endDate(deadlineEntity.getEndDate())
                     .createdAt(deadlineEntity.getCreatedAt())

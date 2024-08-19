@@ -4,6 +4,7 @@ public enum FileOwnerType {
     USER,
     FORUM,
     DEADLINE,
+    DEADLINE_SUBMISSION,
     CLASSROOM,
     COURSE,
     QUESTION,

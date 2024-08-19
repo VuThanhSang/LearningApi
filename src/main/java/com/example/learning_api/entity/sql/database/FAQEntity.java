@@ -3,6 +3,7 @@ package com.example.learning_api.entity.sql.database;
 import com.example.learning_api.enums.FaqSourceType;
 import com.example.learning_api.enums.FaqStatus;
 import jakarta.persistence.Id;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -24,6 +25,7 @@ public class FAQEntity {
     private String createdAt;
     private String updatedAt;
     @Data
+    @Builder
     public static class SourceDto {
         private FaqSourceType type;
         private String path;
