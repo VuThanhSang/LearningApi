@@ -1,16 +1,14 @@
 package com.example.learning_api.controller;
 
 import com.example.learning_api.constant.StatusCode;
-import com.example.learning_api.dto.request.test_feedback.CreateTestFeedbackAnswerRequest;
-import com.example.learning_api.dto.request.test_feedback.CreateTestFeedbackRequest;
-import com.example.learning_api.dto.request.test_feedback.UpdateTestFeedbackRequest;
-import com.example.learning_api.dto.response.test.CreateTestResponse;
-import com.example.learning_api.dto.response.test_feedback.GetTestFeedBacksResponse;
-import com.example.learning_api.dto.response.test_feedback.TestFeedbackAnswerResponse;
-import com.example.learning_api.entity.sql.database.TestFeedbackAnswerEntity;
-import com.example.learning_api.entity.sql.database.TestFeedbackEntity;
+import com.example.learning_api.dto.request.feedback.CreateFeedbackAnswerRequest;
+import com.example.learning_api.dto.request.feedback.CreateFeedbackRequest;
+import com.example.learning_api.dto.request.feedback.UpdateFeedbackRequest;
+import com.example.learning_api.dto.response.feedback.GetFeedBacksResponse;
+import com.example.learning_api.dto.response.feedback.FeedbackAnswerResponse;
+import com.example.learning_api.entity.sql.database.FeedbackEntity;
 import com.example.learning_api.model.ResponseAPI;
-import com.example.learning_api.service.core.ITestFeedbackService;
+import com.example.learning_api.service.core.IFeedbackService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,36 +23,36 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping("/api/v1/test-feedback")
-public class TestFeedbackController {
-    private final ITestFeedbackService testFeedbackService;
+@RequestMapping("/api/v1/feedback")
+public class FeedbackController {
+    private final IFeedbackService feedbackService;
 
     @PostMapping(path = "",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ResponseAPI<String>> createTestFeedback(@ModelAttribute("body") CreateTestFeedbackRequest body) {
+    public ResponseEntity<ResponseAPI<String>> createFeedback(@ModelAttribute("body") CreateFeedbackRequest body) {
         try {
-            testFeedbackService.createTestFeedback(body);
+            feedbackService.createFeedback(body);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
                     .timestamp(new Date())
-                    .message("Create test successfully")
+                    .message("Create feedback successfully")
                     .build();
             return new ResponseEntity<>(res, StatusCode.CREATED);
         } catch (Exception e) {
-            log.error("Error create test feedback: ", e);
+            log.error("Error create  feedback: ", e);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
                     .timestamp(new Date())
-                    .message("Error create test feedback")
+                    .message("Error create feedback feedback")
                     .build();
             return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
         }
     }
-    @PatchMapping(path = "/{testFeedbackId}",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ResponseAPI<String>> updateTestFeedback(@PathVariable String testFeedbackId, @ModelAttribute @Valid UpdateTestFeedbackRequest body) {
+    @PatchMapping(path = "/{feedbackId}",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ResponseAPI<String>> updateFeedback(@PathVariable String feedbackId, @ModelAttribute @Valid UpdateFeedbackRequest body) {
         try {
-            body.setId(testFeedbackId);
-            testFeedbackService.updateTestFeedback( body);
+            body.setId(feedbackId);
+            feedbackService.updateFeedback( body);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
                     .timestamp(new Date())
-                    .message("Update test feedback successfully")
+                    .message("Update  feedback successfully")
                     .build();
             return new ResponseEntity<>(res, StatusCode.OK);
         } catch (Exception e) {
@@ -66,10 +64,10 @@ public class TestFeedbackController {
         }
     }
 
-    @DeleteMapping(path = "/{testFeedbackId}")
-    public ResponseEntity<ResponseAPI<String>> deleteTestFeedback(@PathVariable String testFeedbackId) {
+    @DeleteMapping(path = "/{feedbackId}")
+    public ResponseEntity<ResponseAPI<String>> deleteFeedback(@PathVariable String feedbackId) {
         try {
-            testFeedbackService.deleteTestFeedback(testFeedbackId);
+            feedbackService.deleteFeedback(feedbackId);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
                     .timestamp(new Date())
                     .message("Delete test feedback successfully")
@@ -86,10 +84,10 @@ public class TestFeedbackController {
     }
 
     @GetMapping(path = "/{testId}")
-    public ResponseEntity<ResponseAPI<TestFeedbackEntity>> getTestFeedbackById(@PathVariable String testId) {
+    public ResponseEntity<ResponseAPI<FeedbackEntity>> getFeedbackById(@PathVariable String testId) {
         try {
-            TestFeedbackEntity testFeedback = testFeedbackService.getTestFeedbackById(testId);
-            ResponseAPI<TestFeedbackEntity> res = ResponseAPI.<TestFeedbackEntity>builder()
+            FeedbackEntity testFeedback = feedbackService.getFeedbackById(testId);
+            ResponseAPI<FeedbackEntity> res = ResponseAPI.<FeedbackEntity>builder()
                     .timestamp(new Date())
                     .data(testFeedback)
                     .message("Get test feedback successfully")
@@ -97,7 +95,7 @@ public class TestFeedbackController {
             return new ResponseEntity<>(res, StatusCode.OK);
         } catch (Exception e) {
             log.error("Error get test feedback: ", e);
-            ResponseAPI<TestFeedbackEntity> res = ResponseAPI.<TestFeedbackEntity>builder()
+            ResponseAPI<FeedbackEntity> res = ResponseAPI.<FeedbackEntity>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();
@@ -105,11 +103,12 @@ public class TestFeedbackController {
         }
     }
 
-    @GetMapping(path = "/student/{studentId}/test/{testId}")
-    public ResponseEntity<ResponseAPI<List<TestFeedbackEntity>>> getTestFeedbacksByStudentIdAndTestId(@PathVariable String studentId, @PathVariable String testId) {
+    @GetMapping(path = "/student/{studentId}/{formType}/{formId}")
+    public ResponseEntity<ResponseAPI<List<FeedbackEntity>>> getFeedbacksByStudentIdAndTestId(@PathVariable String studentId,@PathVariable String formType, @PathVariable String formId) {
         try {
-            List<TestFeedbackEntity> testFeedback = testFeedbackService.getTestFeedbacksByStudentIdAndTestId(studentId, testId);
-            ResponseAPI<List<TestFeedbackEntity>> res = ResponseAPI.<List<TestFeedbackEntity>>builder()
+            formType = formType.toUpperCase();
+            List<FeedbackEntity> testFeedback = feedbackService.getFeedbacksByStudentIdAndTestId(studentId, formId, formType);
+            ResponseAPI<List<FeedbackEntity>> res = ResponseAPI.<List<FeedbackEntity>>builder()
                     .timestamp(new Date())
                     .data(testFeedback)
                     .message("Get test feedback successfully")
@@ -117,7 +116,7 @@ public class TestFeedbackController {
             return new ResponseEntity<>(res, StatusCode.OK);
         } catch (Exception e) {
             log.error("Error get test feedback: ", e);
-            ResponseAPI<List<TestFeedbackEntity>> res = ResponseAPI.<List<TestFeedbackEntity>>builder()
+            ResponseAPI<List<FeedbackEntity>> res = ResponseAPI.<List<FeedbackEntity>>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();
@@ -125,12 +124,13 @@ public class TestFeedbackController {
         }
     }
 
-    @GetMapping(path = "/test/{testId}")
-    public ResponseEntity<ResponseAPI<GetTestFeedBacksResponse>> getTestFeedbacksByTestId(@PathVariable String testId,
-          @RequestParam(defaultValue = "desc") String sort, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
+    @GetMapping(path = "/{formType}/{formId}")
+    public ResponseEntity<ResponseAPI<GetFeedBacksResponse>> getFeedbacksByTestId(@PathVariable String formType,@PathVariable String formId,
+                                                                                      @RequestParam(defaultValue = "desc") String sort, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
         try {
-            GetTestFeedBacksResponse testFeedbacks = testFeedbackService.getTestFeedbacksByTestId(testId, sort, page-1, size);
-            ResponseAPI<GetTestFeedBacksResponse> res = ResponseAPI.<GetTestFeedBacksResponse>builder()
+            formType = formType.toUpperCase();
+            GetFeedBacksResponse testFeedbacks = feedbackService.getFeedbacksByTestId(formId,formType, sort, page-1, size);
+            ResponseAPI<GetFeedBacksResponse> res = ResponseAPI.<GetFeedBacksResponse>builder()
                     .timestamp(new Date())
                     .data(testFeedbacks)
                     .message("Get test feedbacks successfully")
@@ -138,7 +138,7 @@ public class TestFeedbackController {
             return new ResponseEntity<>(res, StatusCode.OK);
         } catch (Exception e) {
             log.error("Error get test feedbacks: ", e);
-            ResponseAPI<GetTestFeedBacksResponse> res = ResponseAPI.<GetTestFeedBacksResponse>builder()
+            ResponseAPI<GetFeedBacksResponse> res = ResponseAPI.<GetFeedBacksResponse>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();
@@ -146,11 +146,11 @@ public class TestFeedbackController {
         }
     }
 
-    @PostMapping(path = "/{testFeedbackId}/answer")
-    public ResponseEntity<ResponseAPI<String>> createTestFeedbackAnswer(@PathVariable String  testFeedbackId,@RequestBody @Valid CreateTestFeedbackAnswerRequest body) {
+    @PostMapping(path = "/{feedbackId}/answer")
+    public ResponseEntity<ResponseAPI<String>> createFeedbackAnswer(@PathVariable String  feedbackId,@RequestBody @Valid CreateFeedbackAnswerRequest body) {
         try {
-            body.setTestFeedbackId(testFeedbackId);
-            testFeedbackService.createTestFeedbackAnswer(body);
+            body.setFeedbackId(feedbackId);
+            feedbackService.createFeedbackAnswer(body);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
                     .timestamp(new Date())
                     .message("Create test feedback answer successfully")
@@ -166,10 +166,10 @@ public class TestFeedbackController {
         }
     }
 
-    @PatchMapping(path = "/{testFeedbackId}/answer")
-    public ResponseEntity<ResponseAPI<String>> updateTestFeedbackAnswer(@PathVariable String testFeedbackId, @RequestBody String answer) {
+    @PatchMapping(path = "/{feedbackId}/answer")
+    public ResponseEntity<ResponseAPI<String>> updateFeedbackAnswer(@PathVariable String feedbackId, @RequestBody String answer) {
         try {
-            testFeedbackService.updateTestFeedbackAnswer(testFeedbackId, answer);
+            feedbackService.updateFeedbackAnswer(feedbackId, answer);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
                     .timestamp(new Date())
                     .message("Update test feedback answer successfully")
@@ -185,10 +185,10 @@ public class TestFeedbackController {
         }
     }
 
-    @DeleteMapping(path = "/answer/{testFeedbackId}")
-    public ResponseEntity<ResponseAPI<String>> deleteTestFeedbackAnswer(@PathVariable String testFeedbackId) {
+    @DeleteMapping(path = "/answer/{feedbackId}")
+    public ResponseEntity<ResponseAPI<String>> deleteFeedbackAnswer(@PathVariable String feedbackId) {
         try {
-            testFeedbackService.deleteTestFeedbackAnswer(testFeedbackId);
+            feedbackService.deleteFeedbackAnswer(feedbackId);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
                     .timestamp(new Date())
                     .message("Delete test feedback answer successfully")
@@ -204,11 +204,11 @@ public class TestFeedbackController {
         }
     }
 
-    @GetMapping(path = "/{testFeedbackId}/answer")
-    public ResponseEntity<ResponseAPI<List<TestFeedbackAnswerResponse>>> getTestFeedbackAnswersByFeedbackId(@PathVariable String testFeedbackId) {
+    @GetMapping(path = "/{feedbackId}/answer")
+    public ResponseEntity<ResponseAPI<List<FeedbackAnswerResponse>>> getFeedbackAnswersByFeedbackId(@PathVariable String feedbackId) {
         try {
-            List<TestFeedbackAnswerResponse> testFeedback = testFeedbackService.getTestFeedbackAnswersByFeedbackId(testFeedbackId);
-            ResponseAPI<List<TestFeedbackAnswerResponse>> res = ResponseAPI.<List<TestFeedbackAnswerResponse>>builder()
+            List<FeedbackAnswerResponse> testFeedback = feedbackService.getFeedbackAnswersByFeedbackId(feedbackId);
+            ResponseAPI<List<FeedbackAnswerResponse>> res = ResponseAPI.<List<FeedbackAnswerResponse>>builder()
                     .timestamp(new Date())
                     .data(testFeedback)
                     .message("Get test feedback successfully")
@@ -216,7 +216,7 @@ public class TestFeedbackController {
             return new ResponseEntity<>(res, StatusCode.OK);
         } catch (Exception e) {
             log.error("Error get test feedback: ", e);
-            ResponseAPI<List<TestFeedbackAnswerResponse>> res = ResponseAPI.<List<TestFeedbackAnswerResponse>>builder()
+            ResponseAPI<List<FeedbackAnswerResponse>> res = ResponseAPI.<List<FeedbackAnswerResponse>>builder()
                     .timestamp(new Date())
                     .message("Error get test feedback")
                     .build();

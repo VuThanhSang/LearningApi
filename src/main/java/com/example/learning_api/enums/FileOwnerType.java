@@ -10,6 +10,6 @@ public enum FileOwnerType {
     QUESTION,
     ANSWER,
     TEST,
-    TEST_FEEDBACK,
+    FEEDBACK,
 
 }

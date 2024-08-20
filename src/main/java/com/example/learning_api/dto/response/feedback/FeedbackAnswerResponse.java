@@ -1,10 +1,10 @@
-package com.example.learning_api.dto.response.test_feedback;
+package com.example.learning_api.dto.response.feedback;
 
 import com.example.learning_api.entity.sql.database.TeacherEntity;
 import lombok.Data;
 
 @Data
-public class TestFeedbackAnswerResponse {
+public class FeedbackAnswerResponse {
     private String id;
     private String testFeedbackId;
     private String answer;

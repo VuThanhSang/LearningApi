@@ -1,9 +1,11 @@
 package com.example.learning_api.dto.response.deadline;
 
 
+import com.example.learning_api.entity.sql.database.FileEntity;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 public class UpcomingDeadlinesResponse {
@@ -12,13 +14,11 @@ public class UpcomingDeadlinesResponse {
     private String description;
     private String type;
     private String status;
-    private String attachment;
+    private List<FileEntity> files;
+    private String classroomId;
     private String startDate;
     private String endDate;
     private String lessonName;
-    private String lessonDescription;
-    private String sectionName;
-    private String sectionDescription;
 
     // Getters and setters...
 }
