@@ -248,10 +248,11 @@ public class DeadlineSubmissionsService implements IDeadlineSubmissionsService {
                 }
                 deadlineSubmissionResponses.add(submissionResponse);
             }
-
+            long totalElement = deadlineSubmissionsRepository.countAllByDeadlineIdWithFilters(deadlineId, search, status);
+            int totalPage = (int) Math.ceil((double) totalElement / size);
             response.setDeadlineSubmissions(deadlineSubmissionResponses);
-            response.setTotalElements(deadlineSubmissionsEntities.getTotalElements());
-            response.setTotalPage(deadlineSubmissionsEntities.getTotalPages());
+            response.setTotalElements(totalElement);
+            response.setTotalPage(totalPage);
             return response;
         } catch (Exception e) {
             log.error("Error in GetDeadlineSubmissionsByDeadlineId: ", e);
@@ -284,6 +285,10 @@ public class DeadlineSubmissionsService implements IDeadlineSubmissionsService {
             List<GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse> deadlineSubmissionResponses = new ArrayList<>();
             for (DeadlineSubmissionsEntity deadlineSubmissionsEntity : deadlineSubmissionsEntities) {
                 GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse deadlineSubmissionResponse = fromDeadlineSubmissionEntity(deadlineSubmissionsEntity);
+                StudentEntity studentEntity = studentRepository.findById(deadlineSubmissionsEntity.getStudentId()).orElse(null);
+                deadlineSubmissionResponse.setStudentEmail(studentEntity.getUser().getEmail());
+                deadlineSubmissionResponse.setStudentName(studentEntity.getUser().getFullname());
+                deadlineSubmissionResponse.setStudentAvatar(studentEntity.getUser().getAvatar());
                 deadlineSubmissionResponses.add(deadlineSubmissionResponse);
             }
             response.setDeadlineSubmissions(deadlineSubmissionResponses);

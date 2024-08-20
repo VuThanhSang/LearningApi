@@ -40,4 +40,25 @@ public interface DeadlineSubmissionsRepository extends MongoRepository<DeadlineS
             "]}")
     Page<DeadlineSubmissionsEntity> findAllByDeadlineIdWithFilters(
             String deadlineId, String search, String status, Pageable pageable);
+    @Query(value = "{'deadlineId': ?0, " +
+            "$and: [" +
+            "  {$or: [" +
+            "    {$and: [" +
+            "      {$expr: {$ne: [?1, null]}}, " +
+            "      {$or: [" +
+            "        {'title': {$regex: ?1, $options: 'i'}}, " +
+            "        {'submission': {$regex: ?1, $options: 'i'}}" +
+            "      ]}" +
+            "    ]}, " +
+            "    {$expr: {$eq: [?1, null]}}" +
+            "  ]}, " +
+            "  {$or: [" +
+            "    {$and: [" +
+            "      {$expr: {$ne: [?2, null]}}, " +
+            "      {'status': ?2}" +
+            "    ]}, " +
+            "    {$expr: {$eq: [?2, null]}}" +
+            "  ]}" +
+            "]}", count = true)
+    long countAllByDeadlineIdWithFilters(String deadlineId, String search, String status);
 }

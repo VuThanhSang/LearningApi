@@ -1,13 +1,15 @@
-package com.example.learning_api.dto.request.test_feedback;
+package com.example.learning_api.dto.request.feedback;
 
+import com.example.learning_api.enums.FeedbackFormType;
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 @Data
-public class CreateTestFeedbackRequest {
-    private String testId;
+public class CreateFeedbackRequest {
+    private String formId;
+    private FeedbackFormType formType;
     private String studentId;
     private List<MultipartFile> sources;
     private String feedback;

@@ -3,6 +3,7 @@ package com.example.learning_api.service.core.Impl;
 import com.example.learning_api.constant.CloudinaryConstant;
 import com.example.learning_api.dto.common.SourceUploadDto;
 import com.example.learning_api.dto.request.deadline.CreateDeadlineRequest;
+import com.example.learning_api.dto.request.deadline.GetUpcomingDeadlineResponse;
 import com.example.learning_api.dto.request.deadline.UpdateDeadlineRequest;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.classroom.ClassroomDeadlineResponse;
@@ -27,6 +28,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -226,15 +231,57 @@ public class DeadlineService implements IDeadlineService {
         }
     }
 
+    public static long getStartOfDayTimestamp() {
+        return LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+    }
 
+    public static long getStartOfWeekTimestamp() {
+        LocalDate now = LocalDate.now();
+        LocalDate startOfWeek = now.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        return startOfWeek.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+    }
+
+    public static long getStartOfMonthTimestamp() {
+        LocalDate now = LocalDate.now();
+        LocalDate startOfMonth = now.withDayOfMonth(1);
+        return startOfMonth.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+    }
     @Override
-    public List<UpcomingDeadlinesResponse> getUpcomingDeadlineByStudentId(String studentId, String date) {
+    public GetUpcomingDeadlineResponse getUpcomingDeadlineByStudentId(String studentId,String filterType, Integer page, Integer size) {
         try{
             if (studentRepository.findById(studentId) == null){
                 throw new IllegalArgumentException("StudentId is not found");
             }
-            List<UpcomingDeadlinesResponse> updateDeadlineRequest = studentEnrollmentsRepository.getUpcomingDeadlines(studentId, date);
-            return updateDeadlineRequest;
+            Pageable pageable = PageRequest.of(page, size);
+            String date = String.valueOf(System.currentTimeMillis());
+//            String date = "1724238234617";
+            String startDate = "";
+            String endDate = "";
+            if(filterType==null){
+                startDate = String.valueOf(System.currentTimeMillis());
+                endDate = "9999999999999";
+            }
+            else if (filterType.equals("day")){
+                startDate = String.valueOf(getStartOfDayTimestamp());
+                endDate = String.valueOf(getStartOfDayTimestamp() + 86400000);
+            }
+            else if (filterType.equals("week")){
+                startDate = String.valueOf(getStartOfWeekTimestamp());
+                endDate = String.valueOf(getStartOfWeekTimestamp() + 604800000);
+            }
+            else if (filterType.equals("month")){
+                startDate = String.valueOf(getStartOfMonthTimestamp());
+                endDate = String.valueOf(getStartOfMonthTimestamp() + 2592000000L);
+            }
+
+            List<UpcomingDeadlinesResponse> deadlineEntities = studentEnrollmentsRepository.getUpcomingDeadlines(studentId, startDate, endDate, pageable);
+
+            GetUpcomingDeadlineResponse getUpcomingDeadlineResponse = new GetUpcomingDeadlineResponse();
+            getUpcomingDeadlineResponse.setUpcomingDeadlines(deadlineEntities);
+            long totalElements = studentEnrollmentsRepository.countUpcomingDeadlines(studentId, startDate, endDate);
+            getUpcomingDeadlineResponse.setTotalElements(totalElements);
+            getUpcomingDeadlineResponse.setTotalPages((int) Math.ceil((double) totalElements / size));
+            return getUpcomingDeadlineResponse;
         }
         catch (Exception e) {
             log.error("Error in convertToDeadlineRequest: ", e);
@@ -354,10 +401,14 @@ public class DeadlineService implements IDeadlineService {
             List<GetDeadlinesResponse.DeadlineResponse> deadlineResponses = deadlineSlice.getContent().stream()
                     .map(this::convertToDeadlineResponse)
                     .collect(Collectors.toList());
+           Long totalElements = studentEnrollmentsRepository.countStudentDeadlines(
+                    studentId, status, search, startDate, endDate, classroomId);
+
+            int totalPages = (int) Math.ceil((double) totalElements / size);
 
             return GetDeadlinesResponse.builder()
-                    .totalElements((long) deadlineSlice.getNumberOfElements())
-                    .totalPage(deadlineSlice.getNumberOfElements() > 0 ? (deadlineSlice.getNumberOfElements() + size - 1) / size : 0)
+                    .totalElements(totalElements)
+                    .totalPage(totalPages)
                     .deadlines(deadlineResponses)
                     .build();
         } catch (Exception e) {

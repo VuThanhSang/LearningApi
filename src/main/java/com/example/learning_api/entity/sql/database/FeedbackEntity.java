@@ -1,6 +1,7 @@
 package com.example.learning_api.entity.sql.database;
 
 import com.example.learning_api.enums.FaqSourceType;
+import com.example.learning_api.enums.FeedbackFormType;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.mapping.DBRef;
@@ -10,18 +11,20 @@ import java.util.List;
 
 @Data
 @NoArgsConstructor
-@Document(collection = "test_feedback")
-public class TestFeedbackEntity {
+@Document(collection = "feedback")
+public class FeedbackEntity {
      private String id;
-     private String testId;
+     private String formId;
+     private FeedbackFormType formType;
      private String studentId;
-     private List<String> sources;
      private String title;
      private String feedback;
      private String createdAt;
      private String updatedAt;
      @DBRef
-     private List<TestFeedbackAnswerEntity> answers;
+     private List<FeedbackAnswerEntity> answers;
      @DBRef
      private StudentEntity student;
+     @DBRef
+     private List<FileEntity> files;
 }

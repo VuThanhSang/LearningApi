@@ -142,12 +142,15 @@ public class DeadlineController {
     }
 
     @GetMapping(path = "/upcoming/{studentId}")
-    public ResponseEntity<ResponseAPI<List<UpcomingDeadlinesResponse>>> getUpcomingDeadlinesByStudentId(
+    public ResponseEntity<ResponseAPI<GetUpcomingDeadlineResponse>> getUpcomingDeadlinesByStudentId(
             @PathVariable String studentId,
-            @RequestParam(defaultValue = "") String date)  {
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String filterType
+            )  {
         try{
-            List<UpcomingDeadlinesResponse> data =  deadlineService.getUpcomingDeadlineByStudentId(studentId, date);
-            ResponseAPI<List<UpcomingDeadlinesResponse>> res = ResponseAPI.<List<UpcomingDeadlinesResponse>>builder()
+            GetUpcomingDeadlineResponse data =  deadlineService.getUpcomingDeadlineByStudentId(studentId,filterType, page-1, size);
+            ResponseAPI<GetUpcomingDeadlineResponse> res = ResponseAPI.<GetUpcomingDeadlineResponse>builder()
                     .timestamp(new Date())
                     .message("Get upcoming deadlines successfully")
                     .data(data)
@@ -155,7 +158,7 @@ public class DeadlineController {
             return new ResponseEntity<>(res, StatusCode.OK);
         }
         catch (Exception e){
-            ResponseAPI<List<UpcomingDeadlinesResponse>> res = ResponseAPI.<List<UpcomingDeadlinesResponse>>builder()
+            ResponseAPI<GetUpcomingDeadlineResponse> res = ResponseAPI.<GetUpcomingDeadlineResponse>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();
@@ -189,7 +192,7 @@ public class DeadlineController {
 
     @GetMapping(path = "/teacher/{teacherId}")
     public ResponseEntity<ResponseAPI<GetDeadlinesResponse>> getDeadlinesByTeacherId(
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @PathVariable String teacherId,
             @RequestParam(required = false) String search,
@@ -202,7 +205,7 @@ public class DeadlineController {
             if (status == "") status = null;
             if (startDate == "") startDate = null;
             if (endDate == "") endDate = null;
-            GetDeadlinesResponse data = deadlineService.getDeadlinesByTeacherId(teacherId, search, status, startDate, endDate, page, size);
+            GetDeadlinesResponse data = deadlineService.getDeadlinesByTeacherId(teacherId, search, status, startDate, endDate, page-1, size);
             ResponseAPI<GetDeadlinesResponse> res = ResponseAPI.<GetDeadlinesResponse>builder()
                     .timestamp(new Date())
                     .message("Get deadlines by teacherId successfully")
@@ -352,7 +355,7 @@ public class DeadlineController {
     }
     @GetMapping(path = "/{deadlineId}/submissions")
     public ResponseEntity<ResponseAPI<GetDeadlineSubmissionsResponse>> getDeadlineSubmissionsByDeadlineId(
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @PathVariable String deadlineId,
             @RequestParam(required = false) String search,
@@ -368,7 +371,7 @@ public class DeadlineController {
             sortBy = (sortBy == null || sortBy.trim().isEmpty() || sortBy.equals(",")) ? null : sortBy.trim();
 
             GetDeadlineSubmissionsResponse data = deadlineSubmissionsService.GetDeadlineSubmissionsByDeadlineId(
-                    deadlineId, page, size, search, status, sortBy, direction);
+                    deadlineId, page-1, size, search, status, sortBy, direction);
 
             ResponseAPI<GetDeadlineSubmissionsResponse> res = ResponseAPI.<GetDeadlineSubmissionsResponse>builder()
                     .timestamp(new Date())
@@ -392,7 +395,7 @@ public class DeadlineController {
     }
     @GetMapping(path = "/student/{studentId}")
     public ResponseEntity<ResponseAPI<GetDeadlinesResponse>> getDeadlinesByStudentId(
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "1 ") int page,
             @RequestParam(defaultValue = "10") int size,
             @PathVariable String studentId,
             @RequestParam(required = false) String search,
@@ -401,12 +404,12 @@ public class DeadlineController {
             @RequestParam(required = false) String endDate,
             @RequestParam(required = false) String classroomId,
             @RequestParam(required = false, defaultValue = "startDate") String sortBy,
-            @RequestParam(required = false, defaultValue = "asc") String sortOrder
+            @RequestParam(required = false, defaultValue = "desc") String sortOrder
     )  {
         try {
             Sort.Direction direction = sortOrder.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
             GetDeadlinesResponse data = deadlineService.getDeadlinesByStudentId(
-                    studentId, search, status, startDate, endDate, classroomId, page, size, sortBy, direction);
+                    studentId, search, status, startDate, endDate, classroomId, page-1, size, sortBy, direction);
 
             ResponseAPI<GetDeadlinesResponse> res = ResponseAPI.<GetDeadlinesResponse>builder()
                     .timestamp(new Date())

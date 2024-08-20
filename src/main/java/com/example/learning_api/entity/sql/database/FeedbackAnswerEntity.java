@@ -7,10 +7,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @NoArgsConstructor
-@Document(collection = "test_feedback_answer")
-public class TestFeedbackAnswerEntity {
+@Document(collection = "feedback_answer")
+public class FeedbackAnswerEntity {
     private String id;
-    private String testFeedbackId;
+    private String feedbackId;
     private String answer;
     private String teacherId;
     private String createdAt;

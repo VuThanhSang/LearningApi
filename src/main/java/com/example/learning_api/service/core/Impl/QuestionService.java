@@ -10,7 +10,7 @@ import com.example.learning_api.dto.response.question.GetQuestionsResponse;
 import com.example.learning_api.entity.sql.database.FileEntity;
 import com.example.learning_api.entity.sql.database.QuestionEntity;
 import com.example.learning_api.entity.sql.database.TestEntity;
-import com.example.learning_api.entity.sql.database.TestFeedbackEntity;
+import com.example.learning_api.entity.sql.database.FeedbackEntity;
 import com.example.learning_api.enums.FileOwnerType;
 import com.example.learning_api.enums.QuestionType;
 import com.example.learning_api.model.CustomException;

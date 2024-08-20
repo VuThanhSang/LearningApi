@@ -4,5 +4,7 @@ public enum DeadlineStatus {
 
     EXPIRED,
     UPCOMING,
+    ONGOING,
+    FINISHED,
     NOT_PUBLISHED,
 }

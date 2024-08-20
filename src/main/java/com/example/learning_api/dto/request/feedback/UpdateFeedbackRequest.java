@@ -1,4 +1,4 @@
-package com.example.learning_api.dto.request.test_feedback;
+package com.example.learning_api.dto.request.feedback;
 
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
@@ -6,7 +6,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @Data
-public class UpdateTestFeedbackRequest {
+public class UpdateFeedbackRequest {
     private String id;
     private List<MultipartFile> sources;
     private String feedback;

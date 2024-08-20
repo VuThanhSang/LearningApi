@@ -55,16 +55,28 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
     Slice<GetClassRoomRecentResponse.ClassRoomResponse> getRecentClasses(String studentId, Pageable pageable);
     @Aggregation(pipeline = {
             "{ $match: { studentId: ?0 } }",
-            "{ $lookup: { from: 'sections', localField: 'classroomId', foreignField: 'classRoomId', as: 'section' } }",
-            "{ $unwind: '$section' }",
-            "{ $lookup: { from: 'lessons', let: { sectionId: '$section._id' }, pipeline: [{ $match: { $expr: { $eq: ['$sectionId', { $toString: '$$sectionId' }] } } }], as: 'lessons' } }",
-            "{ $unwind: '$lessons' }",
-            "{ $lookup: { from: 'deadlines', let: { lessonId: '$lessons._id' }, pipeline: [{ $match: { $expr: { $and: [{ $eq: ['$lessonId', { $toString: '$$lessonId' }] }, { $eq: ['$status', 'UPCOMING'] }, { $gt: [{ $toLong: '$endDate' }, { $toLong: ?1 }] }] } } }], as: 'deadlines' } }",
+            "{ $lookup: { from: 'deadlines', localField: 'classroomId', foreignField: 'classroomId', as: 'deadlines' } }",
             "{ $unwind: '$deadlines' }",
-            "{ $project: { _id: '$deadlines._id', title: '$deadlines.title', description: '$deadlines.description', type: '$deadlines.type', status: '$deadlines.status', attachment: '$deadlines.attachment', startDate: { $toLong: '$deadlines.startDate' }, endDate: { $toLong: '$deadlines.endDate' }, lessonName: '$lessons.name', lessonDescription: '$lessons.description', sectionName: '$section.name', sectionDescription: '$section.description' } }"
+            "{ $match: { $expr: { $and: [ { $eq: ['$deadlines.status', 'UPCOMING'] }, { $gt: ['$deadlines.endDate',  ?1 ] }, { $lt: ['$deadlines.endDate',  ?2 ] } ] } } }",
+            "{ $project: { " +
+                    "_id: '$deadlines._id', " +
+                    "title: '$deadlines.title', " +
+                    "description: '$deadlines.description', " +
+                    "type: '$deadlines.type', " +
+                    "status: '$deadlines.status', " +
+                    "startDate: '$deadlines.startDate', " +
+                    "endDate: '$deadlines.endDate', " +
+                    "} }"
     })
-    List<UpcomingDeadlinesResponse> getUpcomingDeadlines(String studentId, String compareDate);
-
+    List<UpcomingDeadlinesResponse> getUpcomingDeadlines(String studentId, String startDate, String endDate, Pageable pageable);
+    @Aggregation(pipeline = {
+            "{ $match: { studentId: ?0 } }",
+            "{ $lookup: { from: 'deadlines', localField: 'classroomId', foreignField: 'classroomId', as: 'deadlines' } }",
+            "{ $unwind: '$deadlines' }",
+            "{ $match: { $expr: { $and: [ { $eq: ['$deadlines.status', 'UPCOMING'] }, { $gt: ['$deadlines.endDate',  ?1 ] }, { $lt: ['$deadlines.endDate',  ?2 ] } ] } } }",
+            "{ $count: 'total' }"
+    })
+    Long countUpcomingDeadlines(String studentId, String startDate, String endDate);
     @Query("{'classroomId': ?0}")
     Page<StudentEnrollmentsEntity> findByClassroomId(String classroomId, Pageable pageable);
     @Aggregation(pipeline = {
@@ -137,4 +149,33 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
             Document sort,  // MongoDB Document representing sort order
             Pageable pageable
     );
+
+    @Aggregation(pipeline = {
+            "{ $match: { studentId: ?0 } }",
+            "{ $lookup: { from: 'deadlines', localField: 'classroomId', foreignField: 'classroomId', as: 'deadlines' } }",
+            "{ $unwind: '$deadlines' }",
+            "{ $match: { $and: [ " +
+                    "{ $or: [ { 'deadlines.status': ?1 }, { $expr: { $eq: [?1, ''] } } ] }, " +
+                    "{ $or: [ " +
+                    "{ $and: [ " +
+                    "{ $expr: { $ne: [?2, ''] } }, " +
+                    "{ 'deadlines.title': { $regex: ?2, $options: 'i' } } " +
+                    "] }, " +
+                    "{ $expr: { $eq: [?2, ''] } } " +
+                    "] }, " +
+                    "{ $or: [ { 'deadlines.startDate': { $gte: ?3 } }, { $expr: { $eq: [?3, ''] } } ] }, " +
+                    "{ $or: [ { 'deadlines.endDate': { $lte: ?4 } }, { $expr: { $eq: [?4, ''] } } ] }, " +
+                    "{ $or: [ { 'deadlines.classroomId': ?5 }, { $expr: { $eq: [?5, ''] } } ] } " +
+                    "] } }",
+            "{ $count: 'total' }"
+    })
+    Long countStudentDeadlines(
+            String studentId,
+            String status,
+            String title,
+            String startDate,
+            String endDate,
+            String classroomId
+    );
+
 }
