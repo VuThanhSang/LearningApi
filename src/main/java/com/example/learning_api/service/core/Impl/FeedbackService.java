@@ -140,6 +140,12 @@ public class FeedbackService implements IFeedbackService {
         if (body.getFeedbackId() == null) {
             throw new RuntimeException("FeedbackId is required");
         }
+        if (body.getTeacherId() == null) {
+            throw new RuntimeException("TeacherId is required");
+        }
+        if (teacherRepository.findById(body.getTeacherId()).isEmpty()) {
+            throw new RuntimeException("TeacherId not found");
+        }
 
         if (feedbackRepository.findById(body.getFeedbackId()).isEmpty()) {
             throw new RuntimeException("FeedbackId not found");
@@ -151,13 +157,13 @@ public class FeedbackService implements IFeedbackService {
     }
 
     @Override
-    public void updateFeedbackAnswer(String feedbackAnswerId, String answer) {
+    public void updateFeedbackAnswer(String feedbackAnswerId, FeedbackAnswerEntity answer) {
         if (feedbackAnswerRepository.findById(feedbackAnswerId).isEmpty()) {
             throw new RuntimeException("FeedbackAnswer not found");
         }
         FeedbackAnswerEntity feedbackAnswerEntity = feedbackAnswerRepository.findById(feedbackAnswerId).orElseThrow(() -> new RuntimeException("FeedbackAnswer not found"));
         if (answer != null)
-            feedbackAnswerEntity.setAnswer(answer);
+            feedbackAnswerEntity.setAnswer(answer.getAnswer());
         feedbackAnswerEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
         feedbackAnswerRepository.save(feedbackAnswerEntity);
     }
