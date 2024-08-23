@@ -6,6 +6,7 @@ import com.example.learning_api.dto.request.feedback.CreateFeedbackRequest;
 import com.example.learning_api.dto.request.feedback.UpdateFeedbackRequest;
 import com.example.learning_api.dto.response.feedback.GetFeedBacksResponse;
 import com.example.learning_api.dto.response.feedback.FeedbackAnswerResponse;
+import com.example.learning_api.entity.sql.database.FeedbackAnswerEntity;
 import com.example.learning_api.entity.sql.database.FeedbackEntity;
 import com.example.learning_api.model.ResponseAPI;
 import com.example.learning_api.service.core.IFeedbackService;
@@ -167,7 +168,7 @@ public class FeedbackController {
     }
 
     @PatchMapping(path = "/{feedbackId}/answer")
-    public ResponseEntity<ResponseAPI<String>> updateFeedbackAnswer(@PathVariable String feedbackId, @RequestBody String answer) {
+    public ResponseEntity<ResponseAPI<String>> updateFeedbackAnswer(@PathVariable String feedbackId, @RequestBody @Valid FeedbackAnswerEntity answer) {
         try {
             feedbackService.updateFeedbackAnswer(feedbackId, answer);
             ResponseAPI<String> res = ResponseAPI.<String>builder()

@@ -5,6 +5,7 @@ import com.example.learning_api.dto.request.feedback.CreateFeedbackRequest;
 import com.example.learning_api.dto.request.feedback.UpdateFeedbackRequest;
 import com.example.learning_api.dto.response.feedback.GetFeedBacksResponse;
 import com.example.learning_api.dto.response.feedback.FeedbackAnswerResponse;
+import com.example.learning_api.entity.sql.database.FeedbackAnswerEntity;
 import com.example.learning_api.entity.sql.database.FeedbackEntity;
 
 import java.util.List;
@@ -14,7 +15,7 @@ public interface IFeedbackService {
     void updateFeedback(UpdateFeedbackRequest body);
     void deleteFeedback(String testFeedbackId);
     void createFeedbackAnswer(CreateFeedbackAnswerRequest body);
-    void updateFeedbackAnswer(String testFeedbackAnswerId, String answer);
+    void updateFeedbackAnswer(String testFeedbackAnswerId, FeedbackAnswerEntity answer);
     void deleteFeedbackAnswer(String testFeedbackAnswerId);
     FeedbackEntity getFeedbackById(String testFeedbackId);
     List<FeedbackEntity> getFeedbacksByStudentIdAndTestId(String studentId, String formId,String formType);
