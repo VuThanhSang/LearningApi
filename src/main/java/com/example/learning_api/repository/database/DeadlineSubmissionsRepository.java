@@ -7,8 +7,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
+import java.util.List;
+
 public interface DeadlineSubmissionsRepository extends MongoRepository<DeadlineSubmissionsEntity, String> {
     Page<DeadlineSubmissionsEntity> findAllByDeadlineId(String deadlineId, org.springframework.data.domain.Pageable pageable);
+    List<DeadlineSubmissionsEntity> findAllByDeadlineIdAndStatus(String deadlineId, DeadlineSubmissionStatus status);
     Page<DeadlineSubmissionsEntity> findAllByStudentIdAndDeadlineId(String studentId,String deadlineId , org.springframework.data.domain.Pageable pageable);
     @Query("{'deadlineId': ?0, $or: [{'title': {$regex: ?1, $options: 'i'}}, {'submission': {$regex: ?1, $options: 'i'}}]}")
     Page<DeadlineSubmissionsEntity> findAllByDeadlineIdAndSearch(String deadlineId, String search, Pageable pageable);

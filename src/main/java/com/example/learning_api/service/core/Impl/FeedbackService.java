@@ -66,7 +66,7 @@ public class FeedbackService implements IFeedbackService {
         feedbackEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
         feedbackEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
         feedbackRepository.save(feedbackEntity);
-        progressSources(body.getSources(), body.getFeedback(), feedbackEntity);
+        progressSources(body.getFiles(), body.getFeedback(), feedbackEntity);
 
     }
 
@@ -114,8 +114,8 @@ public class FeedbackService implements IFeedbackService {
             throw new RuntimeException("Feedback not found");
         }
         FeedbackEntity feedbackEntity = feedbackRepository.findById(body.getId()).orElseThrow(() -> new RuntimeException("Feedback not found"));
-        if (body.getSources() != null) {
-            progressSources(body.getSources(), body.getFeedback(), feedbackEntity);
+        if (body.getFiles() != null) {
+            progressSources(body.getFiles(), body.getFeedback(), feedbackEntity);
         }
         if (body.getTitle() != null)
             feedbackEntity.setTitle(body.getTitle());

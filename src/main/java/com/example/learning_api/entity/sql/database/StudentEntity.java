@@ -19,6 +19,7 @@ public class StudentEntity {
     private String userId;
     private String gradeLevel;
     private UserEntity user;
+    private String studentCode;
     private String gender;
     private String address;
     private String dateOfBirth;
