@@ -11,7 +11,7 @@ public class CreateFeedbackRequest {
     private String formId;
     private FeedbackFormType formType;
     private String studentId;
-    private List<MultipartFile> sources;
+    private List<MultipartFile> files;
     private String feedback;
     private String title;
 }

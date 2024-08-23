@@ -300,4 +300,23 @@ public class DeadlineSubmissionsService implements IDeadlineSubmissionsService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
+
+    @Override
+    public List<String> downloadSubmission(String deadlineId, DeadlineSubmissionStatus type) {
+        try {
+            List<DeadlineSubmissionsEntity> deadlineSubmissionsEntities = deadlineSubmissionsRepository.findAllByDeadlineIdAndStatus(deadlineId, type);
+            List<String> urls = new ArrayList<>();
+            for (DeadlineSubmissionsEntity deadlineSubmissionsEntity : deadlineSubmissionsEntities) {
+                List<FileEntity> fileEntities = fileRepository.findByOwnerIdAndOwnerType(deadlineSubmissionsEntity.getId(), FileOwnerType.DEADLINE_SUBMISSION.name());
+                for (FileEntity fileEntity : fileEntities) {
+                    urls.add(fileEntity.getUrl());
+                }
+            }
+            return urls;
+
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
 }

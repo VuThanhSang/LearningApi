@@ -8,7 +8,7 @@ import java.util.List;
 @Data
 public class UpdateFeedbackRequest {
     private String id;
-    private List<MultipartFile> sources;
+    private List<MultipartFile> files;
     private String feedback;
     private String title;
 }

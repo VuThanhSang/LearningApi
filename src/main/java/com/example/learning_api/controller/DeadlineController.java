@@ -6,21 +6,32 @@ import com.example.learning_api.dto.response.classroom.ClassroomDeadlineResponse
 import com.example.learning_api.dto.response.deadline.*;
 import com.example.learning_api.entity.sql.database.DeadlineEntity;
 import com.example.learning_api.entity.sql.database.DeadlineSubmissionsEntity;
+import com.example.learning_api.enums.DeadlineSubmissionStatus;
 import com.example.learning_api.model.ResponseAPI;
 import com.example.learning_api.service.core.IDeadlineService;
 import com.example.learning_api.service.core.IDeadlineSubmissionsService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static com.example.learning_api.constant.RouterConstant.*;
 
@@ -429,6 +440,50 @@ public class DeadlineController {
                     .message("An unexpected error occurred: " + e.getMessage())
                     .build();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(res);
+        }
+    }
+
+    @GetMapping("/download/{deadlineId}")
+    public ResponseEntity<byte[]> downloadDeadlineSubmissionFiles(@PathVariable String deadlineId) {
+        try {
+            List<String> fileUrls = deadlineSubmissionsService.downloadSubmission(deadlineId, DeadlineSubmissionStatus.SUBMITTED);
+            byte[] zipBytes = createZipFile(fileUrls);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=deadline-submission-files.zip");
+
+            return new ResponseEntity<>(zipBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Error downloading deadline submission files: " + e.getMessage());
+        }
+    }
+
+    private byte[] createZipFile(List<String> fileUrls) throws IOException {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             ZipOutputStream zos = new ZipOutputStream(baos)) {
+            for (String fileUrl : fileUrls) {
+                byte[] fileBytes = downloadFileFromUrl(fileUrl);
+                String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+                zos.putNextEntry(new ZipEntry(fileName));
+                zos.write(fileBytes);
+                zos.closeEntry();
+            }
+            zos.finish();
+            return baos.toByteArray();
+        }
+    }
+
+    private byte[] downloadFileFromUrl(String fileUrl) throws IOException {
+        URL url = new URL(fileUrl);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+
+        int responseCode = connection.getResponseCode();
+        if (responseCode == HttpURLConnection.HTTP_OK) {
+            return connection.getInputStream().readAllBytes();
+        } else {
+            throw new IOException("Failed to download file from URL: " + fileUrl);
         }
     }
 

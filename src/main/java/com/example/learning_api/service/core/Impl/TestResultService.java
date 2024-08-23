@@ -9,6 +9,7 @@ import com.example.learning_api.entity.sql.database.StudentAnswersEntity;
 import com.example.learning_api.entity.sql.database.StudentEntity;
 import com.example.learning_api.entity.sql.database.TestEntity;
 import com.example.learning_api.entity.sql.database.TestResultEntity;
+import com.example.learning_api.enums.FileOwnerType;
 import com.example.learning_api.enums.TestState;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.ModelMapperService;
@@ -42,6 +43,7 @@ public class TestResultService implements ITestResultService {
     private final StudentEnrollmentsRepository studentEnrollmentsRepository;
     private final ClassRoomRepository classRoomRepository;
     private final ITestService testService;
+    private final FileRepository fileRepository;
     @Override
     public StartTestResponse addTestResult(CreateTestResultRequest body) {
         try{
@@ -440,7 +442,7 @@ public class TestResultService implements ITestResultService {
     private StatisticsResultResponse.Question processQuestion(GetQuestionsResponse.QuestionResponse question, List<TestResultOfTestResponse> results) {
         StatisticsResultResponse.Question questionRes = modelMapperService.mapClass(question, StatisticsResultResponse.Question.class);
         questionRes.setAnswers(processAnswers(question.getAnswers(), results));
-
+        questionRes.setSource(fileRepository.findByOwnerIdAndOwnerType(question.getId(), FileOwnerType.QUESTION.name()));
         int[] totals = calculateTotals(questionRes.getAnswers());
         questionRes.setTotalCorrect(totals[0]);
         questionRes.setTotalIncorrect(totals[1]);
