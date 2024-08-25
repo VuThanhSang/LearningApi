@@ -6,9 +6,14 @@ import com.example.learning_api.dto.response.question.GetQuestionsResponse;
 import com.example.learning_api.dto.response.teacher.GetTeachersResponse;
 import com.example.learning_api.dto.response.test.*;
 import com.example.learning_api.entity.sql.database.StudentEntity;
+import com.example.learning_api.entity.sql.database.UserEntity;
 import com.example.learning_api.model.ResponseAPI;
+import com.example.learning_api.repository.database.UserRepository;
+import com.example.learning_api.service.common.JwtService;
 import com.example.learning_api.service.core.ITestResultService;
 import com.example.learning_api.service.core.ITestService;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +35,8 @@ import static com.example.learning_api.constant.RouterConstant.*;
 public class TestController {
     private final ITestService testService;
     private final ITestResultService testResultService;
-
+    private final JwtService jwtService;
+    private final UserRepository userRepository;
     @PostMapping(path = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<String>> importTest(@ModelAttribute @Valid ImportTestRequest body) {
@@ -273,13 +279,23 @@ public class TestController {
     }
 
     @GetMapping(path = "/classroom/{classroomId}")
+    @PreAuthorize("hasAnyAuthority('USER','TEACHER','ADMIN')")
     public ResponseEntity<ResponseAPI<GetTestsResponse>> getTestsByClassroomId (
             @PathVariable String classroomId,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            HttpServletRequest request
     ){
         try{
-            GetTestsResponse resData = testService.getTestsByClassroomId(page-1, size, classroomId);
+            String token = request.getHeader("Authorization");
+            // If the token is prefixed with "Bearer ", you may need to remove it
+            if (token != null && token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+            String studentId = jwtService.extractUserId(token);
+            UserEntity user = userRepository.findById(studentId).orElseThrow(() -> new Exception("User not found"));
+
+            GetTestsResponse resData = testService.getTestsByClassroomId(page-1, size, classroomId, user.getRole().name());
             ResponseAPI<GetTestsResponse> res = ResponseAPI.<GetTestsResponse>builder()
                     .timestamp(new Date())
                     .message("Get tests by classroom id successfully")

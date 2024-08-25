@@ -406,6 +406,7 @@ public class TestService implements ITestService {
     public GetTestDetailResponse getTestDetail(String id) {
         TestEntity testEntity = getTestEntityById(id);
         GetTestDetailResponse response = mapTestEntityToResponse(testEntity);
+        response.setStatus(testEntity.getStatus().name());
         List<GetQuestionsResponse.QuestionResponse> questionResponses = getQuestionResponses(id);
         if (testEntity.getType() == null || !testEntity.getType().equals(TestShowResultType.SHOW_RESULT_IMMEDIATELY)) {
             for (GetQuestionsResponse.QuestionResponse questionResponse : questionResponses) {
@@ -433,7 +434,9 @@ public class TestService implements ITestService {
             throw new IllegalArgumentException("Teacher does not have permission to view this test");
         }
         GetTestDetailResponse response = mapTestEntityToResponse(testEntity);
+        response.setStatus(testEntity.getStatus().name());
         List<GetQuestionsResponse.QuestionResponse> questionResponses = getQuestionResponses(id);
+
         if (testEntity.getType() == null || !testEntity.getType().equals(TestShowResultType.SHOW_RESULT_IMMEDIATELY)) {
             for (GetQuestionsResponse.QuestionResponse questionResponse : questionResponses) {
                 questionResponse.setSources(fileRepository.findByOwnerIdAndOwnerType(questionResponse.getId(), FileOwnerType.QUESTION.name())
@@ -520,14 +523,22 @@ public class TestService implements ITestService {
 
 
     @Override
-    public GetTestsResponse getTestsByClassroomId(int page, int size, String classroomId) {
+    public GetTestsResponse getTestsByClassroomId(int page, int size, String classroomId, String role) {
         try{
             Pageable pageAble = PageRequest.of(page, size);
-            Page<TestEntity> testEntities = testRepository.findByClassroomId(classroomId, pageAble);
+            Page<TestEntity> testEntities = null;
+            if (role.equals("USER")){
+                testEntities = testRepository.findByClassroomIdAndStatus(classroomId, pageAble);
+            }
+            else{
+                 testEntities = testRepository.findByClassroomId(classroomId, pageAble);
+
+            }
             GetTestsResponse resData = new GetTestsResponse();
             List<GetTestsResponse.TestResponse> testResponses = new ArrayList<>();
             for (TestEntity testEntity : testEntities){
                 GetTestsResponse.TestResponse testResponse = modelMapperService.mapClass(testEntity, GetTestsResponse.TestResponse.class);
+                testResponse.setStatus(testEntity.getStatus().name());
                 testResponse.setSource(fileRepository.findByOwnerIdAndOwnerType(testEntity.getId(), FileOwnerType.TEST.name())
                         .stream()
                         .findFirst()
@@ -560,6 +571,7 @@ public class TestService implements ITestService {
             List<GetTestInProgress.TestResponse> testResponses = new ArrayList<>();
             for (TestEntity testEntity : testEntities){
                 GetTestInProgress.TestResponse testResponse = modelMapperService.mapClass(testEntity, GetTestInProgress.TestResponse.class);
+                testResponse.setStatus(testEntity.getStatus().name());
                 if (testEntity.getAttemptLimit()==null){
                     testResponse.setAttemptLimit(1);
                 }
@@ -587,6 +599,7 @@ public class TestService implements ITestService {
             List<GetTestInProgress.TestResponse> testResponses = new ArrayList<>();
             for (TestEntity testEntity : testEntities){
                 GetTestInProgress.TestResponse testResponse = modelMapperService.mapClass(testEntity, GetTestInProgress.TestResponse.class);
+                testResponse.setStatus(testEntity.getStatus().name());
                 testResponses.add(testResponse);
             }
             resData.setTests(testResponses);
@@ -715,8 +728,10 @@ public class TestService implements ITestService {
                     List<GetQuestionsResponse.AnswerResponse> clonedAnswers = question.getAnswers().stream()
                             .map(answer -> {
                                 GetQuestionsResponse.AnswerResponse clonedAnswer = new GetQuestionsResponse.AnswerResponse();
+                                AnswerEntity answerEntity = answerRepository.findById(answer.getId())
+                                        .orElseThrow(() -> new IllegalArgumentException("Answer not found"));
                                 BeanUtils.copyProperties(answer, clonedAnswer);
-                                clonedAnswer.setSelected(false);  // Ensure all answers start as unselected
+                                clonedAnswer.setIsCorrect(answerEntity.isCorrect());
                                 return clonedAnswer;
                             })
                             .collect(Collectors.toList());
