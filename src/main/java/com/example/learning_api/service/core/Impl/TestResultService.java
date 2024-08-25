@@ -442,7 +442,7 @@ public class TestResultService implements ITestResultService {
     private StatisticsResultResponse.Question processQuestion(GetQuestionsResponse.QuestionResponse question, List<TestResultOfTestResponse> results) {
         StatisticsResultResponse.Question questionRes = modelMapperService.mapClass(question, StatisticsResultResponse.Question.class);
         questionRes.setAnswers(processAnswers(question.getAnswers(), results));
-        questionRes.setSource(fileRepository.findByOwnerIdAndOwnerType(question.getId(), FileOwnerType.QUESTION.name()));
+        questionRes.setSources(fileRepository.findByOwnerIdAndOwnerType(question.getId(), FileOwnerType.QUESTION.name()));
         int[] totals = calculateTotals(questionRes.getAnswers());
         questionRes.setTotalCorrect(totals[0]);
         questionRes.setTotalIncorrect(totals[1]);

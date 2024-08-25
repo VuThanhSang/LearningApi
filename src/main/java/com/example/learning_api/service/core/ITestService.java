@@ -17,7 +17,7 @@ public interface ITestService {
     void importTest(ImportTestRequest body);
     GetTestDetailResponse getTestDetail(String id);
     GetTestDetailResponse getTestDetailForTeacher(String id,String teacherId);
-    GetTestsResponse getTestsByClassroomId(int page, int size,String classroomId);
+    GetTestsResponse getTestsByClassroomId(int page, int size,String classroomId,String role);
     GetTestInProgress getTestInProgress(int page,int size,String studentId);
     GetTestInProgress getTestOnSpecificDayByStudentId(String studentId,String date,int page,int size);
     TestSubmitResponse submitTest( TestSubmitRequest body);

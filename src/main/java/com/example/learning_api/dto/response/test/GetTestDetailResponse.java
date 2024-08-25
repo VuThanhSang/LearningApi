@@ -20,5 +20,6 @@ public class GetTestDetailResponse {
     private int attemptLimit;
     private String teacherId;
     private String showResultType;
+    private String status;
     private List<GetQuestionsResponse.QuestionResponse> questions;
 }

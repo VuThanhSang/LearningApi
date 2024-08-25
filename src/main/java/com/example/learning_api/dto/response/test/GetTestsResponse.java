@@ -26,6 +26,7 @@ public class GetTestsResponse {
         private String classroomId;
         private String showResultType;
         private int attemptLimit;
+        private String status;
         private String teacherId;
         private String createdAt;
         private String updatedAt;
