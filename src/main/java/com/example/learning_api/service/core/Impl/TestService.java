@@ -764,7 +764,9 @@ public class TestService implements ITestService {
     @Override
     public TestSubmitResponse submitTest(TestSubmitRequest body) {
         TestResultEntity testResult = getTestResult(body.getTestResultId());
-        GetTestDetailResponse testDetail = getTestDetail(testResult.getTestId());
+        TestEntity testEntity = testRepository.findById(testResult.getTestId())
+                .orElseThrow(() -> new IllegalArgumentException("Test not found"));
+        GetTestDetailResponse testDetail = getTestDetailForTeacher(testResult.getTestId(), testEntity.getTeacherId());
         List<GetQuestionsResponse.QuestionResponse> questions = testDetail.getQuestions();
 
         List<TestSubmitResponse.QuestionResponse> questionResponses = processQuestions(questions, body, testResult);
@@ -918,6 +920,7 @@ public class TestService implements ITestService {
         response.setAttendedAt(testResult.getAttendedAt());
         response.setGrade(testResult.getGrade());
         response.setPassed(testResult.getGrade() >= 4);
+        response.setId(testResult.getId());
         return response;
     }
 
