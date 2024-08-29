@@ -408,7 +408,8 @@ public class TestService implements ITestService {
         GetTestDetailResponse response = mapTestEntityToResponse(testEntity);
         response.setStatus(testEntity.getStatus().name());
         List<GetQuestionsResponse.QuestionResponse> questionResponses = getQuestionResponses(id);
-        if (testEntity.getType() == null || !testEntity.getType().equals(TestShowResultType.SHOW_RESULT_IMMEDIATELY)) {
+        String showType = testEntity.getShowResultType().toString();
+        if (testEntity.getShowResultType() == null || !showType.equals(TestShowResultType.SHOW_RESULT_IMMEDIATELY.name())) {
             for (GetQuestionsResponse.QuestionResponse questionResponse : questionResponses) {
                 questionResponse.setSources(fileRepository.findByOwnerIdAndOwnerType(questionResponse.getId(), FileOwnerType.QUESTION.name())
                         );
@@ -517,6 +518,7 @@ public class TestService implements ITestService {
 
     private GetQuestionsResponse.AnswerResponse mapAnswerEntityToResponse(AnswerEntity answerEntity) {
         GetQuestionsResponse.AnswerResponse answerResponse = modelMapperService.mapClass(answerEntity, GetQuestionsResponse.AnswerResponse.class);
+        answerResponse.setIsCorrect(answerEntity.isCorrect());
         answerResponse.setSource(fileRepository.findByOwnerIdAndOwnerType(answerEntity.getId(), FileOwnerType.ANSWER.name()).stream().findFirst().orElse(null));
         return answerResponse;
     }
