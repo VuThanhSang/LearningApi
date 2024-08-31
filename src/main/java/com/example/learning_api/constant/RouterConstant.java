@@ -31,10 +31,12 @@ public class RouterConstant {
     public static final String RECENT_CLASS_BASE_PATH = "/api/v1/recent-class";
     public static final String DEADLINE_BASE_PATH = "/api/v1/deadline";
     public static final String SUMMARY_BASE_PATH = "/api/v1/summary";
-    //authentication
+    public static final String DOCUMENT_BASE_PATH = "/api/v1/document";
+    public static final String WORKSPACE_BASE_PATH = "/api/v1/workspace";
+    // authentication
     public static final String POST_USER_AUTH_REGISTER_SUB_PATH = "/register";
     public static final String POST_USER_AUTH_LOGIN_SUB_PATH = "/login";
-    public static final String USER_AUTH_LOGIN_SUM ="User login to get token";
+    public static final String USER_AUTH_LOGIN_SUM = "User login to get token";
     public static final String USER_AUTH_GOOGLE_LOGIN_PATH = "/google";
     public static final String USER_AUTH_GOOGLE_LOGIN_SUM = "User login with google to get token";
     public static final String USER_AUTH_LOGOUT_PATH = "/logout";
@@ -42,7 +44,7 @@ public class RouterConstant {
     public static final String USER_AUTH_REFRESH_PATH = "/refresh";
     public static final String USER_AUTH_REFRESH_SUM = "User refresh token";
 
-    //==========================================
+    // ==========================================
     public static final String POST_USER_AUTH_SEND_CODE_TO_REGISTER_SUB_PATH = "/send-code-register";
     public static final String USER_AUTH_SEND_CODE_TO_EMAIL_TO_REGISTER_SUM = "/verify-code";
 
@@ -54,7 +56,6 @@ public class RouterConstant {
 
     public static final String PATCH_USER_AUTH_CHANGE_PASSWORD_SUB_PATH = "/change-password";
     public static final String USER_AUTH_CHANGE_PASSWORD_SUM = "/change-password";
-
 
     // ClassRoom path
 }

@@ -1,6 +1,6 @@
 package com.example.learning_api.dto.request.deadline;
 
-import com.example.learning_api.dto.common.SourceUploadDto;
+
 import com.example.learning_api.enums.DeadlineStatus;
 import com.example.learning_api.enums.DeadlineType;
 import jakarta.validation.constraints.NotBlank;
@@ -17,7 +17,7 @@ public class UpdateDeadlineRequest {
     private String title;
     private String description;
     private String status;
-    private List<SourceUploadDto> files;
+    private List<MultipartFile> files;
     private String startDate;
     private String endDate;
     private String type;

@@ -9,6 +9,6 @@ public class CreateWorkSpaceRequest {
     private String name;
     private String description;
     private String ownerId;
-    private RoleEnum ownerType;
+    private RoleEnum ownerRole;
     private WorkspaceType type;
 }

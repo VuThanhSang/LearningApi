@@ -1,21 +1,20 @@
 package com.example.learning_api.entity.sql.database;
 
-import com.example.learning_api.enums.BlockType;
+import org.springframework.data.mongodb.core.mapping.Document;
+
 import jakarta.persistence.Id;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @NoArgsConstructor
-@Document(collection = "blocks")
-public class BlockEntity {
+@Document(collection = "document_comments")
+public class DocumentCommentEntity {
     @Id
     private String id;
-    private String documentId;
+    private String blockId;
+    private String userId;
     private String content;
-    private BlockType type;
-    private int order;
     private String createdAt;
     private String updatedAt;
 }
