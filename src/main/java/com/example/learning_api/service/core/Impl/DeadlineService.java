@@ -8,6 +8,7 @@ import com.example.learning_api.dto.request.deadline.UpdateDeadlineRequest;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.classroom.ClassroomDeadlineResponse;
 import com.example.learning_api.dto.response.deadline.DeadlineResponse;
+import com.example.learning_api.dto.response.deadline.DeadlineStatistics;
 import com.example.learning_api.dto.response.deadline.GetDeadlinesResponse;
 import com.example.learning_api.dto.response.deadline.UpcomingDeadlinesResponse;
 import com.example.learning_api.entity.sql.database.*;
@@ -415,6 +416,22 @@ public class DeadlineService implements IDeadlineService {
             throw new RuntimeException("Error retrieving deadlines: " + e.getMessage());
         }
     }
+
+    public List<DeadlineStatistics> getDeadlineStatistics(String classroomId, int page, int size) {
+        try {
+            ClassRoomEntity classroom = classroomRepository.findById(classroomId).orElse(null);
+            if (classroom == null) {
+                throw new IllegalArgumentException("Classroom not found");
+            }
+
+            long skip = (long) page * size;
+            return deadlineRepository.getDeadlineStatisticsByClassroomId(classroomId, skip, size);
+        } catch (Exception e) {
+            log.error("Error in getDeadlineStatistics: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
     private GetDeadlinesResponse.DeadlineResponse convertToDeadlineResponse(GetDeadlinesResponse.DeadlineResponse deadlineResponse) {
         List<FileEntity> files = fileRepository.findByOwnerIdAndOwnerType(deadlineResponse.getId(), FileOwnerType.DEADLINE.name());
         return GetDeadlinesResponse.DeadlineResponse.builder()

@@ -5,6 +5,7 @@ import com.example.learning_api.dto.request.deadline.GetUpcomingDeadlineResponse
 import com.example.learning_api.dto.request.deadline.UpdateDeadlineRequest;
 import com.example.learning_api.dto.response.classroom.ClassroomDeadlineResponse;
 import com.example.learning_api.dto.response.deadline.DeadlineResponse;
+import com.example.learning_api.dto.response.deadline.DeadlineStatistics;
 import com.example.learning_api.dto.response.deadline.GetDeadlinesResponse;
 import com.example.learning_api.dto.response.deadline.UpcomingDeadlinesResponse;
 import com.example.learning_api.entity.sql.database.DeadlineEntity;
@@ -23,4 +24,5 @@ public interface IDeadlineService {
     ClassroomDeadlineResponse getClassroomDeadlinesByClassroomId(String classroomId, Integer page, Integer size);
     GetDeadlinesResponse getDeadlinesByTeacherId(String teacherId, String search,String status,String startDate,String enDate,Integer page, Integer size);
     GetDeadlinesResponse getDeadlinesByStudentId(String studentId, String search,String status,String startDate,String enDate,String classroomId,Integer page, Integer size, String sort, Sort.Direction order);
+    List<DeadlineStatistics> getDeadlineStatistics(String classroomId,int page, int size);
 }

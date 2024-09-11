@@ -200,6 +200,27 @@ public class DeadlineController {
         }
     }
 
+    @GetMapping(path = "/statistics/{classroomId}")
+    public ResponseEntity<ResponseAPI<List<DeadlineStatistics>>> getDeadlineStatistics(@PathVariable String classroomId,
+                                                                                      @RequestParam(defaultValue = "1") int page,
+                                                                                      @RequestParam(defaultValue = "10") int size) {
+        try {
+            List<DeadlineStatistics> data = deadlineService.getDeadlineStatistics(classroomId, page-1, size);
+            ResponseAPI<List<DeadlineStatistics>> res = ResponseAPI.<List<DeadlineStatistics>>builder()
+                    .timestamp(new Date())
+                    .message("Get deadline statistics successfully")
+                    .data(data)
+                    .build();
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            ResponseAPI<List<DeadlineStatistics>> res = ResponseAPI.<List<DeadlineStatistics>>builder()
+                    .timestamp(new Date())
+                    .message("An unexpected error occurred: " + e.getMessage())
+                    .build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(res);
+        }
+    }
+
     @GetMapping(path = "/teacher/{teacherId}")
     public ResponseEntity<ResponseAPI<GetDeadlinesResponse>> getDeadlinesByTeacherId(
             @RequestParam(defaultValue = "1") int page,
