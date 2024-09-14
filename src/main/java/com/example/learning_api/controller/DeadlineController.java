@@ -1,18 +1,20 @@
 package com.example.learning_api.controller;
-
 import com.example.learning_api.constant.StatusCode;
 import com.example.learning_api.dto.request.deadline.*;
 import com.example.learning_api.dto.response.classroom.ClassroomDeadlineResponse;
 import com.example.learning_api.dto.response.deadline.*;
 import com.example.learning_api.entity.sql.database.DeadlineEntity;
 import com.example.learning_api.entity.sql.database.DeadlineSubmissionsEntity;
+import com.example.learning_api.entity.sql.database.ScoringCriteriaEntity;
 import com.example.learning_api.enums.DeadlineSubmissionStatus;
 import com.example.learning_api.model.ResponseAPI;
+import com.example.learning_api.service.common.ExcelExportService;
 import com.example.learning_api.service.core.IDeadlineService;
 import com.example.learning_api.service.core.IDeadlineSubmissionsService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
@@ -42,6 +44,8 @@ import static com.example.learning_api.constant.RouterConstant.*;
 public class DeadlineController {
     private final IDeadlineService deadlineService;
     private final IDeadlineSubmissionsService deadlineSubmissionsService;
+    @Autowired
+    private ExcelExportService excelExportService;
     @PostMapping(path = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<String>> createDeadline(@ModelAttribute @Valid CreateDeadlineRequest body) {
@@ -201,6 +205,43 @@ public class DeadlineController {
         }
     }
 
+    @GetMapping(path = "/statistics/{classroomId}")
+    public ResponseEntity<ResponseAPI<GetDeadlineStatistics>> getDeadlineStatistics(@PathVariable String classroomId,
+                                                                                      @RequestParam(defaultValue = "1") int page,
+                                                                                      @RequestParam(defaultValue = "10") int size) {
+        try {
+            GetDeadlineStatistics data = deadlineService.getDeadlineStatistics(classroomId, page-1, size);
+            ResponseAPI<GetDeadlineStatistics> res = ResponseAPI.<GetDeadlineStatistics>builder()
+                    .timestamp(new Date())
+                    .message("Get deadline statistics successfully")
+                    .data(data)
+                    .build();
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            ResponseAPI<GetDeadlineStatistics> res = ResponseAPI.<GetDeadlineStatistics>builder()
+                    .timestamp(new Date())
+                    .message("An unexpected error occurred: " + e.getMessage())
+                    .build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(res);
+        }
+    }
+    
+    @GetMapping(path = "/statistics/{classroomId}/export")
+    public ResponseEntity<InputStreamResource> exportExcel(@PathVariable String classroomId) throws IOException {
+        GetDeadlineStatistics statistics = deadlineService.getDeadlineStatistics(classroomId, 0, Integer.MAX_VALUE);
+
+        ByteArrayInputStream in = excelExportService.exportDeadlineStatisticsToExcel(statistics.getDeadlineStatistics());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Disposition", "attachment; filename=deadline_statistics.xlsx");
+
+        return ResponseEntity
+                .ok()
+                .headers(headers)
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(new InputStreamResource(in));
+    }
+    
     @GetMapping(path = "/teacher/{teacherId}")
     public ResponseEntity<ResponseAPI<GetDeadlinesResponse>> getDeadlinesByTeacherId(
             @RequestParam(defaultValue = "1") int page,
@@ -485,6 +526,70 @@ public class DeadlineController {
         } else {
             throw new IOException("Failed to download file from URL: " + fileUrl);
         }
+    }
+
+
+    @PostMapping(path = "/scoring-criteria")
+//    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
+    public ResponseEntity<ResponseAPI<String>> createScoringCriteria(@RequestBody ScoringCriteriaEntity body) {
+        try{
+            deadlineService.createScoringCriteria(body);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message("Create scoring criteria successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.CREATED);
+        }
+        catch (Exception e){
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
+
+    @PatchMapping(path = "/scoring-criteria/{scoringCriteriaId}")
+//    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
+    public ResponseEntity<ResponseAPI<String>> updateScoringCriteria(@RequestBody ScoringCriteriaEntity body, @PathVariable String scoringCriteriaId) {
+        try{
+            deadlineService.updateScoringCriteria(body, scoringCriteriaId);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message("Update scoring criteria successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
+
+    @DeleteMapping(path = "/scoring-criteria/{scoringCriteriaId}")
+//    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
+    public ResponseEntity<ResponseAPI<String>> deleteScoringCriteria(@PathVariable String scoringCriteriaId) {
+        try{
+            deadlineService.deleteScoringCriteria(scoringCriteriaId);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message("Delete scoring criteria successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
     }
 
 }

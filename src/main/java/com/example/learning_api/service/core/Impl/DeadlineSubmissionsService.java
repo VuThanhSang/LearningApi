@@ -1,8 +1,6 @@
 package com.example.learning_api.service.core.Impl;
 
 import com.example.learning_api.constant.CloudinaryConstant;
-import com.example.learning_api.dto.common.FileDto;
-import com.example.learning_api.dto.common.SourceUploadDto;
 import com.example.learning_api.dto.request.deadline.CreateDeadlineSubmissionsRequest;
 import com.example.learning_api.dto.request.deadline.UpdateDeadlineSubmissionsRequest;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
@@ -13,6 +11,7 @@ import com.example.learning_api.entity.sql.database.FAQEntity;
 import com.example.learning_api.entity.sql.database.FileEntity;
 import com.example.learning_api.entity.sql.database.StudentEntity;
 import com.example.learning_api.enums.DeadlineSubmissionStatus;
+import com.example.learning_api.enums.FaqSourceType;
 import com.example.learning_api.enums.FileOwnerType;
 import com.example.learning_api.repository.database.DeadlineRepository;
 import com.example.learning_api.repository.database.DeadlineSubmissionsRepository;
@@ -48,11 +47,11 @@ public class DeadlineSubmissionsService implements IDeadlineSubmissionsService {
     private final DeadlineRepository deadlineRepository;
     private final CloudinaryService cloudinaryService;
     private final FileRepository fileRepository;
-    public void processFiles (List<SourceUploadDto> files,String title, DeadlineSubmissionsEntity deadlineSubmissionsEntity) {
+    public void processFiles (List<MultipartFile> files,String title, DeadlineSubmissionsEntity deadlineSubmissionsEntity) {
         if (files == null) {
             return;
         }
-        for (SourceUploadDto file : files) {
+        for (MultipartFile file : files) {
             try {
                 FileEntity fileEntity = new FileEntity();
                 FAQEntity.SourceDto fileDto = processFile(file, deadlineSubmissionsEntity.getTitle());
@@ -60,7 +59,7 @@ public class DeadlineSubmissionsService implements IDeadlineSubmissionsService {
                 fileEntity.setType(fileDto.getType().toString());
                 fileEntity.setExtension(fileDto.getPath().substring(fileDto.getPath().lastIndexOf(".") + 1));
                 fileEntity.setName(title);
-                fileEntity.setSize(String.valueOf(file.getPath().getSize()));
+                fileEntity.setSize(String.valueOf(file.getSize()));
                 fileEntity.setOwnerType(FileOwnerType.DEADLINE_SUBMISSION);
                 fileEntity.setOwnerId(deadlineSubmissionsEntity.getId());
                 fileEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
@@ -75,29 +74,28 @@ public class DeadlineSubmissionsService implements IDeadlineSubmissionsService {
 
 
     }
-    public FAQEntity.SourceDto processFile(SourceUploadDto file, String title) throws IOException {
-        byte[] fileBytes = file.getPath().getBytes();
+    public FAQEntity.SourceDto processFile(MultipartFile file, String title) throws IOException {
+        byte[] fileBytes = file.getBytes();
         String fileName = StringUtils.generateFileName(title, "deadline");
         CloudinaryUploadResponse response;
-        switch (file.getType()) {
-            case IMAGE:
-                byte[] resizedImage = ImageUtils.resizeImage(fileBytes, 400, 400);
-                response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName, resizedImage, "image");
-                break;
-            case VIDEO:
-                String videoFileType = getFileExtension(file.getPath().getOriginalFilename());
-                response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + videoFileType, fileBytes, "video");
-                break;
-            case DOCUMENT:
-                String docFileType = getFileExtension(file.getPath().getOriginalFilename());
-                response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + docFileType, fileBytes, "raw");
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported source type");
+
+        String contentType = file.getContentType();
+        if (contentType.startsWith("image/")) {
+            byte[] resizedImage = ImageUtils.resizeImage(fileBytes, 400, 400);
+            response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName, resizedImage, "image");
+        } else if (contentType.startsWith("video/")) {
+            String videoFileType = getFileExtension(file.getOriginalFilename());
+            response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + videoFileType, fileBytes, "video");
+        } else if (contentType.startsWith("application/")) {
+            String docFileType = getFileExtension(file.getOriginalFilename());
+            response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + docFileType, fileBytes, "raw");
+        } else {
+            throw new IllegalArgumentException("Unsupported source type");
         }
+
         return FAQEntity.SourceDto.builder()
                 .path(response.getSecureUrl())
-                .type(file.getType())
+                .type(contentType.startsWith("image/") ? FaqSourceType.IMAGE : contentType.startsWith("video/") ? FaqSourceType.VIDEO : FaqSourceType.DOCUMENT)
                 .build();
 
     }

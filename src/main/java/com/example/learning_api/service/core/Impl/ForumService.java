@@ -7,9 +7,11 @@ import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.forum.GetForumCommentResponse;
 import com.example.learning_api.dto.response.forum.GetForumDetailResponse;
 import com.example.learning_api.dto.response.forum.GetForumsResponse;
+import com.example.learning_api.entity.sql.database.FAQEntity;
 import com.example.learning_api.entity.sql.database.ForumCommentEntity;
 import com.example.learning_api.entity.sql.database.ForumEntity;
 import com.example.learning_api.entity.sql.database.VoteEntity;
+import com.example.learning_api.enums.FaqSourceType;
 import com.example.learning_api.enums.ForumStatus;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
@@ -23,6 +25,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -54,7 +57,7 @@ public class ForumService implements IForumService {
             }
             ForumEntity forumEntity = modelMapperService.mapClass(request, ForumEntity.class);
             forumEntity.setSources(new ArrayList<>());
-            processSources(request.getSources(), request.getTitle(), forumEntity);
+            processSources(request.getFiles(), request.getTitle(), forumEntity);
             forumEntity.setCommentCount(0);
             forumEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
             forumEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
@@ -65,12 +68,12 @@ public class ForumService implements IForumService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
-    public void processSources(List<SourceUploadDto> sources, String question, ForumEntity forumEntity) {
+    public void processSources(List<MultipartFile> sources, String question, ForumEntity forumEntity) {
         if (sources.isEmpty()) {
             return;
         }
 
-        for (SourceUploadDto source : sources) {
+        for (MultipartFile source : sources) {
             try {
                 ForumEntity.SourceDto sourceDto = processSource(source, question);
                 forumEntity.getSources().add(sourceDto);
@@ -81,33 +84,29 @@ public class ForumService implements IForumService {
         }
     }
 
-    private ForumEntity.SourceDto processSource(SourceUploadDto source, String question) throws IOException {
-        ForumEntity.SourceDto sourceDto = new ForumEntity.SourceDto();
-        sourceDto.setType(source.getType());
-
-        byte[] fileBytes = source.getPath().getBytes();
-        String fileName = StringUtils.generateFileName(question, "forum");
-
+    private ForumEntity.SourceDto processSource(MultipartFile file, String title) throws IOException {
+        byte[] fileBytes = file.getBytes();
+        String fileName = StringUtils.generateFileName(title, "forum");
         CloudinaryUploadResponse response;
-        switch (source.getType()) {
-            case IMAGE:
-                byte[] resizedImage = ImageUtils.resizeImage(fileBytes, 400, 400);
-                response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName, resizedImage, "image");
-                break;
-            case VIDEO:
-                String videoFileType = getFileExtension(source.getPath().getOriginalFilename());
-                response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + videoFileType, fileBytes, "video");
-                break;
-            case DOCUMENT:
-                String docFileType = getFileExtension(source.getPath().getOriginalFilename());
-                response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + docFileType, fileBytes, "raw");
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported source type");
+
+        String contentType = file.getContentType();
+        if (contentType.startsWith("image/")) {
+            byte[] resizedImage = ImageUtils.resizeImage(fileBytes, 400, 400);
+            response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName, resizedImage, "image");
+        } else if (contentType.startsWith("video/")) {
+            String videoFileType = getFileExtension(file.getOriginalFilename());
+            response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + videoFileType, fileBytes, "video");
+        } else if (contentType.startsWith("application/")) {
+            String docFileType = getFileExtension(file.getOriginalFilename());
+            response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + docFileType, fileBytes, "raw");
+        } else {
+            throw new IllegalArgumentException("Unsupported source type");
         }
 
-        sourceDto.setPath(response.getUrl() );
-        return sourceDto;
+        return ForumEntity.SourceDto.builder()
+                .path(response.getSecureUrl())
+                .type(contentType.startsWith("image/") ? FaqSourceType.IMAGE : contentType.startsWith("video/") ? FaqSourceType.VIDEO : FaqSourceType.DOCUMENT)
+                .build();
     }
 
     private String getFileExtension(String filename) {
@@ -332,32 +331,27 @@ public class ForumService implements IForumService {
             List<ForumCommentEntity.SourceDto> attachments = new ArrayList<>();
             if (request.getSources() != null && !request.getSources().isEmpty()) {
                 forumCommentEntity.setAttachments(new ArrayList<>());
-                for (SourceUploadDto source : request.getSources()) {
-                    ForumCommentEntity.SourceDto sourceDto = new ForumCommentEntity.SourceDto();
-                    sourceDto.setType(source.getType());
-
-                    byte[] fileBytes = source.getPath().getBytes();
-                    String fileName = StringUtils.generateFileName(request.getContent(), "forum");
+                for (MultipartFile file : request.getSources()) {
+                    byte[] fileBytes = file.getBytes();
+                    String fileName = StringUtils.generateFileName("title", "forum");
                     CloudinaryUploadResponse response;
-                    switch (source.getType()) {
-                        case IMAGE:
-                            byte[] resizedImage = ImageUtils.resizeImage(fileBytes, 400, 400);
-                            response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName, resizedImage, "image");
-                            break;
-                        case VIDEO:
-                            String videoFileType = getFileExtension(source.getPath().getOriginalFilename());
-                            response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + videoFileType, fileBytes, "video");
-                            break;
-                        case DOCUMENT:
-                            String docFileType = getFileExtension(source.getPath().getOriginalFilename());
-                            response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + docFileType, fileBytes, "raw");
-                            break;
-                        default:
-                            throw new IllegalArgumentException("Unsupported source type");
-                    }
 
+                    String contentType = file.getContentType();
+                    if (contentType.startsWith("image/")) {
+                        byte[] resizedImage = ImageUtils.resizeImage(fileBytes, 400, 400);
+                        response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName, resizedImage, "image");
+                    } else if (contentType.startsWith("video/")) {
+                        String videoFileType = getFileExtension(file.getOriginalFilename());
+                        response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + videoFileType, fileBytes, "video");
+                    } else if (contentType.startsWith("application/")) {
+                        String docFileType = getFileExtension(file.getOriginalFilename());
+                        response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + docFileType, fileBytes, "raw");
+                    } else {
+                        throw new IllegalArgumentException("Unsupported source type");
+                    }
+                    ForumCommentEntity.SourceDto sourceDto = new ForumCommentEntity.SourceDto();
                     sourceDto.setPath(response.getUrl());
-                    sourceDto.setType(source.getType());
+                    sourceDto.setType(contentType.startsWith("image/") ? FaqSourceType.IMAGE : contentType.startsWith("video/") ? FaqSourceType.VIDEO : FaqSourceType.DOCUMENT);
                     attachments.add(sourceDto);
                 }
             }
@@ -396,33 +390,27 @@ public class ForumService implements IForumService {
             List<ForumCommentEntity.SourceDto> attachments = new ArrayList<>();
 
             if (request.getSources() != null && !request.getSources().isEmpty()) {
-                for (SourceUploadDto source : request.getSources()) {
-                    forumCommentEntity.setAttachments(new ArrayList<>());
-                    ForumCommentEntity.SourceDto sourceDto = new ForumCommentEntity.SourceDto();
-                    sourceDto.setType(source.getType());
-
-                    byte[] fileBytes = source.getPath().getBytes();
-                    String fileName = StringUtils.generateFileName(request.getContent(), "forum");
+                for (MultipartFile file : request.getSources()) {
+                    byte[] fileBytes = file.getBytes();
+                    String fileName = StringUtils.generateFileName("title", "forum");
                     CloudinaryUploadResponse response;
-                    switch (source.getType()) {
-                        case IMAGE:
-                            byte[] resizedImage = ImageUtils.resizeImage(fileBytes, 400, 400);
-                            response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName, resizedImage, "image");
-                            break;
-                        case VIDEO:
-                            String videoFileType = getFileExtension(source.getPath().getOriginalFilename());
-                            response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + videoFileType, fileBytes, "video");
-                            break;
-                        case DOCUMENT:
-                            String docFileType = getFileExtension(source.getPath().getOriginalFilename());
-                            response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + docFileType, fileBytes, "raw");
-                            break;
-                        default:
-                            throw new IllegalArgumentException("Unsupported source type");
-                    }
 
+                    String contentType = file.getContentType();
+                    if (contentType.startsWith("image/")) {
+                        byte[] resizedImage = ImageUtils.resizeImage(fileBytes, 400, 400);
+                        response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName, resizedImage, "image");
+                    } else if (contentType.startsWith("video/")) {
+                        String videoFileType = getFileExtension(file.getOriginalFilename());
+                        response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + videoFileType, fileBytes, "video");
+                    } else if (contentType.startsWith("application/")) {
+                        String docFileType = getFileExtension(file.getOriginalFilename());
+                        response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + docFileType, fileBytes, "raw");
+                    } else {
+                        throw new IllegalArgumentException("Unsupported source type");
+                    }
+                    ForumCommentEntity.SourceDto sourceDto = new ForumCommentEntity.SourceDto();
                     sourceDto.setPath(response.getUrl());
-                    sourceDto.setType(source.getType());
+                    sourceDto.setType(contentType.startsWith("image/") ? FaqSourceType.IMAGE : contentType.startsWith("video/") ? FaqSourceType.VIDEO : FaqSourceType.DOCUMENT);
                     attachments.add(sourceDto);
                 }
             }

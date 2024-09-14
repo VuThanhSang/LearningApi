@@ -23,6 +23,7 @@ public class DeadlineEntity {
     private DeadlineType type;
     private DeadlineStatus status;
     private String startDate;
+    private Boolean useScoringCriteria;
     private String endDate;
     private String createdAt;
     private String updatedAt;

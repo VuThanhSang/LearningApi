@@ -4,6 +4,7 @@ import com.example.learning_api.enums.FaqSourceType;
 import com.example.learning_api.enums.ForumStatus;
 import com.example.learning_api.enums.RoleEnum;
 import jakarta.persistence.Id;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.mapping.DBRef;
@@ -31,6 +32,7 @@ public class ForumEntity {
     private String createdAt;
     private String updatedAt;
     @Data
+    @Builder
     public static class SourceDto {
         private FaqSourceType type;
         private String path;

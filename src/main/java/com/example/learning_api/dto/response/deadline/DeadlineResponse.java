@@ -1,6 +1,7 @@
 package com.example.learning_api.dto.response.deadline;
 
 import com.example.learning_api.entity.sql.database.FileEntity;
+import com.example.learning_api.entity.sql.database.ScoringCriteriaEntity;
 import com.example.learning_api.enums.DeadlineStatus;
 import com.example.learning_api.enums.DeadlineType;
 import lombok.Builder;
@@ -19,6 +20,8 @@ public class DeadlineResponse {
     private DeadlineType type;
     private DeadlineStatus status;
     private List<FileEntity> files;
+    private Boolean useScoringCriteria;
+    private List<ScoringCriteriaEntity> scoringCriteria;
     private String startDate;
     private String endDate;
     private String createdAt;

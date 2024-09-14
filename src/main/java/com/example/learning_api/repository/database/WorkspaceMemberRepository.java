@@ -6,4 +6,5 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 public interface WorkspaceMemberRepository extends MongoRepository<WorkspaceMemberEntity, String> {
     WorkspaceMemberEntity findByWorkspaceIdAndMemberId(String workspaceId, String memberId);
     void deleteByWorkspaceIdAndMemberId(String workspaceId, String memberId);
+
 }

@@ -18,7 +18,7 @@ public class CreateDeadlineRequest {
     private String description;
     @NotBlank
     private DeadlineType type;
-    private List<SourceUploadDto> files;
+    private List<MultipartFile> files;
     private String startDate;
     private String endDate;
 }

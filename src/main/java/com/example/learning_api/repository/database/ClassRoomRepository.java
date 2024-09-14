@@ -42,7 +42,7 @@ public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, St
             "{ $unwind: '$lessons' }",
             "{ $lookup: { from: 'deadlines', let: { lessonId: { $toString: '$lessons._id' } }, pipeline: [{ $match: { $expr: { $eq: ['$lessonId', '$$lessonId'] } } }], as: 'deadlines' } }",
             "{ $unwind: '$deadlines' }",
-            "{ $project: { _id: '$deadlines._id', title: '$deadlines.title', description: '$deadlines.description', type: '$deadlines.type', status: '$deadlines.status', attachment: '$deadlines.attachment', dueDate: '$deadlines.dueDate', lessonName: '$lessons.name', lessonDescription: '$lessons.description', sectionName: '$sections.name', sectionDescription: '$sections.description', classroomName: '$name', classroomDescription: '$description' } }",
+            "{ $project: { _id: '$deadlines._id', title: '$deadlines.title', description: '$deadlines.description', type: '$deadlines.type', status: '$deadlines.status', startDate : '$deadlines.startDate ',endDate : '$deadlines.endDate', lessonName: '$lessons.name', lessonDescription: '$lessons.description', sectionName: '$sections.name', sectionDescription: '$sections.description', classroomName: '$name', classroomDescription: '$description' } }",
             "{ $skip: ?1 }",
             "{ $limit: ?2 }"
     })
