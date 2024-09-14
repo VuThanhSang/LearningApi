@@ -7,10 +7,7 @@ import com.example.learning_api.dto.request.deadline.GetUpcomingDeadlineResponse
 import com.example.learning_api.dto.request.deadline.UpdateDeadlineRequest;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.classroom.ClassroomDeadlineResponse;
-import com.example.learning_api.dto.response.deadline.DeadlineResponse;
-import com.example.learning_api.dto.response.deadline.DeadlineStatistics;
-import com.example.learning_api.dto.response.deadline.GetDeadlinesResponse;
-import com.example.learning_api.dto.response.deadline.UpcomingDeadlinesResponse;
+import com.example.learning_api.dto.response.deadline.*;
 import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.DeadlineStatus;
 import com.example.learning_api.enums.DeadlineType;
@@ -54,6 +51,7 @@ public class DeadlineService implements IDeadlineService {
     private final ClassRoomRepository classroomRepository;
     private final SectionRepository sectionRepository;
     private final FileRepository fileRepository;
+    private final ScoringCriteriaRepository scoringCriteriaRepository;
     public void processFiles (List<MultipartFile> files,String title, DeadlineEntity deadlineEntity){
         if (files == null) {
             return;
@@ -164,6 +162,7 @@ public class DeadlineService implements IDeadlineService {
                 deadlineEntity.setStatus(DeadlineStatus.valueOf(body.getStatus()));
             }
 
+
             processFiles(body.getFiles(),body.getTitle(),deadlineEntity);
             deadlineEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             deadlineRepository.save(deadlineEntity);
@@ -190,6 +189,74 @@ public class DeadlineService implements IDeadlineService {
     }
 
     @Override
+    public void createScoringCriteria(ScoringCriteriaEntity body) {
+        try{
+            DeadlineEntity deadlineEntity = deadlineRepository.findById(body.getDeadlineId()).orElse(null);
+            if (deadlineEntity == null){
+                throw new IllegalArgumentException("DeadlineId is not found");
+            }
+            ScoringCriteriaEntity scoringCriteriaEntity = modelMapperService.mapClass(body, ScoringCriteriaEntity.class);
+            scoringCriteriaEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+            scoringCriteriaEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+            scoringCriteriaRepository.save(scoringCriteriaEntity);
+            deadlineEntity.setUseScoringCriteria(true);
+            deadlineRepository.save(deadlineEntity);
+        }
+        catch (Exception e) {
+            log.error("Error in createScoringCriteria: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void updateScoringCriteria(ScoringCriteriaEntity body, String scoringCriteriaId) {
+        try{
+            ScoringCriteriaEntity scoringCriteriaEntity = scoringCriteriaRepository.findById(scoringCriteriaId).orElse(null);
+            if (scoringCriteriaEntity == null){
+                throw new IllegalArgumentException("ScoringCriteriaId is not found");
+            }
+            if (body.getTitle()!=null){
+                scoringCriteriaEntity.setTitle(body.getTitle());
+            }
+            if (body.getDescription()!=null){
+                scoringCriteriaEntity.setDescription(body.getDescription());
+            }
+            if (body.getScore()!=null){
+                scoringCriteriaEntity.setScore(body.getScore());
+            }
+            scoringCriteriaEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+            scoringCriteriaRepository.save(scoringCriteriaEntity);
+        }
+        catch (Exception e) {
+            log.error("Error in updateScoringCriteria: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void deleteScoringCriteria(String scoringCriteriaId) {
+        try{
+            ScoringCriteriaEntity scoringCriteriaEntity = scoringCriteriaRepository.findById(scoringCriteriaId).orElse(null);
+            if (scoringCriteriaEntity == null){
+                throw new IllegalArgumentException("ScoringCriteriaId is not found");
+            }
+            scoringCriteriaRepository.deleteById(scoringCriteriaId);
+            int count = scoringCriteriaRepository.countByDeadlineId(scoringCriteriaEntity.getDeadlineId());
+            if (count == 0){
+                DeadlineEntity deadlineEntity = deadlineRepository.findById(scoringCriteriaEntity.getDeadlineId()).orElse(null);
+                if (deadlineEntity != null){
+                    deadlineEntity.setUseScoringCriteria(false);
+                    deadlineRepository.save(deadlineEntity);
+                }
+            }
+        }
+        catch (Exception e) {
+            log.error("Error in deleteScoringCriteria: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
     public DeadlineResponse getDeadline(String deadlineId) {
         try{
             DeadlineEntity deadlineEntity = deadlineRepository.findById(deadlineId).orElse(null);
@@ -199,6 +266,10 @@ public class DeadlineService implements IDeadlineService {
             DeadlineResponse deadlineResponse = modelMapperService.mapClass(deadlineEntity, DeadlineResponse.class);
             List<FileEntity> fileEntities = fileRepository.findByOwnerIdAndOwnerType(deadlineId, FileOwnerType.DEADLINE.name());
             deadlineResponse.setFiles(fileEntities);
+            if (deadlineEntity.getUseScoringCriteria()){
+                List<ScoringCriteriaEntity> scoringCriteriaEntities = scoringCriteriaRepository.findByDeadlineId(deadlineId);
+                deadlineResponse.setScoringCriteria(scoringCriteriaEntities);
+            }
             return deadlineResponse;
         }
         catch (Exception e) {
@@ -215,7 +286,12 @@ public class DeadlineService implements IDeadlineService {
             List<GetDeadlinesResponse.DeadlineResponse> deadlineResponses = new ArrayList<>();
             for (DeadlineEntity deadlineEntity : deadlineEntities){
                 GetDeadlinesResponse.DeadlineResponse deadlineResponse = GetDeadlinesResponse.DeadlineResponse.fromDeadlineEntity(deadlineEntity);
+                deadlineResponse.setUseScoringCriteria(deadlineEntity.getUseScoringCriteria());
                 deadlineResponse.setFiles(fileRepository.findByOwnerIdAndOwnerType(deadlineEntity.getId(), FileOwnerType.DEADLINE.name()));
+                if ( deadlineEntity.getUseScoringCriteria()!=null && deadlineEntity.getUseScoringCriteria()==true ){
+                    List<ScoringCriteriaEntity> scoringCriteriaEntities = scoringCriteriaRepository.findByDeadlineId(deadlineEntity.getId());
+                    deadlineResponse.setScoringCriteria(scoringCriteriaEntities);
+                }
                 deadlineResponses.add(deadlineResponse);
             }
             return GetDeadlinesResponse.builder()
@@ -298,7 +374,12 @@ public class DeadlineService implements IDeadlineService {
 
             int skip = page * size;
             List<ClassroomDeadlineResponse.DeadlineResponse> content = classroomRepository.getDeadlinesForClassroom(classroomId, skip, size);
-
+            for (ClassroomDeadlineResponse.DeadlineResponse deadlineResponse : content) {
+                List<FileEntity> files = fileRepository.findByOwnerIdAndOwnerType(deadlineResponse.getId(), FileOwnerType.DEADLINE.name());
+                List<ScoringCriteriaEntity> scoringCriteriaEntities = scoringCriteriaRepository.findByDeadlineId(deadlineResponse.getId());
+                deadlineResponse.setFiles(files);
+                deadlineResponse.setScoringCriteria(scoringCriteriaEntities);
+            }
             long totalElements = classroomRepository.countDeadlinesForClassroom(classroomId);
             int totalPages = (int) Math.ceil((double) totalElements / size);
 
@@ -417,7 +498,7 @@ public class DeadlineService implements IDeadlineService {
         }
     }
 
-    public List<DeadlineStatistics> getDeadlineStatistics(String classroomId, int page, int size) {
+    public GetDeadlineStatistics getDeadlineStatistics(String classroomId, int page, int size) {
         try {
             ClassRoomEntity classroom = classroomRepository.findById(classroomId).orElse(null);
             if (classroom == null) {
@@ -425,7 +506,23 @@ public class DeadlineService implements IDeadlineService {
             }
 
             long skip = (long) page * size;
-            return deadlineRepository.getDeadlineStatisticsByClassroomId(classroomId, skip, size);
+           List<DeadlineStatistics> data = deadlineRepository.getDeadlineStatisticsByClassroomId(classroomId, skip, size);
+           for (DeadlineStatistics deadlineStatistics : data) {
+               List<DeadlineStatistics.StudentSubmission> students = deadlineStatistics.getStudents();
+               for (DeadlineStatistics.StudentSubmission student : students) {
+                   StudentEntity studentEntity = studentRepository.findById(student.getStudentId()).orElse(null);
+                   if (studentEntity != null) {
+                       student.setStudentName(studentEntity.getUser().getFullname());
+                   }
+               }
+           }
+
+            GetDeadlineStatistics response = new GetDeadlineStatistics();
+            long total =  deadlineRepository.countDeadlinesByClassroomId(classroomId);
+            response.setTotalElements(total);
+            response.setTotalPage((int) Math.ceil((double) total / size));
+            response.setDeadlineStatistics(data);
+            return response;
         } catch (Exception e) {
             log.error("Error in getDeadlineStatistics: ", e);
             throw new IllegalArgumentException(e.getMessage());
@@ -434,12 +531,15 @@ public class DeadlineService implements IDeadlineService {
 
     private GetDeadlinesResponse.DeadlineResponse convertToDeadlineResponse(GetDeadlinesResponse.DeadlineResponse deadlineResponse) {
         List<FileEntity> files = fileRepository.findByOwnerIdAndOwnerType(deadlineResponse.getId(), FileOwnerType.DEADLINE.name());
+        List<ScoringCriteriaEntity> scoringCriteriaEntities = scoringCriteriaRepository.findByDeadlineId(deadlineResponse.getId());
         return GetDeadlinesResponse.DeadlineResponse.builder()
                 .id(deadlineResponse.getId())
                 .title(deadlineResponse.getTitle())
                 .description(deadlineResponse.getDescription())
                 .type(deadlineResponse.getType())
                 .files(files)
+                .useScoringCriteria(deadlineResponse.getUseScoringCriteria())
+                .scoringCriteria(scoringCriteriaEntities)
                 .status(deadlineResponse.getStatus())
                 .startDate(deadlineResponse.getStartDate())
                 .endDate(deadlineResponse.getEndDate())
@@ -460,8 +560,10 @@ public class DeadlineService implements IDeadlineService {
                 .description(source.getDescription())
                 .type(source.getType())
                 .status(source.getStatus())
-                .attachment(source.getAttachment())
                 .startDate(source.getStartDate())
+                .files(source.getFiles())
+                .scoringCriteria(source.getScoringCriteria())
+                .useScoringCriteria(source.getUseScoringCriteria())
                 .endDate(source.getEndDate())
                 .lessonName(source.getLessonName())
                 .lessonDescription(source.getLessonDescription())

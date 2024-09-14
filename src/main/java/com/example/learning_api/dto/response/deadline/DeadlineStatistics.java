@@ -17,6 +17,7 @@ public class DeadlineStatistics {
     @Data
     public static class StudentSubmission {
         private String studentId;
+        private String studentName;
         private String grade;
         private String status;
     }
