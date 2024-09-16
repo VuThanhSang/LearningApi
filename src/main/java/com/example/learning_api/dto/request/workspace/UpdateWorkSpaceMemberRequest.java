@@ -9,7 +9,6 @@ import lombok.Data;
 public class UpdateWorkSpaceMemberRequest {
     private String workspaceId;
     private String memberId;
-    private RoleEnum memberRole;
     private WorkspaceRole role;
     private WorkspaceMemberStatus status;
 }

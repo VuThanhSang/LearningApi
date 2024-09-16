@@ -25,24 +25,27 @@ import java.util.List;
 public class JwtService {
     public static final String EMAIL_CLAIM_KEY = "email";
     public static final String ROLES_CLAIM_KEY = "role";
+    public static final String USER_ID_CLAIM_KEY = "userId";
     private static final Logger log = LoggerFactory.getLogger(JwtService.class);
     private final JwtProperties properties;
     UserRepository userRepository;
 
-    public String issueAccessToken(String userId, String email, RoleEnum role) {
+    public String issueAccessToken(String userId, String email, RoleEnum role,String userRoleId) {
         return JWT.create()
                 .withSubject(String.valueOf(userId))
                 .withExpiresAt(Date.from(Instant.now().plus(Duration.of(10, ChronoUnit.MINUTES))))
                 .withClaim(EMAIL_CLAIM_KEY, email)
                 .withClaim(ROLES_CLAIM_KEY, role.name())
+                .withClaim(USER_ID_CLAIM_KEY, userRoleId)
                 .sign(Algorithm.HMAC256(properties.getAccessTokenKey()));
     }
-    public String issueRefreshToken(String userId, String email,RoleEnum role) {
+    public String issueRefreshToken(String userId, String email,RoleEnum role, String userRoleId) {
         return JWT.create()
                 .withSubject(String.valueOf(userId))
                 .withExpiresAt(Date.from(Instant.now().plus(Duration.of(7, ChronoUnit.DAYS))))
                 .withClaim(EMAIL_CLAIM_KEY, email)
                 .withClaim(ROLES_CLAIM_KEY, role.name())
+                .withClaim(USER_ID_CLAIM_KEY, userRoleId)
                 .sign(Algorithm.HMAC256(properties.getRefreshTokenKey()));
     }
 
@@ -57,6 +60,13 @@ public class JwtService {
         if(claim.isNull()) return List.of();
         return claim.asList(SimpleGrantedAuthority.class);
     }
+    public String extractUserIdFromToken(String token) {
+        return JWT.require(Algorithm.HMAC256(properties.getAccessTokenKey()))
+                .build()
+                .verify(token)
+                .getClaim(USER_ID_CLAIM_KEY)
+                .asString();
+    }
     public String extractUsername(String token) {
         return JWT.require(Algorithm.HMAC256(properties.getAccessTokenKey()))
                 .build()
@@ -69,6 +79,13 @@ public class JwtService {
                 .build()
                 .verify(token)
                 .getSubject();
+    }
+    public String extractRole(String token) {
+        return JWT.require(Algorithm.HMAC256(properties.getAccessTokenKey()))
+                .build()
+                .verify(token)
+                .getClaim(ROLES_CLAIM_KEY)
+                .asString();
     }
     public DecodedJWT decodeAccessToken(String token) {
         return JWT.require(Algorithm.HMAC256(properties.getAccessTokenKey()))
