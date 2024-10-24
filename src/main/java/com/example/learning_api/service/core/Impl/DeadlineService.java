@@ -92,7 +92,10 @@ public class DeadlineService implements IDeadlineService {
         } else if (contentType.startsWith("application/")) {
             String docFileType = getFileExtension(file.getOriginalFilename());
             response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + docFileType, fileBytes, "raw");
-        } else {
+        }  else if (contentType.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document")) {
+            response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + ".docx", fileBytes, "raw");
+        }
+        else {
             throw new IllegalArgumentException("Unsupported source type");
         }
 
