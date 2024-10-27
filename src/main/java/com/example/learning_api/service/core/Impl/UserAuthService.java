@@ -298,7 +298,7 @@ public class UserAuthService  implements IUserAuthService {
             String code = GeneratorUtils.generateRandomCode(6);
             createOrUpdateConfirmationInfo(email, code);
 //            mailerKafkaPublisher.sendMessageToCodeEmail(new CodeEmailMsgData(code, email));
-//            sendEmailWithCode(email, code, "Active User Successfully");
+            sendEmailWithCode(email, code, "Active User Successfully");
             return;
         }else if(user != null && user.getStatus() == UserStatus.ACTIVE){
             throw new CustomException( "User already Active");
