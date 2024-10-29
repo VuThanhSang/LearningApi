@@ -269,7 +269,7 @@ public class DeadlineService implements IDeadlineService {
             DeadlineResponse deadlineResponse = modelMapperService.mapClass(deadlineEntity, DeadlineResponse.class);
             List<FileEntity> fileEntities = fileRepository.findByOwnerIdAndOwnerType(deadlineId, FileOwnerType.DEADLINE.name());
             deadlineResponse.setFiles(fileEntities);
-            if (deadlineEntity.getUseScoringCriteria()){
+            if (deadlineEntity.getUseScoringCriteria()!=null){
                 List<ScoringCriteriaEntity> scoringCriteriaEntities = scoringCriteriaRepository.findByDeadlineId(deadlineId);
                 deadlineResponse.setScoringCriteria(scoringCriteriaEntities);
             }

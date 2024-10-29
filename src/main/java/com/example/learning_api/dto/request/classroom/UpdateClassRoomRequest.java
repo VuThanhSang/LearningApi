@@ -21,9 +21,8 @@ public class UpdateClassRoomRequest {
     private String name;
     @Schema(example = DESCRIPTION_EX)
     private String description;
-    @Schema(example = IMAGE_EX)
-    private MultipartFile source;
-    private String image;
+
+    private MultipartFile image;
     @Schema(example = TEACHER_ID_EX)
     private String courseId;
     private String teacherId;
