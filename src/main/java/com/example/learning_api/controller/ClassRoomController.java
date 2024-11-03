@@ -9,8 +9,12 @@ import com.example.learning_api.dto.request.faculty.ImportFacultyRequest;
 import com.example.learning_api.dto.response.classroom.*;
 import com.example.learning_api.dto.response.section.GetSectionsResponse;
 import com.example.learning_api.model.ResponseAPI;
+import com.example.learning_api.repository.database.StudentRepository;
 import com.example.learning_api.service.common.JwtService;
 import com.example.learning_api.service.core.IClassRoomService;
+import com.example.learning_api.service.core.IStudentService;
+import com.example.learning_api.service.core.ITeacherService;
+import com.example.learning_api.service.core.Impl.StudentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,8 +35,10 @@ import static com.example.learning_api.constant.RouterConstant.*;
 public class ClassRoomController {
     private final IClassRoomService classRoomService;
     private final JwtService jwtService;
+    private final IStudentService studentService;
+    private final ITeacherService teacherService;
     @PostMapping(path = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<CreateClassRoomResponse>> createClassRoom(@ModelAttribute @Valid CreateClassRoomRequest body,@CookieValue(name = "refreshToken", required = false) String refreshToken) {
         try{
             CreateClassRoomResponse resDate = classRoomService.createClassRoom(body);
@@ -206,6 +212,118 @@ public class ClassRoomController {
         }
 
     }
+
+    @GetMapping(path = "/invitation/{invitationCode}")
+    public ResponseEntity<ResponseAPI<GetClassRoomDetailResponse>> getClassRoomByInvitationCode(@PathVariable String invitationCode) {
+        try{
+            GetClassRoomDetailResponse data= classRoomService.getClassRoomByInvitationCode(invitationCode);
+            ResponseAPI<GetClassRoomDetailResponse> res = ResponseAPI.<GetClassRoomDetailResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get class room by invitation code successfully")
+                    .data(data)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetClassRoomDetailResponse> res = ResponseAPI.<GetClassRoomDetailResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
+
+    @GetMapping(path = "/invitation/{classroomId}/join")
+    @PreAuthorize("hasAnyAuthority('USER')")
+    public ResponseEntity<ResponseAPI<String>> joinClassRoom(@PathVariable String classroomId,
+                                                             @RequestHeader(name = "Authorization") String authorizationHeader) {
+        try {
+            String accessToken = authorizationHeader.replace("Bearer ", "");
+            String userId = jwtService.extractUserId(accessToken);
+            String studentId = studentService.getStudentByUserId(userId).getId();
+            classRoomService.joinClassRoom(classroomId, studentId);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message("Join class room successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        } catch (Exception e) {
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping(path = "/invitation/{classroomId}/view-request")
+    public ResponseEntity<ResponseAPI<GetJoinClassResponse>> getJoinClass(@PathVariable String classroomId,
+                                                                          @RequestParam(name="page",required = false,defaultValue = "1") int page,
+                                                                          @RequestParam(name="size",required = false,defaultValue = "10") int size,
+                                                                          @RequestParam(name="email", required = false) String email,
+                                                                          @RequestParam(name="name", required = false) String name,
+                                                                          @RequestHeader(name = "Authorization") String authorizationHeader) {
+        try {
+            String accessToken = authorizationHeader.replace("Bearer ", "");
+            String userId = jwtService.extractUserId(accessToken);
+            String teacherId = teacherService.getTeacherByUserId(userId).getId();
+            GetJoinClassResponse data = classRoomService.getJoinClassRequests( page - 1, size, classroomId, teacherId,email,name);
+            ResponseAPI<GetJoinClassResponse> res = ResponseAPI.<GetJoinClassResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get join class requests successfully")
+                    .data(data)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        } catch (Exception e) {
+            ResponseAPI<GetJoinClassResponse> res = ResponseAPI.<GetJoinClassResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping(path = "/invitation/{classroomId}/accept-request/{studentId}")
+    @PreAuthorize("hasAnyAuthority('TEACHER')")
+    public ResponseEntity<ResponseAPI<String>> acceptJoinClass(@PathVariable String classroomId,
+                                                               @PathVariable String studentId) {
+        try {
+            classRoomService.acceptJoinClass(classroomId, studentId);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message("Accept join class successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        } catch (Exception e) {
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping(path = "/invitation/{classroomId}/reject-request/{studentId}")
+    @PreAuthorize("hasAnyAuthority('TEACHER')")
+    public ResponseEntity<ResponseAPI<String>> rejectJoinClass(@PathVariable String classroomId,
+                                                               @PathVariable String studentId) {
+        try {
+            classRoomService.rejectJoinClass(classroomId, studentId);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message("Reject join class successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        } catch (Exception e) {
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
     @PostMapping(path = "/import", consumes = "multipart/form-data")
     @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<ResponseAPI<String>> importClass(@ModelAttribute @Valid ImportClassRoomRequest body) {
@@ -272,6 +390,8 @@ public class ClassRoomController {
         }
 
     }
+
+
 
 
 }

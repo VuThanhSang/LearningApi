@@ -1,25 +1,21 @@
 package com.example.learning_api.entity.sql.database;
 
-import com.example.learning_api.enums.StudentEnrollmentStatus;
+
+import com.example.learning_api.enums.JoinRequestStatus;
 import jakarta.persistence.Id;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.Date;
-
 @Data
 @NoArgsConstructor
-@Document(collection = "student_enrollments")
-public class StudentEnrollmentsEntity {
+@Document(collection = "join_class_requests")
+public class JoinClassRequestEntity {
     @Id
     private String id;
     private String studentId;
     private String classroomId;
-    private StudentEnrollmentStatus status;
-    private String grade;
-    private String enrolledAt;
+    private JoinRequestStatus status; // Pending, Approved, Rejected
     private String createdAt;
     private String updatedAt;
-
 }

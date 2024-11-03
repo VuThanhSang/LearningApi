@@ -39,8 +39,10 @@ public class SectionService implements ISectionService {
             if (classRoomRepository.findById(body.getClassRoomId()).isEmpty()){
                 throw new IllegalArgumentException("ClassRoomId is not found");
             }
+
             SectionEntity sectionEntity = modelMapperService.mapClass(body, SectionEntity.class);
             CreateSectionResponse resData = new CreateSectionResponse();
+            sectionEntity.setIndex(sectionRepository.findMaxIndexByClassRoomId(body.getClassRoomId())+1);
             sectionEntity.setCreatedAt(new Date());
             sectionEntity.setUpdatedAt(new Date());
             sectionRepository.save(sectionEntity);

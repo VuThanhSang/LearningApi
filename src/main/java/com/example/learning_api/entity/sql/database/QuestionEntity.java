@@ -23,6 +23,7 @@ public class QuestionEntity {
     private String description;
     private QuestionType type;
     private QuestionStatus status;
+    private Integer index;
     private String createdAt;
     private String updatedAt;
     @DBRef

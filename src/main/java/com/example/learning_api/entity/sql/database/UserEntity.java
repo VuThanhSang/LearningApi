@@ -28,6 +28,8 @@ public class UserEntity implements UserDetails  {
     private UserStatus status;
     private String avatar;
     private String authType;
+    private StudentEntity student;
+    private TeacherEntity teacher;
     private Date createdAt;
     private Date updatedAt;
 

@@ -99,18 +99,20 @@ public class UserAuthService  implements IUserAuthService {
                 .refreshToken(refreshToken)
                 .role(user.getRole().toString())
                 .status(user.getStatus()!= null ? user.getStatus().toString() : UserStatus.INACTIVE.toString());
-
         if (user.getRole() == RoleEnum.TEACHER) {
             TeacherEntity teacher = teacherRepository.findByUserId(user.getId());
+            teacher.setUser(null);
             if (teacher != null) {
-                responseBuilder.teacher(teacher);
+                user.setTeacher(teacher);
             }
         } else if (user.getRole() == RoleEnum.USER) {
             StudentEntity student = studentRepository.findByUserId(user.getId());
+            student.setUser(null);
             if (student != null) {
-                responseBuilder.student(student);
+                user.setStudent(student);
             }
         }
+        responseBuilder.user(user);
         return responseBuilder.build();
     }
 
@@ -184,28 +186,7 @@ public class UserAuthService  implements IUserAuthService {
             String jwt = jwtService.issueAccessToken(user.getId(), user.getEmail(), user.getRole());
             String refreshToken = jwtService.issueRefreshToken(user.getId(), user.getEmail(), user.getRole());
 
-            LoginResponse.LoginResponseBuilder responseBuilder = LoginResponse.builder()
-                    .accessToken(jwt)
-                    .refreshToken(refreshToken)
-                    .status(user.getStatus().toString());
-
-
-            if (user.getRole() == RoleEnum.TEACHER) {
-                TeacherEntity teacher = teacherRepository.findByUserId(user.getId());
-                if (teacher == null) {
-                    throw new CustomException("Teacher not found");
-                }
-                responseBuilder.teacher(teacher);
-            } else if (user.getRole() == RoleEnum.USER) {
-                StudentEntity student = studentRepository.findByUserId(user.getId());
-                if (student != null) {
-                    responseBuilder.student(student);
-                }
-            }
-
-//            userTokenRedisService.upsertUserToken(user.getId(), refreshToken, false);
-//            userTokenRedisService.setUserOnline(user.getId());
-            return responseBuilder.build();
+            return buildLoginResponse(user, jwt, refreshToken);
         }
         catch (Exception e){
             throw new CustomException(e.getMessage());
