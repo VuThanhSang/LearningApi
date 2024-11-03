@@ -102,4 +102,14 @@ public class StudentService implements IStudentService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
+
+    @Override
+    public StudentEntity getStudentByUserId(String userId) {
+        try{
+            return studentRepository.findByUserId(userId);
+        }
+        catch (Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
 }

@@ -58,4 +58,7 @@ public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, St
             "{ $count: 'total' }"
     })
     long countDeadlinesForClassroom(String classroomId);
+
+    @Query("{ 'inviteCode' : ?0 }")
+    ClassRoomEntity findClassRoomEntityByInviteCode(String inviteCode);
 }

@@ -34,7 +34,6 @@ public class GetClassRoomsResponse {
             classRoomResponse.setCreatedAt(classRoomEntity.getCreatedAt().toString());
             classRoomResponse.setUpdatedAt(classRoomEntity.getUpdatedAt().toString());
             classRoomResponse.setTeacherId(classRoomEntity.getTeacherId());
-            classRoomResponse.setCourseId(classRoomEntity.getCourseId());
             classRoomResponse.setImage(classRoomEntity.getImage());
             classRoomResponse.setEnrollmentCapacity(classRoomEntity.getEnrollmentCapacity());
             classRoomResponse.setCurrentEnrollment(classRoomEntity.getCurrentEnrollment());

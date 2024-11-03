@@ -20,4 +20,9 @@ public interface LessonRepository extends MongoRepository<LessonEntity, String>{
     })
     GetLessonDetailResponse getLessonWithResourcesAndMediaAndSubstances(String id);
     List<LessonEntity> findBySectionId(String sectionId);
+    @Aggregation(pipeline = {
+            "{ '$match': { 'sectionId': ?0 } }",
+            "{ '$group': { '_id': null, 'maxIndex': { '$max': '$index' } } }"
+    })
+    Integer findMaxIndexBySectionId(String sectionId);
 }

@@ -11,6 +11,7 @@ import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.lesson.GetLessonDetailResponse;
 import com.example.learning_api.dto.response.section.GetSectionsResponse;
 import com.example.learning_api.entity.sql.database.*;
+import com.example.learning_api.enums.JoinRequestStatus;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
@@ -30,10 +31,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -43,7 +41,6 @@ public class ClassRoomService implements IClassRoomService {
     private final ModelMapperService modelMapperService;
     private final ClassRoomRepository classRoomRepository;
     private final CloudinaryService cloudinaryService;
-    private final CourseRepository courseRepository;
     private final SectionRepository sectionRepository;
     private final TeacherRepository teacherRepository;
     private final StudentRepository studentRepository;
@@ -54,7 +51,7 @@ public class ClassRoomService implements IClassRoomService {
     private final FacultyRepository facultyRepository;
     private final ExcelReader excelReader;
     private final RecentClassRepository recentClassRepository;
-
+    private final JoinClassRequestRepository joinClassRequestRepository;
     @Override
     public CreateClassRoomResponse createClassRoom(CreateClassRoomRequest body) {
         try{
@@ -62,12 +59,8 @@ public class ClassRoomService implements IClassRoomService {
             if (body.getName()==null){
                 throw new IllegalArgumentException("Name is required");
             }
-            if (body.getCourseId()==null){
-                throw new IllegalArgumentException("CourseId is required");
-            }
-            if (courseRepository.findById(body.getCourseId()).isEmpty()){
-                throw new IllegalArgumentException("CourseId is not found");
-            }
+
+
             if (body.getTeacherId()==null){
                 throw new IllegalArgumentException("TeacherId is required");
             }
@@ -92,7 +85,6 @@ public class ClassRoomService implements IClassRoomService {
             ClassRoomEntity classRoomEntity = modelMapperService.mapClass(body, ClassRoomEntity.class);
             classRoomEntity.setFacultyId(body.getFacultyId());
             classRoomEntity.setCurrentEnrollment(0);
-            classRoomEntity.setCourseId(body.getCourseId());
             classRoomEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
             classRoomEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             List<ScheduleEntity> schedules = new ArrayList<>();
@@ -126,11 +118,12 @@ public class ClassRoomService implements IClassRoomService {
             else{
                 throw new IllegalArgumentException("Sessions is required");
             }
+            classRoomEntity.setInviteCode(generateInviteCode(classRoomEntity.getId()));
+            classRoomRepository.save(classRoomEntity);
             resData.setId(classRoomEntity.getId());
             resData.setName(classRoomEntity.getName());
             resData.setDescription(classRoomEntity.getDescription());
             resData.setImage(classRoomEntity.getImage());
-            resData.setCourseId(classRoomEntity.getCourseId());
             resData.setTeacherId(classRoomEntity.getTeacherId());
             resData.setTermId(classRoomEntity.getTermId());
             resData.setFacultyId(classRoomEntity.getFacultyId());
@@ -147,6 +140,11 @@ public class ClassRoomService implements IClassRoomService {
             log.error(e.getMessage());
             throw new IllegalArgumentException(e.getMessage());
         }
+    }
+
+    public String generateInviteCode(String id) {
+        String encodedId = Base64.getEncoder().encodeToString(id.getBytes());
+        return "CLASS-" + encodedId;
     }
 
     @Override
@@ -173,12 +171,7 @@ public class ClassRoomService implements IClassRoomService {
             if (body.getDescription()!=null){
                 classroom.setDescription(body.getDescription());
             }
-            if (body.getCourseId()!=null){
-                if (courseRepository.findById(body.getCourseId()).isEmpty()){
-                    throw new IllegalArgumentException("CourseId is not found");
-                }
-                classroom.setCourseId(body.getCourseId());
-            }
+
             if (body.getTeacherId()!=null){
                 if (teacherRepository.findById(body.getTeacherId()).isEmpty()){
                     throw new IllegalArgumentException("TeacherId is not found");
@@ -329,6 +322,41 @@ public class ClassRoomService implements IClassRoomService {
     }
 
     @Override
+    public GetClassRoomDetailResponse getClassRoomByInvitationCode(String invitationCode) {
+        try{
+            ClassRoomEntity classRoomEntity = classRoomRepository.findClassRoomEntityByInviteCode(invitationCode);
+            if (classRoomEntity==null){
+                throw new IllegalArgumentException("ClassRoom is not found");
+            }
+            GetClassRoomDetailResponse resData = new GetClassRoomDetailResponse();
+            Pageable pageAble = PageRequest.of(0, 15);
+            resData.setClassRoom(classRoomEntity);
+            Page<SectionEntity> sectionEntities = sectionRepository.findByClassRoomId(classRoomEntity.getId(),pageAble);
+            List<GetClassRoomDetailResponse.Section> sections = new ArrayList<>();
+            for (SectionEntity sectionEntity : sectionEntities){
+                GetClassRoomDetailResponse.Section section = new GetClassRoomDetailResponse.Section();
+                section.setId(sectionEntity.getId());
+                section.setName(sectionEntity.getName());
+                section.setDescription(sectionEntity.getDescription());
+                List<LessonEntity> lessons = lessonRepository.findBySectionId(sectionEntity.getId());
+                List<GetLessonDetailResponse> lessonDetails = new ArrayList<>();
+                for (LessonEntity lesson : lessons){
+                    GetLessonDetailResponse lessonDetail = lessonRepository.getLessonWithResourcesAndMediaAndSubstances(lesson.getId());
+                    lessonDetails.add(lessonDetail);
+                }
+                section.setLessons(lessonDetails);
+                sections.add(section);
+
+            }
+            resData.setSections(sections);
+            return resData;
+        }
+        catch (Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
     public GetClassRoomDetailResponse getClassRoomDetail(String classroomId) {
        try{
               ClassRoomEntity classRoomEntity = classRoomRepository.findById(classroomId)
@@ -375,13 +403,7 @@ public class ClassRoomService implements IClassRoomService {
                 ClassRoomEntity classRoomEntity = new ClassRoomEntity();
                 classRoomEntity.setName(row.get(0));
                 classRoomEntity.setDescription(row.get(1));
-                if (courseRepository.findById(row.get(2)).isEmpty()){
-                    throw new IllegalArgumentException("CourseId is not found");
-                }
-                classRoomEntity.setCourseId(row.get(2));
-                if (teacherRepository.findById(row.get(4)).isEmpty()){
-                    throw new IllegalArgumentException("TeacherId is not found");
-                }
+
                 classRoomEntity.setTeacherId(row.get(4));
                 if (termRepository.findById(row.get(3)).isEmpty()){
                     throw new IllegalArgumentException("TermId is not found");
@@ -436,5 +458,108 @@ public class ClassRoomService implements IClassRoomService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
+
+    @Override
+    public void joinClassRoom(String classroomId, String studentId) {
+        try {
+            if (studentRepository.findById(studentId).isEmpty()) {
+                throw new IllegalArgumentException("StudentId is not found");
+            }
+            if (classRoomRepository.findById(classroomId).isEmpty()) {
+                throw new IllegalArgumentException("ClassroomId is not found");
+            }
+            StudentEnrollmentsEntity studentEnrollmentsEntity = studentEnrollmentsRepository.findByStudentIdAndClassroomId(classroomId, studentId);
+            if (studentEnrollmentsEntity != null) {
+                throw new IllegalArgumentException("Student is already enrolled in this class");
+            }
+            JoinClassRequestEntity joinClassRequestEntity = new JoinClassRequestEntity();
+            joinClassRequestEntity.setClassroomId(classroomId);
+            joinClassRequestEntity.setStudentId(studentId);
+            joinClassRequestEntity.setStatus(JoinRequestStatus.PENDING);
+            joinClassRequestEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+            joinClassRequestEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+            joinClassRequestRepository.save(joinClassRequestEntity);
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+    @Override
+    public GetJoinClassResponse getJoinClassRequests(int page, int size, String classroomId, String teacherId, String email, String name) {
+        try {
+            ClassRoomEntity classRoom = classRoomRepository.findById(classroomId)
+                    .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
+            if (!classRoom.getTeacherId().equals(teacherId)) {
+                throw new IllegalArgumentException("TeacherId is not authorized to view join requests");
+            }
+            Pageable pageable = PageRequest.of(page, size);
+            Page<JoinClassRequestEntity> joinRequests = joinClassRequestRepository.findByClassroomId(classroomId, pageable);
+
+            List<GetJoinClassResponse.JoinRequest> data = new ArrayList<>();
+            long totalElements = 0;
+            for (JoinClassRequestEntity joinRequest : joinRequests) {
+                StudentEntity student = studentRepository.findById(joinRequest.getStudentId())
+                        .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
+                if ((email == null || student.getUser().getEmail().matches(".*" + email + ".*")) &&
+                        (name == null || student.getUser().getFullname().matches(".*" + name + ".*"))) {
+                    GetJoinClassResponse.JoinRequest resJoinRequest = new GetJoinClassResponse.JoinRequest();
+                    resJoinRequest.setId(joinRequest.getId());
+                    resJoinRequest.setStudent(student);
+                    resJoinRequest.setClassroomId(joinRequest.getClassroomId());
+                    resJoinRequest.setStatus(joinRequest.getStatus().toString());
+                    resJoinRequest.setCreatedAt(joinRequest.getCreatedAt());
+                    resJoinRequest.setUpdatedAt(joinRequest.getUpdatedAt());
+                    data.add(resJoinRequest);
+                    totalElements++;
+                }
+            }
+            GetJoinClassResponse res = new GetJoinClassResponse();
+            res.setJoinRequests(data);
+            res.setTotalPage((int) Math.ceil((double) totalElements / size));
+            res.setTotalElements(totalElements);
+            return res;
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+    @Override
+    public void acceptJoinClass(String classroomId, String studentId) {
+        try {
+            JoinClassRequestEntity joinRequest = joinClassRequestRepository.findByClassroomIdAndStudentId(classroomId, studentId)
+                    .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
+            joinRequest.setStatus(JoinRequestStatus.APPROVED);
+            joinRequest.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+            joinClassRequestRepository.save(joinRequest);
+            StudentEnrollmentsEntity student = new StudentEnrollmentsEntity();
+            student.setClassroomId(classroomId);
+            student.setStudentId(studentId);
+            student.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+            student.setEnrolledAt(String.valueOf(System.currentTimeMillis()));
+            student.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+            studentEnrollmentsRepository.save(student);
+
+
+            ClassRoomEntity classRoom = classRoomRepository.findById(classroomId
+            ).orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
+            classRoom.setCurrentEnrollment(classRoom.getCurrentEnrollment() + 1);
+            classRoomRepository.save(classRoom);
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void rejectJoinClass(String classroomId, String studentId) {
+        try {
+            JoinClassRequestEntity joinRequest = joinClassRequestRepository.findByClassroomIdAndStudentId(classroomId, studentId)
+                    .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
+            joinRequest.setStatus(JoinRequestStatus.REJECTED);
+            joinRequest.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+            joinClassRequestRepository.save(joinRequest);
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+
+    }
+
 
 }

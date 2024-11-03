@@ -178,4 +178,6 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
             String classroomId
     );
 
+    StudentEnrollmentsEntity findByStudentIdAndClassroomId(String studentId, String classroomId);
+
 }

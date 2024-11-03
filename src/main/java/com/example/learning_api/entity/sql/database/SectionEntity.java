@@ -22,6 +22,7 @@ public class SectionEntity {
     private String name;
     private String description;
     private SectionStatus status;
+    private Integer index;
     private Date createdAt;
     private Date updatedAt;
     @DBRef

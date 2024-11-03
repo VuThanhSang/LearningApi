@@ -41,9 +41,9 @@ public class StudentEnrollmentsService implements IStudentEnrollmentsService {
             studentEnrollmentsEntity.setStudentId(body.getStudentId());
             studentEnrollmentsEntity.setClassroomId(body.getClassroomId());
             studentEnrollmentsEntity.setGrade("0");
-            studentEnrollmentsEntity.setEnrolledAt(new Date());
-            studentEnrollmentsEntity.setCreatedAt(new Date());
-            studentEnrollmentsEntity.setUpdatedAt(new Date());
+            studentEnrollmentsEntity.setEnrolledAt(String.valueOf(System.currentTimeMillis()));
+            studentEnrollmentsEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+            studentEnrollmentsEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             studentEnrollmentsEntity.setStatus(StudentEnrollmentStatus.IN_PROGRESS);
             classRoomEntity.setCurrentEnrollment(classRoomEntity.getCurrentEnrollment() + 1);
             classroomRepository.save(classRoomEntity);
@@ -95,7 +95,7 @@ public class StudentEnrollmentsService implements IStudentEnrollmentsService {
             }
             StudentEnrollmentsEntity studentEnrollmentsEntity = studentEnrollmentsRepository.findByStudentIdAndCourseId(studentId, courseId);
             studentEnrollmentsEntity.setStatus(StudentEnrollmentStatus.COMPLETED);
-            studentEnrollmentsEntity.setUpdatedAt(new Date());
+            studentEnrollmentsEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             studentEnrollmentsRepository.save(studentEnrollmentsEntity);
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
@@ -122,7 +122,7 @@ public class StudentEnrollmentsService implements IStudentEnrollmentsService {
             }
             StudentEnrollmentsEntity studentEnrollmentsEntity = studentEnrollmentsRepository.findByStudentIdAndCourseId(studentId, courseId);
             studentEnrollmentsEntity.setGrade(String.valueOf(grade));
-            studentEnrollmentsEntity.setUpdatedAt(new Date());
+            studentEnrollmentsEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             studentEnrollmentsRepository.save(studentEnrollmentsEntity);
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());

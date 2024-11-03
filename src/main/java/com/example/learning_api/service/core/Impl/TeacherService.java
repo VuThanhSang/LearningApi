@@ -132,4 +132,14 @@ public class TeacherService implements ITeacherService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
+
+    @Override
+    public TeacherEntity getTeacherByUserId(String teacherId) {
+        try{
+            return teacherRepository.findByUserId(teacherId);
+        }
+        catch (Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
 }

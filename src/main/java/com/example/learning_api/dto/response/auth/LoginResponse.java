@@ -13,8 +13,7 @@ public class LoginResponse {
     private final String accessToken;
     @JsonIgnore
     private final String refreshToken;
-    private final StudentEntity student;
-    private final TeacherEntity teacher;
+    private final UserEntity user;
     private final String status;
     private final String role;
 }
