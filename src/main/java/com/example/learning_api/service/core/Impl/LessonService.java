@@ -36,7 +36,8 @@ public class LessonService implements ILessonService {
                 throw new IllegalArgumentException("SectionId is not found");
             }
             LessonEntity lessonEntity = modelMapperService.mapClass(createLessonRequest, LessonEntity.class);
-            lessonEntity.setIndex(lessonRepository.findMaxIndexBySectionId(createLessonRequest.getSectionId())+1);
+            Integer index = lessonRepository.findMaxIndexBySectionId(createLessonRequest.getSectionId());
+            lessonEntity.setIndex(index==null?0:index+1);
             lessonEntity.setCreatedAt(new Date());
             lessonEntity.setUpdatedAt(new Date());
             lessonRepository.save(lessonEntity);

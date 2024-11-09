@@ -4,6 +4,7 @@ import com.example.learning_api.constant.StatusCode;
 import com.example.learning_api.dto.request.classroom.CreateClassRoomRequest;
 
 import com.example.learning_api.dto.request.classroom.ImportClassRoomRequest;
+import com.example.learning_api.dto.request.classroom.InviteClassByEmailResponse;
 import com.example.learning_api.dto.request.classroom.UpdateClassRoomRequest;
 import com.example.learning_api.dto.request.faculty.ImportFacultyRequest;
 import com.example.learning_api.dto.response.classroom.*;
@@ -104,7 +105,7 @@ public class ClassRoomController {
 
     }
     @DeleteMapping(path = "/{classroomId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('TEACHER')")
     public ResponseEntity<ResponseAPI<String>> deleteClassRoom(@PathVariable String classroomId) {
         try{
             classRoomService.deleteClassRoom(classroomId);
@@ -323,9 +324,32 @@ public class ClassRoomController {
             return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
         }
     }
+    @PostMapping(path = "/invite",  consumes = "multipart/form-data")
+    @PreAuthorize("hasAnyAuthority('TEACHER')")
+    public ResponseEntity<ResponseAPI<InviteClassByEmailResponse>> inviteStudentByEmail(@ModelAttribute @Valid InviteStudentByEmailRequest body, @RequestHeader(name = "Authorization") String authorizationHeader){
+        try{
+            String accessToken = authorizationHeader.replace("Bearer ", "");
+            String userId = jwtService.extractUserId(accessToken);
+            body.setTeacherId(teacherService.getTeacherByUserId(userId).getId());
+            InviteClassByEmailResponse resData = classRoomService.inviteStudentByEmail(body);
+            ResponseAPI<InviteClassByEmailResponse> res = ResponseAPI.<InviteClassByEmailResponse>builder()
+                    .message("Invite students successfully")
+                    .data(resData)
+                    .build();
+            return ResponseEntity.ok(res);
+        }
+        catch (Exception e){
+            log.error(e.getMessage());
+            ResponseAPI<InviteClassByEmailResponse> res = ResponseAPI.<InviteClassByEmailResponse>builder()
+                    .message(e.getMessage())
+                    .build();
+            return ResponseEntity.badRequest().body(res);
+        }
+    }
+
 
     @PostMapping(path = "/import", consumes = "multipart/form-data")
-    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('TEACHER')")
     public ResponseEntity<ResponseAPI<String>> importClass(@ModelAttribute @Valid ImportClassRoomRequest body) {
         try{
             classRoomService.importClassRoom(body);
