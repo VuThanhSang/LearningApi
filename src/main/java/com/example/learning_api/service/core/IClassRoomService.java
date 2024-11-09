@@ -2,6 +2,7 @@ package com.example.learning_api.service.core;
 
 import com.example.learning_api.dto.request.classroom.CreateClassRoomRequest;
 import com.example.learning_api.dto.request.classroom.ImportClassRoomRequest;
+import com.example.learning_api.dto.request.classroom.InviteClassByEmailResponse;
 import com.example.learning_api.dto.request.classroom.UpdateClassRoomRequest;
 import com.example.learning_api.dto.response.classroom.*;
 import com.example.learning_api.dto.response.section.GetSectionsResponse;
@@ -25,4 +26,5 @@ public interface IClassRoomService {
     GetJoinClassResponse getJoinClassRequests(int page, int size, String classroomId,String teacherId,String email,String name);
     void acceptJoinClass(String classroomId, String studentId);
     void rejectJoinClass(String classroomId, String studentId);
+    InviteClassByEmailResponse inviteStudentByEmail(InviteStudentByEmailRequest body);
 }

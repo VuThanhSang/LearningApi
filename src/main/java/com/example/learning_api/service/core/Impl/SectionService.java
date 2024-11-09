@@ -42,7 +42,8 @@ public class SectionService implements ISectionService {
 
             SectionEntity sectionEntity = modelMapperService.mapClass(body, SectionEntity.class);
             CreateSectionResponse resData = new CreateSectionResponse();
-            sectionEntity.setIndex(sectionRepository.findMaxIndexByClassRoomId(body.getClassRoomId())+1);
+            Integer index = sectionRepository.findMaxIndexByClassRoomId(body.getClassRoomId());
+            sectionEntity.setIndex(index==null?0:index+1);
             sectionEntity.setCreatedAt(new Date());
             sectionEntity.setUpdatedAt(new Date());
             sectionRepository.save(sectionEntity);

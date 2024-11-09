@@ -11,4 +11,6 @@ public interface StudentRepository extends MongoRepository<StudentEntity, String
     @Query("{'user.fullname': {$regex: ?0, $options: 'i'}}")
     Page<StudentEntity> findByNameContaining(String email, Pageable pageable);
     StudentEntity findByUserId(String userId);
+    @Query("{'user.email': ?0}")
+    StudentEntity findByEmail(String email);
 }

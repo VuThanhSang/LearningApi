@@ -2,16 +2,14 @@ package com.example.learning_api.service.core.Impl;
 
 import com.example.learning_api.constant.CloudinaryConstant;
 import com.example.learning_api.constant.ErrorConstant;
-import com.example.learning_api.dto.request.classroom.ClassSessionRequest;
-import com.example.learning_api.dto.request.classroom.CreateClassRoomRequest;
-import com.example.learning_api.dto.request.classroom.ImportClassRoomRequest;
-import com.example.learning_api.dto.request.classroom.UpdateClassRoomRequest;
+import com.example.learning_api.dto.request.classroom.*;
 import com.example.learning_api.dto.response.classroom.*;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.lesson.GetLessonDetailResponse;
 import com.example.learning_api.dto.response.section.GetSectionsResponse;
 import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.JoinRequestStatus;
+import com.example.learning_api.enums.StudentEnrollmentStatus;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
@@ -52,6 +50,7 @@ public class ClassRoomService implements IClassRoomService {
     private final ExcelReader excelReader;
     private final RecentClassRepository recentClassRepository;
     private final JoinClassRequestRepository joinClassRequestRepository;
+    private final UserRepository userRepository;
     @Override
     public CreateClassRoomResponse createClassRoom(CreateClassRoomRequest body) {
         try{
@@ -559,6 +558,79 @@ public class ClassRoomService implements IClassRoomService {
             throw new IllegalArgumentException(e.getMessage());
         }
 
+    }
+
+    @Override
+    public InviteClassByEmailResponse inviteStudentByEmail(InviteStudentByEmailRequest body) {
+        try{
+            ClassRoomEntity classRoom = classRoomRepository.findById(body.getClassroomId())
+                    .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
+            if (!classRoom.getTeacherId().equals(body.getTeacherId())) {
+                throw new IllegalArgumentException("TeacherId is not authorized to invite students");
+            }
+            List<String> errors = new ArrayList<>();
+            List<String> success = new ArrayList<>();
+            if(body.getInviteType().equals("FILE")){
+                if (body.getFile()==null){
+                    throw new IllegalArgumentException("File is required");
+                }
+                List<List<String>> data = excelReader.readExcel(body.getFile().getInputStream());
+                for (int i = 0; i < data.size(); i++) {
+                    List<String> row = data.get(i);
+                    StudentEntity studentUser = studentRepository.findByEmail(row.get(0));
+                    if (studentUser == null) {
+                        errors.add("Student with email " + row.get(0) + " not found");
+                        continue;
+                    }
+                    StudentEnrollmentsEntity studentEnrollmentsEntity = studentEnrollmentsRepository.findByStudentIdAndClassroomId( studentUser.getId(),classRoom.getId());
+                    if (studentEnrollmentsEntity != null) {
+                        errors.add("Student with email " + row.get(0) + " is already enrolled in this class");
+                        continue;
+                    }
+                    StudentEnrollmentsEntity newData = new StudentEnrollmentsEntity();
+                    newData.setStudentId(studentUser.getId());
+                    newData.setClassroomId(classRoom.getId());
+                    newData.setGrade("0");
+                    newData.setStatus(StudentEnrollmentStatus.IN_PROGRESS);
+                    newData.setEnrolledAt(String.valueOf(System.currentTimeMillis()));
+                    newData.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+                    newData.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+                    studentEnrollmentsRepository.save(newData);
+                    success.add(row.get(0));
+                }
+            }else{
+
+                for (String email : body.getEmails()) {
+                    StudentEntity studentUser = studentRepository.findByEmail(email);
+                    if (studentUser == null) {
+                        throw new IllegalArgumentException("Student with email " + email + " not found");
+                    }
+                    StudentEnrollmentsEntity studentEnrollmentsEntity = studentEnrollmentsRepository.findByStudentIdAndClassroomId( studentUser.getId(),classRoom.getId());
+                    if (studentEnrollmentsEntity != null) {
+                        errors.add("Student with email " + email + " is already enrolled in this class");
+                        continue;
+                    }
+                    StudentEnrollmentsEntity newData = new StudentEnrollmentsEntity();
+                    newData.setStudentId(studentUser.getId());
+                    newData.setClassroomId(classRoom.getId());
+                    newData.setGrade("0");
+                    newData.setStatus(StudentEnrollmentStatus.IN_PROGRESS);
+                    newData.setEnrolledAt(String.valueOf(System.currentTimeMillis()));
+                    newData.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+                    newData.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+                    studentEnrollmentsRepository.save(newData);
+                    success.add(email);
+                }
+            }
+            InviteClassByEmailResponse res = new InviteClassByEmailResponse();
+            res.setSuccess(success);
+            res.setFail(errors);
+            return res;
+
+        }
+        catch (Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
     }
 
 
