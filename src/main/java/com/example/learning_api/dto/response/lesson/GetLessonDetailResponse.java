@@ -14,6 +14,8 @@ public class GetLessonDetailResponse {
     private String sectionId;
     private String name;
     private String description;
+    private int index;
+    private String status;
     private List<ResourceEntity> resources;
     private List<MediaEntity> media;
     private List<SubstanceEntity> substances;

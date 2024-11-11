@@ -44,8 +44,8 @@ public class SectionService implements ISectionService {
             CreateSectionResponse resData = new CreateSectionResponse();
             Integer index = sectionRepository.findMaxIndexByClassRoomId(body.getClassRoomId());
             sectionEntity.setIndex(index==null?0:index+1);
-            sectionEntity.setCreatedAt(new Date());
-            sectionEntity.setUpdatedAt(new Date());
+            sectionEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+            sectionEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             sectionRepository.save(sectionEntity);
             resData.setName(sectionEntity.getName());
             resData.setDescription(sectionEntity.getDescription());

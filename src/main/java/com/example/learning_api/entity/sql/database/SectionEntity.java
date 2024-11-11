@@ -23,8 +23,8 @@ public class SectionEntity {
     private String description;
     private SectionStatus status;
     private Integer index;
-    private Date createdAt;
-    private Date updatedAt;
+    private String createdAt;
+    private String updatedAt;
     @DBRef
     private List<ResourceEntity> resources;
     @DBRef

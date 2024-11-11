@@ -336,14 +336,16 @@ public class ClassRoomService implements IClassRoomService {
                 GetClassRoomDetailResponse.Section section = new GetClassRoomDetailResponse.Section();
                 section.setId(sectionEntity.getId());
                 section.setName(sectionEntity.getName());
+                section.setStatus(sectionEntity.getStatus().toString());
                 section.setDescription(sectionEntity.getDescription());
-                List<LessonEntity> lessons = lessonRepository.findBySectionId(sectionEntity.getId());
-                List<GetLessonDetailResponse> lessonDetails = new ArrayList<>();
-                for (LessonEntity lesson : lessons){
-                    GetLessonDetailResponse lessonDetail = lessonRepository.getLessonWithResourcesAndMediaAndSubstances(lesson.getId());
-                    lessonDetails.add(lessonDetail);
-                }
-                section.setLessons(lessonDetails);
+                section.setIndex(sectionEntity.getIndex()!=null?sectionEntity.getIndex():0);
+//                List<LessonEntity> lessons = lessonRepository.findBySectionId(sectionEntity.getId());
+//                List<GetLessonDetailResponse> lessonDetails = new ArrayList<>();
+//                for (LessonEntity lesson : lessons){
+//                    GetLessonDetailResponse lessonDetail = lessonRepository.getLessonWithResourcesAndMediaAndSubstances(lesson.getId());
+//                    lessonDetails.add(lessonDetail);
+//                }
+//                section.setLessons(lessonDetails);
                 sections.add(section);
 
             }
@@ -369,14 +371,16 @@ public class ClassRoomService implements IClassRoomService {
                     GetClassRoomDetailResponse.Section section = new GetClassRoomDetailResponse.Section();
                     section.setId(sectionEntity.getId());
                     section.setName(sectionEntity.getName());
+                    section.setStatus(sectionEntity.getStatus().toString());
                     section.setDescription(sectionEntity.getDescription());
-                    List<LessonEntity> lessons = lessonRepository.findBySectionId(sectionEntity.getId());
-                    List<GetLessonDetailResponse> lessonDetails = new ArrayList<>();
-                    for (LessonEntity lesson : lessons){
-                        GetLessonDetailResponse lessonDetail = lessonRepository.getLessonWithResourcesAndMediaAndSubstances(lesson.getId());
-                        lessonDetails.add(lessonDetail);
-                    }
-                    section.setLessons(lessonDetails);
+                    section.setIndex(sectionEntity.getIndex()!=null?sectionEntity.getIndex():0);
+//                    List<LessonEntity> lessons = lessonRepository.findBySectionId(sectionEntity.getId());
+//                    List<GetLessonDetailResponse> lessonDetails = new ArrayList<>();
+//                    for (LessonEntity lesson : lessons){
+//                        GetLessonDetailResponse lessonDetail = lessonRepository.getLessonWithResourcesAndMediaAndSubstances(lesson.getId());
+//                        lessonDetails.add(lessonDetail);
+//                    }
+//                    section.setLessons(lessonDetails);
                     sections.add(section);
 
                 }

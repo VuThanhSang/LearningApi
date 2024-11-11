@@ -15,8 +15,10 @@ public class GetClassRoomDetailResponse {
         private String id;
         private String name;
         private String description;
+        private String status;
+        private int index;
         private String createdAt;
         private String updatedAt;
-        private List<GetLessonDetailResponse> lessons;
+//        private List<GetLessonDetailResponse> lessons;
     }
 }
