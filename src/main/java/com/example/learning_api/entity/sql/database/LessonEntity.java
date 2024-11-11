@@ -19,6 +19,6 @@ public class LessonEntity {
     private String description;
     private SectionStatus status;
     private Integer index;
-    private Date createdAt;
-    private Date updatedAt;
+    private String createdAt;
+    private String updatedAt;
 }
