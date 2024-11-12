@@ -336,7 +336,7 @@ public class ClassRoomService implements IClassRoomService {
                 GetClassRoomDetailResponse.Section section = new GetClassRoomDetailResponse.Section();
                 section.setId(sectionEntity.getId());
                 section.setName(sectionEntity.getName());
-                section.setStatus(sectionEntity.getStatus().toString());
+                section.setStatus(sectionEntity.getStatus()!=null?sectionEntity.getStatus().toString():null);
                 section.setDescription(sectionEntity.getDescription());
                 section.setIndex(sectionEntity.getIndex()!=null?sectionEntity.getIndex():0);
 //                List<LessonEntity> lessons = lessonRepository.findBySectionId(sectionEntity.getId());
@@ -371,7 +371,7 @@ public class ClassRoomService implements IClassRoomService {
                     GetClassRoomDetailResponse.Section section = new GetClassRoomDetailResponse.Section();
                     section.setId(sectionEntity.getId());
                     section.setName(sectionEntity.getName());
-                    section.setStatus(sectionEntity.getStatus().toString());
+                    section.setStatus(sectionEntity.getStatus() != null ? sectionEntity.getStatus().toString() : null);
                     section.setDescription(sectionEntity.getDescription());
                     section.setIndex(sectionEntity.getIndex()!=null?sectionEntity.getIndex():0);
 //                    List<LessonEntity> lessons = lessonRepository.findBySectionId(sectionEntity.getId());

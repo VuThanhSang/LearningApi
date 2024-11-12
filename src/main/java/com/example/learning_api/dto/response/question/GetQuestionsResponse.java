@@ -16,6 +16,7 @@ public class GetQuestionsResponse {
         private String id;
         private String content;
         private String description;
+        private Integer index;
         private List<FileEntity> sources;
         private String type;
         private String createdAt;
