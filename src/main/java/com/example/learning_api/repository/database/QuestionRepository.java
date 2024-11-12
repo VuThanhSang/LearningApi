@@ -9,10 +9,11 @@ import org.springframework.data.mongodb.repository.Query;
 import java.util.List;
 
 public interface QuestionRepository extends MongoRepository<QuestionEntity, String>{
-    @Query("{'testId': ?0}")
+    @Query(value = "{'testId': ?0}", sort = "{'index': 1}")
     Page<QuestionEntity> findByTestId(String search, Pageable pageable);
     void deleteByTestId(String testId);
-    List<QuestionEntity> findByTestId(String testId);
+    @Query("{'testId': ?0}")
+    List<QuestionEntity> findByTestId(String testId,org.springframework.data.domain.Sort sort);
 
     int countByTestId(String testId);
 }

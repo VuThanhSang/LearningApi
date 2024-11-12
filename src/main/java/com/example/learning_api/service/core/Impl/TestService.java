@@ -27,11 +27,8 @@ import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.springframework.beans.BeanUtils;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
-import org.springframework.data.domain.Slice;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -237,7 +234,7 @@ public class TestService implements ITestService {
                 cloudinaryService.deleteImage(fileEntity.getUrl());
                 fileEntities.remove(fileEntity);
             }
-            List<QuestionEntity> questionEntities = questionRepository.findByTestId(id);
+            List<QuestionEntity> questionEntities = questionRepository.findByTestId(id,Sort.by(Sort.Direction.ASC, "index"));
             for (QuestionEntity questionEntity : questionEntities){
                 answerRepository.deleteByQuestionId(questionEntity.getId());
             }
@@ -494,7 +491,7 @@ public class TestService implements ITestService {
     }
 
     private List<GetQuestionsResponse.QuestionResponse> getQuestionResponses(String testId) {
-        List<QuestionEntity> questionEntities = questionRepository.findByTestId(testId);
+        List<QuestionEntity> questionEntities = questionRepository.findByTestId(testId, Sort.by(Sort.Direction.ASC, "index"));
         return questionEntities.stream()
                 .map(this::mapQuestionEntityToResponse)
                 .collect(Collectors.toList());

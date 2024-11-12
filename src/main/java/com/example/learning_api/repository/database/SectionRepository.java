@@ -11,7 +11,7 @@ import org.springframework.data.mongodb.repository.Query;
 
 
 public interface SectionRepository extends MongoRepository<SectionEntity, String> {
-    @Query("{'classRoomId': ?0}")
+    @Query(value = "{'classRoomId': ?0}", sort = "{'index': 1}")
     Page<SectionEntity> findByClassRoomId(String classRoomId, Pageable pageable);
     @Aggregation(pipeline = {
             "{ '$match': { 'classroomId': ?0 } }",
