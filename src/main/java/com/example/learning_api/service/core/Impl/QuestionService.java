@@ -99,6 +99,7 @@ public class QuestionService implements IQuestionService {
 
             questionEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
             questionEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+            questionEntity.setIndex(questionRepository.findMaxIndexByTestId(body.getTestId())==null?0:questionRepository.findMaxIndexByTestId(body.getTestId())+1);
             questionRepository.save(questionEntity);
             progressSources(body.getSources(), body.getContent(), fileEntity, questionEntity);
             resData.setTestId(body.getTestId());
