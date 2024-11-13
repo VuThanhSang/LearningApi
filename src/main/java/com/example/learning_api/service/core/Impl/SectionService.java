@@ -5,8 +5,10 @@ import com.example.learning_api.dto.request.section.DeleteSectionRequest;
 import com.example.learning_api.dto.request.section.UpdateSectionRequest;
 import com.example.learning_api.dto.response.section.CreateSectionResponse;
 import com.example.learning_api.dto.response.section.GetSectionsResponse;
+import com.example.learning_api.entity.sql.database.LessonEntity;
 import com.example.learning_api.entity.sql.database.SectionEntity;
 import com.example.learning_api.repository.database.ClassRoomRepository;
+import com.example.learning_api.repository.database.LessonRepository;
 import com.example.learning_api.repository.database.SectionRepository;
 import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.ISectionService;
@@ -15,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -27,6 +30,7 @@ public class SectionService implements ISectionService {
     private final ModelMapperService modelMapperService;
     private final SectionRepository sectionRepository;
     private final ClassRoomRepository classRoomRepository;
+    private final LessonRepository lessonRepository;
     @Override
     public CreateSectionResponse createSection(CreateSectionRequest body) {
         try {
@@ -107,6 +111,10 @@ public class SectionService implements ISectionService {
         Pageable pageAble = PageRequest.of(page, size);
         Page<SectionEntity> sectionEntities = sectionRepository.findByClassRoomId(classRoomId, pageAble);
         List<GetSectionsResponse.SectionResponse> sectionResponses = modelMapperService.mapList(sectionEntities.getContent(), GetSectionsResponse.SectionResponse.class);
+        for (GetSectionsResponse.SectionResponse sectionResponse : sectionResponses){
+            List<LessonEntity> lessonEntities = lessonRepository.findBySectionId(sectionResponse.getId(), Sort.by(Sort.Direction.ASC, "index"));
+            sectionResponse.setLessons(lessonEntities);
+        }
         GetSectionsResponse resData = new GetSectionsResponse();
         resData.setTotalPage(sectionEntities.getTotalPages());
         resData.setTotalElements(sectionEntities.getTotalElements());

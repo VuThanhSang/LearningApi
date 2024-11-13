@@ -1,5 +1,6 @@
 package com.example.learning_api.dto.response.section;
 
+import com.example.learning_api.entity.sql.database.LessonEntity;
 import com.example.learning_api.entity.sql.database.SectionEntity;
 import lombok.Data;
 
@@ -18,6 +19,7 @@ public class GetSectionsResponse {
         private String classRoomId;
         private String status;
         private int index;
+        private List<LessonEntity> lessons;
         private String createdAt;
         private String updatedAt;
         public static SectionResponse formSectionEntity(SectionEntity sectionEntity){
