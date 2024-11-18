@@ -15,6 +15,7 @@ public class DeadlineSubmissionResponse {
     private String submission;
     private String grade;
     private String feedback;
+    private Boolean isLate;
     private DeadlineSubmissionStatus status;
     private List<FileEntity> files;
     private String createdAt;

@@ -68,9 +68,9 @@ public interface DeadlineRepository extends MongoRepository<DeadlineEntity, Stri
             "{ $lookup: { from: 'student_enrollments', localField: 'classroomId', foreignField: 'classroomId', as: 'enrollments' } }",
             "{ $unwind: '$enrollments' }",
             "{ $lookup: { from: 'deadline_submissions', let: { deadlineId: { $toString: '$_id' }, studentId: '$enrollments.studentId' }, pipeline: [ { $match: { $expr: { $and: [ { $eq: [{ $toString: '$deadlineId' }, '$$deadlineId'] }, { $eq: ['$studentId', '$$studentId'] } ] } } } ], as: 'submissions' } }",
-            "{ $addFields: { bestSubmission: { $reduce: { input: '$submissions', initialValue: { grade: '0', status: 'NOT_SUBMITTED' }, in: { $cond: [ { $gt: [{ $toDouble: '$$this.grade' }, { $toDouble: '$$value.grade' }] }, '$$this', '$$value' ] } } } } }",
-            "{ $addFields: { grade: { $ifNull: ['$bestSubmission.grade', '0'] }, status: { $ifNull: ['$bestSubmission.status', 'NOT_SUBMITTED'] } } }",
-            "{ $group: { _id: '$_id', title: { $first: '$title' }, description: { $first: '$description' }, startDate: { $first: '$startDate' }, endDate: { $first: '$endDate' }, students: { $push: { studentId: '$enrollments.studentId', grade: '$grade', status: '$status' } } } }",
+            "{ $addFields: { bestSubmission: { $reduce: { input: '$submissions', initialValue: { grade: '0', status: 'NOT_SUBMITTED', deadlineSubmissionId: null }, in: { $cond: [ { $gt: [{ $toDouble: '$$this.grade' }, { $toDouble: '$$value.grade' }] }, '$$this', '$$value' ] } } } } }",
+            "{ $addFields: { grade: { $ifNull: ['$bestSubmission.grade', '0'] }, status: { $ifNull: ['$bestSubmission.status', 'NOT_SUBMITTED'] }, deadlineSubmissionId: '$bestSubmission.deadlineSubmissionId' } }",
+            "{ $group: { _id: '$_id', title: { $first: '$title' }, description: { $first: '$description' }, startDate: { $first: '$startDate' }, endDate: { $first: '$endDate' }, students: { $push: { studentId: '$enrollments.studentId', grade: '$grade', status: '$status', deadlineSubmissionId: '$bestSubmission.id' } } } }",
             "{ $sort: { '_id': 1 } }",
             "{ $skip: ?1 }",
             "{ $limit: ?2 }"

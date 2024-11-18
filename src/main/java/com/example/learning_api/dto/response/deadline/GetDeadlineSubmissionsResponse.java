@@ -25,6 +25,7 @@ public class GetDeadlineSubmissionsResponse {
         private String studentAvatar;
         private List<FileEntity> files;
         private String submission;
+        private Boolean isLate;
         private String grade;
         private String feedback;
         private String status;

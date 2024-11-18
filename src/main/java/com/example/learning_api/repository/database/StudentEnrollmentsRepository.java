@@ -79,6 +79,7 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
     Long countUpcomingDeadlines(String studentId, String startDate, String endDate);
     @Query("{'classroomId': ?0}")
     Page<StudentEnrollmentsEntity> findByClassroomId(String classroomId, Pageable pageable);
+    List<StudentEnrollmentsEntity> findByClassroomId(String classroomId);
     @Aggregation(pipeline = {
             "{$match: {classroomId: '?0'}}",
             "{$lookup: {from: 'test', localField: 'classroomId', foreignField: 'classroomId', as: 'tests'}}",
