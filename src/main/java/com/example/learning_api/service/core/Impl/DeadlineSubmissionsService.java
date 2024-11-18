@@ -51,7 +51,7 @@ public class  DeadlineSubmissionsService implements IDeadlineSubmissionsService 
                 fileEntity.setUrl(fileDto.getPath());
                 fileEntity.setType(fileDto.getType().toString());
                 fileEntity.setExtension(fileDto.getPath().substring(fileDto.getPath().lastIndexOf(".") + 1));
-                fileEntity.setName(title);
+                fileEntity.setName(file.getOriginalFilename());
                 fileEntity.setSize(String.valueOf(file.getSize()));
                 fileEntity.setOwnerType(FileOwnerType.DEADLINE_SUBMISSION);
                 fileEntity.setOwnerId(deadlineSubmissionsEntity.getId());
@@ -69,7 +69,7 @@ public class  DeadlineSubmissionsService implements IDeadlineSubmissionsService 
     }
     public FAQEntity.SourceDto processFile(MultipartFile file, String title) throws IOException {
         byte[] fileBytes = file.getBytes();
-        String fileName = StringUtils.generateFileName(title, "deadline");
+        String fileName = StringUtils.generateFileName(file.getOriginalFilename(), "deadline");
         CloudinaryUploadResponse response;
 
         String contentType = file.getContentType();
@@ -226,7 +226,8 @@ public class  DeadlineSubmissionsService implements IDeadlineSubmissionsService 
             if (status != null && (status.isEmpty() || status.equals(","))) {
                 status = null;
             }
-            status = status.split(",")[1];
+            if(status !=null)
+                status = status.split(",")[1];
             // Validate and sanitize sortBy
             List<String> allowedSortFields = Arrays.asList("createdAt", "updatedAt", "studentName", "status");
             if (sortBy == null || !allowedSortFields.contains(sortBy)) {
