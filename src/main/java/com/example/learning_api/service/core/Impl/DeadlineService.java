@@ -65,7 +65,7 @@ public class DeadlineService implements IDeadlineService {
                 fileEntity.setOwnerType(FileOwnerType.DEADLINE);
                 fileEntity.setOwnerId(deadlineEntity.getId());
                 fileEntity.setExtension(fileDto.getPath().substring(fileDto.getPath().lastIndexOf(".") + 1));
-                fileEntity.setName(title);
+                fileEntity.setName(file.getOriginalFilename());
                 fileEntity.setSize(String.valueOf(file.getSize()));
                 fileEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
                 fileEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));

@@ -25,6 +25,7 @@ public class DeadlineSubmissionsEntity {
     private String submission;
     private String grade;
     private String feedback;
+    private Boolean isLate;
     private DeadlineSubmissionStatus status;
     private String createdAt;
     private String updatedAt;

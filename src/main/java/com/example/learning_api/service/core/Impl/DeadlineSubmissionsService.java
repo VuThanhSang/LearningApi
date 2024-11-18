@@ -6,10 +6,7 @@ import com.example.learning_api.dto.request.deadline.UpdateDeadlineSubmissionsRe
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.deadline.DeadlineSubmissionResponse;
 import com.example.learning_api.dto.response.deadline.GetDeadlineSubmissionsResponse;
-import com.example.learning_api.entity.sql.database.DeadlineSubmissionsEntity;
-import com.example.learning_api.entity.sql.database.FAQEntity;
-import com.example.learning_api.entity.sql.database.FileEntity;
-import com.example.learning_api.entity.sql.database.StudentEntity;
+import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.DeadlineSubmissionStatus;
 import com.example.learning_api.enums.FaqSourceType;
 import com.example.learning_api.enums.FileOwnerType;
@@ -40,7 +37,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class DeadlineSubmissionsService implements IDeadlineSubmissionsService {
+public class  DeadlineSubmissionsService implements IDeadlineSubmissionsService {
     private final DeadlineSubmissionsRepository deadlineSubmissionsRepository;
     private final ModelMapperService modelMapperService;
     private final StudentRepository studentRepository;
@@ -106,21 +103,35 @@ public class DeadlineSubmissionsService implements IDeadlineSubmissionsService {
     @Override
     public void CreateDeadlineSubmissions(CreateDeadlineSubmissionsRequest body) {
         try {
+            DeadlineEntity deadlineEntity = deadlineRepository.findById(body.getDeadlineId()).orElse(null);
             if (body.getDeadlineId() == null) {
                 throw new IllegalArgumentException("DeadlineId is required");
             }
-            if (deadlineRepository.findById(body.getDeadlineId()) == null) {
+            if (deadlineEntity == null) {
                 throw new IllegalArgumentException("DeadlineId is not found");
             }
+
             if (body.getStudentId() == null) {
                 throw new IllegalArgumentException("StudentId is required");
             }
             if (studentRepository.findById(body.getStudentId()) == null) {
                 throw new IllegalArgumentException("StudentId is not found");
             }
+
             DeadlineSubmissionsEntity deadlineSubmissionsEntity = modelMapperService.mapClass(body, DeadlineSubmissionsEntity.class);
+            long endDate = Long.parseLong(deadlineEntity.getEndDate());
+            long currentTime = System.currentTimeMillis();
+            long gracePeriod = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
+            if (currentTime > endDate + gracePeriod) {
+                throw new IllegalArgumentException("The deadline and grace period have passed. Submissions are no longer accepted.");
+            }
 
+            if (currentTime > endDate) {
+                deadlineSubmissionsEntity.setIsLate(true);
+            } else {
+                deadlineSubmissionsEntity.setIsLate(false);
+            }
 
             deadlineSubmissionsEntity.setGrade("0");
             deadlineSubmissionsEntity.setStatus(DeadlineSubmissionStatus.SUBMITTED);
@@ -267,6 +278,7 @@ public class DeadlineSubmissionsService implements IDeadlineSubmissionsService {
         response.setDeadlineId(entity.getDeadlineId());
         response.setStudentId(entity.getStudentId());
         response.setSubmission(entity.getSubmission());
+        response.setIsLate(entity.getIsLate());
         response.setGrade(entity.getGrade());
         response.setFeedback(entity.getFeedback());
         response.setStatus(entity.getStatus().name());

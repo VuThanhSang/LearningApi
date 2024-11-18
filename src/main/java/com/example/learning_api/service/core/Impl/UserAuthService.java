@@ -101,15 +101,15 @@ public class UserAuthService  implements IUserAuthService {
                 .status(user.getStatus()!= null ? user.getStatus().toString() : UserStatus.INACTIVE.toString());
         if (user.getRole() == RoleEnum.TEACHER) {
             TeacherEntity teacher = teacherRepository.findByUserId(user.getId());
-            teacher.setUser(null);
             if (teacher != null) {
+                teacher.setUser(null);
                 user.setTeacher(teacher);
             }
         } else if (user.getRole() == RoleEnum.USER) {
             StudentEntity student = studentRepository.findByUserId(user.getId());
-            student.setUser(null);
             if (student != null) {
                 user.setStudent(student);
+                student.setUser(null);
             }
         }
         responseBuilder.user(user);
@@ -147,19 +147,7 @@ public class UserAuthService  implements IUserAuthService {
             UserEntity user = authenticateUser(body.getEmail(), body.getPassword());
             String jwt = jwtService.issueAccessToken(user.getId(), user.getEmail(), user.getRole());
             String refreshToken = jwtService.issueRefreshToken(user.getId(), user.getEmail(), user.getRole());
-            String userId= null;
-            if (user.getRole().equals(RoleEnum.TEACHER)) {
-                TeacherEntity teacher = teacherRepository.findByUserId(user.getId());
-                if (teacher != null) {
-                    userId = teacher.getId();
-                }
-            }
-            else{
-                StudentEntity student = studentRepository.findByUserId(user.getId());
-                if (student != null) {
-                    userId = student.getId();
-                }
-            }
+
 //            userTokenRedisService.upsertUserToken(userId, refreshToken, false);
 //            userTokenRedisService.setUserOnline(user.getId());
             return buildLoginResponse(user, jwt, refreshToken);
