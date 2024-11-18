@@ -79,7 +79,7 @@ public class DeadlineService implements IDeadlineService {
 
     public FAQEntity.SourceDto processFile(MultipartFile file, String title) throws IOException {
         byte[] fileBytes = file.getBytes();
-        String fileName = StringUtils.generateFileName(title, "deadline");
+        String fileName = StringUtils.generateFileName(file.getOriginalFilename(), "deadline");
         CloudinaryUploadResponse response;
 
         String contentType = file.getContentType();
