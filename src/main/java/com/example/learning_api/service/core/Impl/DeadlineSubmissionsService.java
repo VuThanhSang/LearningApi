@@ -226,16 +226,16 @@ public class  DeadlineSubmissionsService implements IDeadlineSubmissionsService 
             if (status != null && (status.isEmpty() || status.equals(","))) {
                 status = null;
             }
-            if(status !=null)
+            if (status != null) {
                 status = status.split(",")[1];
+            }
+
             // Validate and sanitize sortBy
             List<String> allowedSortFields = Arrays.asList("createdAt", "updatedAt", "studentName", "status");
             if (sortBy == null || !allowedSortFields.contains(sortBy)) {
                 sortBy = "createdAt";
             }
 
-            Sort sort = Sort.by(sortDirection, sortBy);
-            Pageable pageable = PageRequest.of(page, size, sort);
             search = (search == null) ? "" : search;
 
             List<GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse> allSubmissions = new ArrayList<>();
@@ -341,9 +341,15 @@ public class  DeadlineSubmissionsService implements IDeadlineSubmissionsService 
             if (sortDirection == Sort.Direction.DESC) {
                 comparator = comparator.reversed();
             }
-
-            allSubmissions.sort(comparator);
-
+            if (sortBy.equals("studentName")|| sortBy.equals("status")) {
+                if (sortDirection == Sort.Direction.DESC) {
+                    allSubmissions.sort(comparator.reversed());
+                } else {
+                    allSubmissions.sort(comparator);
+                }
+            }else {
+                allSubmissions.sort(comparator);
+            }
             // Handle pagination
             int start = page * size;
             int end = Math.min((start + size), allSubmissions.size());
