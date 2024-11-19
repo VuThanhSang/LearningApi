@@ -21,5 +21,6 @@ public class UpdateDeadlineRequest {
     private String startDate;
     private String endDate;
     private String type;
+    private Boolean allowLateSubmission;
 
 }

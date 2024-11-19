@@ -125,6 +125,11 @@ public class DeadlineService implements IDeadlineService {
 
             SectionEntity sectionEntity = sectionRepository.findById(lessonEntity.getSectionId()).orElse(null);
             ClassRoomEntity classRoomEntity = classroomRepository.findById(sectionEntity.getClassRoomId()).orElse(null);
+            if (body.getAllowLateSubmission()==null){
+                deadlineEntity.setAllowLateSubmission(true);
+            }else{
+                deadlineEntity.setAllowLateSubmission(body.getAllowLateSubmission());
+            }
             deadlineEntity.setClassroomId(classRoomEntity.getId());
             deadlineEntity.setTeacherId(classRoomEntity.getTeacherId());
             deadlineEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
@@ -163,6 +168,9 @@ public class DeadlineService implements IDeadlineService {
             }
             if (body.getStatus()!=null){
                 deadlineEntity.setStatus(DeadlineStatus.valueOf(body.getStatus()));
+            }
+            if (body.getAllowLateSubmission()!=null){
+                deadlineEntity.setAllowLateSubmission(body.getAllowLateSubmission());
             }
 
 

@@ -21,4 +21,5 @@ public class CreateDeadlineRequest {
     private List<MultipartFile> files;
     private String startDate;
     private String endDate;
+    private Boolean allowLateSubmission;
 }

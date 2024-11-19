@@ -18,6 +18,10 @@ import com.example.learning_api.utils.ImageUtils;
 import com.example.learning_api.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFFont;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -25,7 +29,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -117,13 +124,12 @@ public class  DeadlineSubmissionsService implements IDeadlineSubmissionsService 
             DeadlineSubmissionsEntity deadlineSubmissionsEntity = modelMapperService.mapClass(body, DeadlineSubmissionsEntity.class);
             long endDate = Long.parseLong(deadlineEntity.getEndDate());
             long currentTime = System.currentTimeMillis();
-            long gracePeriod = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
-            if (currentTime > endDate + gracePeriod) {
-                throw new IllegalArgumentException("The deadline and grace period have passed. Submissions are no longer accepted.");
-            }
 
             if (currentTime > endDate) {
+                if (deadlineEntity.getAllowLateSubmission() == null || !deadlineEntity.getAllowLateSubmission()) {
+                    throw new IllegalArgumentException("Deadline is over");
+                }
                 deadlineSubmissionsEntity.setIsLate(true);
             } else {
                 deadlineSubmissionsEntity.setIsLate(false);
@@ -156,6 +162,19 @@ public class  DeadlineSubmissionsService implements IDeadlineSubmissionsService 
             }
             if (body.getStatus() != null) {
                 deadlineSubmissionsEntity.setStatus(DeadlineSubmissionStatus.valueOf(body.getStatus()));
+            }
+            DeadlineEntity deadlineEntity = deadlineRepository.findById(deadlineSubmissionsEntity.getDeadlineId()).orElse(null);
+            long endDate = Long.parseLong(deadlineEntity.getEndDate());
+            long currentTime = System.currentTimeMillis();
+
+
+            if (currentTime > endDate) {
+                if (deadlineEntity.getAllowLateSubmission() == null || !deadlineEntity.getAllowLateSubmission()) {
+                    throw new IllegalArgumentException("Deadline is over");
+                }
+                deadlineSubmissionsEntity.setIsLate(true);
+            } else {
+                deadlineSubmissionsEntity.setIsLate(false);
             }
             processFiles(body.getFiles(), body.getTitle(), deadlineSubmissionsEntity);
             deadlineSubmissionsEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
@@ -275,8 +294,8 @@ public class  DeadlineSubmissionsService implements IDeadlineSubmissionsService 
                                 submissionResponse.setStudentName(studentName);
                                 submissionResponse.setStudentEmail(studentEntity.getUser().getEmail());
                                 submissionResponse.setStudentAvatar(studentEntity.getUser().getAvatar());
-                                submissionResponse.setCreatedAt(enrollment.getCreatedAt());
-                                submissionResponse.setUpdatedAt(enrollment.getUpdatedAt());
+                                submissionResponse.setCreatedAt("N/A");
+                                submissionResponse.setUpdatedAt("N/A");
 
                                 allSubmissions.add(submissionResponse);
                             }
@@ -411,6 +430,127 @@ public class  DeadlineSubmissionsService implements IDeadlineSubmissionsService 
             throw new IllegalArgumentException(e.getMessage());
         }
     }
+
+    @Override
+    public byte[] downloadDeadlineSubmissionsByStudentId(String deadlineId) {
+        try {
+            // Get deadline information
+            DeadlineEntity deadline = deadlineRepository.findById(deadlineId)
+                    .orElseThrow(() -> new IllegalArgumentException("Deadline not found"));
+
+            // Get all submissions including NOT_SUBMITTED ones
+            GetDeadlineSubmissionsResponse response = GetDeadlineSubmissionsByDeadlineId(
+                    deadlineId, 0, Integer.MAX_VALUE, "", null, "studentName", Sort.Direction.ASC
+            );
+
+            // Create workbook and sheet
+            XSSFWorkbook workbook = new XSSFWorkbook();
+            XSSFSheet sheet = workbook.createSheet("Submissions");
+
+            // Create styles
+            CellStyle headerStyle = workbook.createCellStyle();
+            headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            XSSFFont boldFont = workbook.createFont();
+            boldFont.setBold(true);
+            headerStyle.setFont(boldFont);
+
+            CellStyle infoStyle = workbook.createCellStyle();
+            infoStyle.setFont(boldFont);
+
+            // Add deadline information at the top
+            Row deadlineInfoRow1 = sheet.createRow(0);
+            Cell deadlineIdCell = deadlineInfoRow1.createCell(0);
+            deadlineIdCell.setCellValue("Deadline ID:");
+            deadlineIdCell.setCellStyle(infoStyle);
+            deadlineInfoRow1.createCell(1).setCellValue(deadlineId);
+
+            Row deadlineInfoRow2 = sheet.createRow(1);
+            Cell deadlineTitleCell = deadlineInfoRow2.createCell(0);
+            deadlineTitleCell.setCellValue("Deadline Title:");
+            deadlineTitleCell.setCellStyle(infoStyle);
+            deadlineInfoRow2.createCell(1).setCellValue(deadline.getTitle());
+
+            Row downloadInfoRow = sheet.createRow(2);
+            Cell downloadDateCell = downloadInfoRow.createCell(0);
+            downloadDateCell.setCellValue("Download Date:");
+            downloadDateCell.setCellStyle(infoStyle);
+            downloadInfoRow.createCell(1).setCellValue(
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+            );
+
+            // Add empty row for spacing
+            sheet.createRow(3);
+
+            // Create header row for submissions table
+            Row headerRow = sheet.createRow(4);
+            String[] columns = {
+                    "Student ID", "Student Name", "Email", "Status", "Submission Time",
+                    "Is Late", "Grade", "Feedback", "Files"
+            };
+
+            // Create headers
+            for (int i = 0; i < columns.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(columns[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            // Add data rows
+            int rowNum = 5; // Start after header
+            for (GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse submission :
+                    response.getDeadlineSubmissions()) {
+                Row row = sheet.createRow(rowNum++);
+
+                row.createCell(0).setCellValue(submission.getStudentId());
+                row.createCell(1).setCellValue(submission.getStudentName());
+                row.createCell(2).setCellValue(submission.getStudentEmail());
+                row.createCell(3).setCellValue(submission.getStatus());
+                row.createCell(4).setCellValue(submission.getCreatedAt());
+                row.createCell(5).setCellValue(submission.getIsLate() != null ?
+                        submission.getIsLate().toString() : "N/A");
+                row.createCell(6).setCellValue(submission.getGrade() != null ?
+                        submission.getGrade() : "Not graded");
+                row.createCell(7).setCellValue(submission.getFeedback() != null ?
+                        submission.getFeedback() : "");
+
+                // Handle files column
+                String filesList = "";
+                if (submission.getFiles() != null && !submission.getFiles().isEmpty()) {
+                    filesList = submission.getFiles().stream()
+                            .map(FileEntity::getUrl)
+                            .collect(Collectors.joining("\n"));
+                }
+                row.createCell(8).setCellValue(filesList);
+            }
+
+            // Add summary at the bottom
+            int lastRow = rowNum + 1;
+            Row summaryRow = sheet.createRow(lastRow);
+            Cell summaryLabelCell = summaryRow.createCell(0);
+            summaryLabelCell.setCellValue("Total Submissions:");
+            summaryLabelCell.setCellStyle(infoStyle);
+            summaryRow.createCell(1).setCellValue(response.getTotalElements());
+
+            // Autosize columns
+            for (int i = 0; i < columns.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            // Write to ByteArrayOutputStream
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            workbook.close();
+
+            return outputStream.toByteArray();
+
+        } catch (Exception e) {
+            log.error("Error creating Excel file for deadline submissions: ", e);
+            throw new IllegalArgumentException("Error creating Excel file: " + e.getMessage());
+        }
+    }
+
+
 
     @Override
     public List<String> downloadSubmission(String deadlineId, DeadlineSubmissionStatus type) {
