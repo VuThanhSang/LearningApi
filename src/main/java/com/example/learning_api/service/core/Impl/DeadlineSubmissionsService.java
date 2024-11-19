@@ -227,9 +227,12 @@ public class  DeadlineSubmissionsService implements IDeadlineSubmissionsService 
                 status = null;
             }
             if (status != null) {
-                status = status.split(",")[1];
+                // Nếu status chứa dấu phẩy, lấy phần tử cuối cùng
+                String[] statusParts = status.split(",");
+                status = statusParts.length > 1 ? statusParts[1] : statusParts[0];
             }
 
+            // Rest of your existing code...
             // Validate and sanitize sortBy
             List<String> allowedSortFields = Arrays.asList("createdAt", "updatedAt", "studentName", "status");
             if (sortBy == null || !allowedSortFields.contains(sortBy)) {
