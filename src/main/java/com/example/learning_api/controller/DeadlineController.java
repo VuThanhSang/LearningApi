@@ -413,9 +413,9 @@ public class DeadlineController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String sortBy,
-            @RequestParam(required = false, defaultValue = "asc") String sortOrder)  {
+            @RequestParam(required = false, defaultValue = "asc") String sortDirection)  {
         try {
-            Sort.Direction direction = sortOrder.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+            Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
 
             // Convert empty strings, "," or null to null
             search = (search == null || search.trim().isEmpty() || search.equals(",")) ? null : search.trim();
