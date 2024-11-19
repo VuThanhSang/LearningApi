@@ -19,5 +19,6 @@ public interface IDeadlineSubmissionsService {
     GetDeadlineSubmissionsResponse GetDeadlineSubmissionsByDeadlineId( String deadlineId, Integer page, Integer size, String search, String status,
                                                                        String sortBy, Sort.Direction sortDirection);
     GetDeadlineSubmissionsResponse GetDeadlineSubmissionsByStudentId(String studentId,String deadlineId, Integer page, Integer size);
+    byte[] downloadDeadlineSubmissionsByStudentId(String deadlineId);
     List<String> downloadSubmission(String deadlineId, DeadlineSubmissionStatus type);
 }

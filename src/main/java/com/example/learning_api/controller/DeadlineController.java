@@ -17,10 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -590,6 +587,23 @@ public class DeadlineController {
             return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
         }
 
+    }
+
+    @GetMapping("/download-submissions/{deadlineId}")
+    public ResponseEntity<byte[]> downloadDeadlineSubmissionsExcel(@PathVariable String deadlineId) {
+        try {
+            byte[] excelBytes = deadlineSubmissionsService.downloadDeadlineSubmissionsByStudentId(deadlineId);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(ContentDisposition.builder("attachment")
+                    .filename("deadline-submissions.xlsx")
+                    .build());
+
+            return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Error downloading deadline submissions excel: " + e.getMessage());
+        }
     }
 
 }

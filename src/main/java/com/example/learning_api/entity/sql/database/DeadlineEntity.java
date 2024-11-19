@@ -24,6 +24,7 @@ public class DeadlineEntity {
     private DeadlineStatus status;
     private String startDate;
     private Boolean useScoringCriteria;
+    private Boolean allowLateSubmission;
     private String endDate;
     private String createdAt;
     private String updatedAt;
