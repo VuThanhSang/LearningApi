@@ -4,21 +4,29 @@ import com.example.learning_api.constant.CloudinaryConstant;
 import com.example.learning_api.dto.request.media.CreateMediaRequest;
 import com.example.learning_api.dto.request.media.UpdateMediaRequest;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
-import com.example.learning_api.dto.response.lesson.GetMediaResponse;
-import com.example.learning_api.entity.sql.database.MediaEntity;
-import com.example.learning_api.repository.database.LessonRepository;
-import com.example.learning_api.repository.database.MediaRepository;
+import com.example.learning_api.dto.response.media.GetMediaCommentsResponse;
+import com.example.learning_api.dto.response.media.GetMediaNotesResponse;
+import com.example.learning_api.dto.response.media.GetMediaResponse;
+import com.example.learning_api.entity.sql.database.*;
+import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
 import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.IMediaService;
 import com.example.learning_api.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tika.Tika;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.BodyContentHandler;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -31,17 +39,41 @@ public class MediaService implements IMediaService {
     private final LessonRepository lessonRepository;
     private final CloudinaryService cloudinaryService;
     private final MediaRepository mediaRepository;
+    private final MediaProgressRepository mediaProgressRepository;
+    private final MediaCommentRepository mediaCommentRepository;
+    private final MediaNoteRepository mediaNoteRepository;
+    private final UserRepository userRepository;
+    private final SectionRepository sectionRepository;
+
+
     @Override
     public void createMedia(CreateMediaRequest body) {
-        try{
-            if (body.getLessonId()==null){
+        try {
+            if (body.getLessonId() == null) {
                 throw new IllegalArgumentException("LessonId is required");
             }
-            if (lessonRepository.findById(body.getLessonId()).isEmpty()){
-                throw new IllegalArgumentException("LessonId is not found");
+            LessonEntity lessonEntity = lessonRepository.findById(body.getLessonId()).orElseThrow(() -> new IllegalArgumentException("LessonId is not found"));
+            SectionEntity sectionEntity = sectionRepository.findById(lessonEntity.getSectionId()).orElseThrow(() -> new IllegalArgumentException("SectionId is not found"));
+            if (lessonEntity == null) {
+                throw new IllegalArgumentException("Lesson is not found");
             }
             MediaEntity mediaEntity = modelMapperService.mapClass(body, MediaEntity.class);
-            if (body.getFile() != null) {
+            if (body.getFilePath() != null) {
+                mediaEntity.setFilePath(body.getFilePath());
+
+                // Get video duration from URL
+                URL url = new URL(body.getFilePath());
+                URLConnection connection = url.openConnection();
+                Tika tika = new Tika();
+                Metadata metadata = new Metadata();
+                AutoDetectParser parser = new AutoDetectParser();
+                BodyContentHandler handler = new BodyContentHandler();
+                parser.parse(connection.getInputStream(), handler, metadata, new ParseContext());
+                String duration = metadata.get("xmpDM:duration");
+                if (duration != null) {
+                    mediaEntity.setDuration((int) (Double.parseDouble(duration) / 1000)); // Convert milliseconds to seconds
+                }
+            } else if (body.getFile() != null) {
                 byte[] fileBytes = body.getFile().getBytes();
                 String fileType = body.getFile().getOriginalFilename().substring(body.getFile().getOriginalFilename().lastIndexOf("."));
                 CloudinaryUploadResponse fileUploaded = cloudinaryService.uploadFileToFolder(
@@ -51,21 +83,29 @@ public class MediaService implements IMediaService {
                         "video"
                 );
                 mediaEntity.setFilePath(fileUploaded.getUrl());
-                mediaEntity.setFileExtension(fileType);
-                mediaEntity.setFileName(body.getFile().getOriginalFilename());
-                mediaEntity.setFileSize(body.getFile().getSize() + " bytes");
-                mediaEntity.setFileType(body.getFile().getContentType());
+
+                // Get video duration from URL
+                URL url = new URL(fileUploaded.getUrl());
+                URLConnection connection = url.openConnection();
+                Tika tika = new Tika();
+                Metadata metadata = new Metadata();
+                AutoDetectParser parser = new AutoDetectParser();
+                BodyContentHandler handler = new BodyContentHandler();
+                parser.parse(connection.getInputStream(), handler, metadata, new ParseContext());
+                String duration = metadata.get("xmpDM:duration");
+                if (duration != null) {
+                    mediaEntity.setDuration((int) (Double.parseDouble(duration) / 1000)); // Convert milliseconds to seconds
+                }
             }
-            mediaEntity.setCreatedAt(new Date());
-            mediaEntity.setUpdatedAt(new Date());
+            mediaEntity.setClassroomId(sectionEntity.getClassRoomId());
+            mediaEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+            mediaEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             mediaRepository.save(mediaEntity);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.error("Error in createMedia: ", e);
             throw new IllegalArgumentException(e.getMessage());
         }
     }
-
     @Override
     public void deleteMedia(String mediaId) {
         try{
@@ -139,9 +179,6 @@ public class MediaService implements IMediaService {
                     GetMediaResponse.MediaResponse mediaResponse = modelMapperService.mapClass(mediaEntity, GetMediaResponse.MediaResponse.class);
                     GetMediaResponse.FileResponse fileResponse = new GetMediaResponse.FileResponse();
                     fileResponse.setUrl(mediaEntity.getFilePath());
-                    fileResponse.setFileType(mediaEntity.getFileType());
-                    fileResponse.setFileName(mediaEntity.getFileName());
-                    fileResponse.setFileSize(mediaEntity.getFileSize());
                     mediaResponse.setFile(fileResponse);
                     mediaResponses.add(mediaResponse);
 
@@ -157,5 +194,407 @@ public class MediaService implements IMediaService {
               log.error("Error in getMediaByLessonId: ", e);
               throw new IllegalArgumentException(e.getMessage());
          }
+    }
+
+    @Override
+    public GetMediaResponse getMediaByClassroomId(String classroomId, Integer page, Integer size) {
+        try {
+            Pageable pageAble = PageRequest.of(page, size);
+            Page<MediaEntity> mediaEntities = mediaRepository.findByClassroomId(classroomId, pageAble);
+            GetMediaResponse getMediaResponse = new GetMediaResponse();
+            List<GetMediaResponse.MediaResponse> mediaResponses = new ArrayList<>();
+            for (MediaEntity mediaEntity : mediaEntities) {
+                GetMediaResponse.MediaResponse mediaResponse = modelMapperService.mapClass(mediaEntity, GetMediaResponse.MediaResponse.class);
+                GetMediaResponse.FileResponse fileResponse = new GetMediaResponse.FileResponse();
+                fileResponse.setUrl(mediaEntity.getFilePath());
+                mediaResponse.setFile(fileResponse);
+                mediaResponses.add(mediaResponse);
+
+            }
+            getMediaResponse.setMedia(mediaResponses);
+            getMediaResponse.setTotalPage(mediaEntities.getTotalPages());
+            getMediaResponse.setTotalElements(mediaEntities.getTotalElements());
+
+            return getMediaResponse;
+
+        }
+        catch (Exception e) {
+            log.error("Error in getMediaByLessonId: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void updateMediaProgress(MediaProgressEntity body) {
+        try{
+            MediaProgressEntity mediaProgressEntity ;
+            if (body.getId()!=null){
+                mediaProgressEntity= mediaProgressRepository.findById(body.getId()).orElseThrow(()->new IllegalArgumentException("Id is not found"));
+            }else{
+                mediaProgressEntity=null;
+            }
+            MediaEntity mediaEntity= mediaRepository.findById(body.getMediaId()).orElseThrow(()->new IllegalArgumentException("MediaId is not found"));
+            if (mediaEntity==null){
+                throw new IllegalArgumentException("Media is not found");
+            }
+            if (mediaProgressEntity==null){
+                MediaProgressEntity mediaProgressEntity1 = new MediaProgressEntity();
+                mediaProgressEntity1.setUserId(body.getUserId());
+                mediaProgressEntity1.setMediaId(body.getMediaId());
+                mediaProgressEntity1.setWatchedDuration(body.getWatchedDuration());
+                mediaProgressEntity1.setCompleted(body.isCompleted());
+                mediaProgressEntity1.setLastWatchedAt(body.getLastWatchedAt());
+                mediaProgressRepository.save(mediaProgressEntity1);
+            }else{
+                if (body.getWatchedDuration()!=null){
+                    mediaProgressEntity.setWatchedDuration(body.getWatchedDuration());
+                }
+                if (body.isCompleted()){
+                    mediaProgressEntity.setCompleted(body.isCompleted());
+                }
+                if (body.getLastWatchedAt()!=null){
+                    mediaProgressEntity.setLastWatchedAt(body.getLastWatchedAt());
+                }
+                mediaProgressEntity.setLastWatchedAt(new Date().toString());
+                mediaProgressRepository.save(mediaProgressEntity);
+            }
+
+
+
+        }
+        catch (Exception e) {
+            log.error("Error in updateMediaProgress: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
+
+    }
+
+    @Override
+    public MediaProgressEntity getMediaProgress(String userId, String mediaId) {
+        try{
+            MediaEntity mediaEntity= mediaRepository.findById(mediaId).orElseThrow(()->new IllegalArgumentException("MediaId is not found"));
+            if (mediaEntity==null){
+                throw new IllegalArgumentException("Media is not found");
+            }
+            UserEntity userEntity= userRepository.findById(userId).orElseThrow(()->new IllegalArgumentException("UserId is not found"));
+            if (userEntity==null){
+                throw new IllegalArgumentException("User is not found");
+            }
+            MediaProgressEntity data =  mediaProgressRepository.findByUserIdAndMediaId(userId, mediaId);
+            if (data==null){
+                MediaProgressEntity mediaProgressEntity = new MediaProgressEntity();
+                mediaProgressEntity.setUserId(userId);
+                mediaProgressEntity.setMediaId(mediaId);
+                mediaProgressEntity.setWatchedDuration(0);
+                mediaProgressEntity.setCompleted(false);
+                mediaProgressEntity.setLastWatchedAt(new Date().toString());
+                mediaProgressRepository.save(mediaProgressEntity);
+                return mediaProgressEntity;
+            }
+            return data;
+        }
+        catch (Exception e) {
+            log.error("Error in getMediaProgress: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void createMediaComment(MediaCommentEntity body) {
+        try{
+            if (body.getMediaId()==null){
+                throw new IllegalArgumentException("MediaId is required");
+            }
+            if (mediaRepository.findById(body.getMediaId()).isEmpty()){
+                throw new IllegalArgumentException("MediaId is not found");
+            }
+            if (body.getUserId()==null){
+                throw new IllegalArgumentException("UserId is required");
+            }
+            if (userRepository.findById(body.getUserId()).isEmpty()){
+                throw new IllegalArgumentException("UserId is not found");
+            }
+            MediaCommentEntity mediaCommentEntity = modelMapperService.mapClass(body, MediaCommentEntity.class);
+            if (body.getIsReply()==null) {
+                mediaCommentEntity.setIsReply(false);
+            }else if (body.getIsReply()){
+                if (body.getReplyTo()==null){
+                    throw new IllegalArgumentException("ReplyTo is required");
+                }
+                if (mediaCommentRepository.findById(body.getReplyTo()).isEmpty()){
+                    throw new IllegalArgumentException("ReplyTo is not found");
+                }
+            }
+            mediaCommentEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+            mediaCommentRepository.save(mediaCommentEntity);
+        }
+        catch (Exception e) {
+            log.error("Error in createMediaComment: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
+
+    }
+
+    @Override
+    public void updateMediaComment(MediaCommentEntity body) {
+        try{
+            MediaCommentEntity mediaCommentEntity= mediaCommentRepository.findById(body.getId()).orElseThrow(()->new IllegalArgumentException("Id is not found"));
+            if (body.getId()==null){
+                throw new IllegalArgumentException("Id is required");
+            }
+            if (mediaCommentEntity==null){
+                throw new IllegalArgumentException("MediaComment is not found");
+            }
+            if (body.getMediaId()==null){
+                throw new IllegalArgumentException("MediaId is required");
+            }
+            if (mediaRepository.findById(body.getMediaId()).isEmpty()){
+                throw new IllegalArgumentException("MediaId is not found");
+            }
+            if (body.getUserId()==null){
+                throw new IllegalArgumentException("UserId is required");
+            }
+            if (userRepository.findById(body.getUserId()).isEmpty()){
+                throw new IllegalArgumentException("UserId is not found");
+            }
+            if (body.getContent()!=null){
+                mediaCommentEntity.setContent(body.getContent());
+            }
+            mediaCommentRepository.save(mediaCommentEntity);
+        }
+        catch (Exception e) {
+            log.error("Error in updateMediaComment: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
+
+    }
+
+    @Override
+    public void deleteMediaComment(String commentId) {
+        try {
+            if (mediaCommentRepository.findById(commentId).isEmpty()) {
+                throw new IllegalArgumentException("CommentId is not found");
+            }
+            mediaCommentRepository.deleteById(commentId);
+
+        }
+        catch (Exception e) {
+            log.error("Error in deleteMediaComment: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
+
+    }
+
+
+
+    @Override
+    public MediaCommentEntity getMediaComment(String commentId) {
+        try{
+            return mediaCommentRepository.findById(commentId).orElseThrow(()->new IllegalArgumentException("Id is not found"));
+        }
+        catch (Exception e) {
+            log.error("Error in getMediaComment: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public GetMediaCommentsResponse getMediaCommentByMediaId(String mediaId, Integer page, Integer size) {
+        try {
+            Pageable pageAble = PageRequest.of(page, size);
+            Page<MediaCommentEntity> mediaCommentEntities = mediaCommentRepository.findByMediaId(mediaId, pageAble);
+            GetMediaCommentsResponse getMediaResponse = new GetMediaCommentsResponse();
+            List<GetMediaCommentsResponse.MediaCommentResponse> mediaResponses = new ArrayList<>();
+            for (MediaCommentEntity mediaCommentEntity : mediaCommentEntities) {
+                GetMediaCommentsResponse.MediaCommentResponse mediaResponse = modelMapperService.mapClass(mediaCommentEntity, GetMediaCommentsResponse.MediaCommentResponse.class);
+                UserEntity userEntity = userRepository.findById(mediaCommentEntity.getUserId()).orElseThrow(()->new IllegalArgumentException("UserId is not found"));
+                mediaResponse.setUserName(userEntity.getFullname());
+                mediaResponse.setUserAvatar(userEntity.getAvatar());
+                mediaResponses.add(mediaResponse);
+
+            }
+            getMediaResponse.setMediaComments(mediaResponses);
+            getMediaResponse.setTotalPage(mediaCommentEntities.getTotalPages());
+            getMediaResponse.setTotalElements(mediaCommentEntities.getTotalElements());
+
+            return getMediaResponse;
+
+        }
+        catch (Exception e) {
+            log.error("Error in getMediaCommentByMediaId: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public GetMediaCommentsResponse getMediaCommentByUserId(String userId, Integer page, Integer size) {
+        try {
+            Pageable pageAble = PageRequest.of(page, size);
+            Page<MediaCommentEntity> mediaCommentEntities = mediaCommentRepository.findByUserId(userId, pageAble);
+            GetMediaCommentsResponse getMediaResponse = new GetMediaCommentsResponse();
+            List<GetMediaCommentsResponse.MediaCommentResponse> mediaResponses = new ArrayList<>();
+            for (MediaCommentEntity mediaCommentEntity : mediaCommentEntities) {
+                GetMediaCommentsResponse.MediaCommentResponse mediaResponse = modelMapperService.mapClass(mediaCommentEntity, GetMediaCommentsResponse.MediaCommentResponse.class);
+                UserEntity userEntity = userRepository.findById(mediaCommentEntity.getUserId()).orElseThrow(()->new IllegalArgumentException("UserId is not found"));
+                mediaResponse.setUserName(userEntity.getFullname());
+                mediaResponse.setUserAvatar(userEntity.getAvatar());
+                mediaResponses.add(mediaResponse);
+
+            }
+            getMediaResponse.setMediaComments(mediaResponses);
+            getMediaResponse.setTotalPage(mediaCommentEntities.getTotalPages());
+            getMediaResponse.setTotalElements(mediaCommentEntities.getTotalElements());
+
+            return getMediaResponse;
+
+        }
+        catch (Exception e) {
+            log.error("Error in getMediaCommentByUserId: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void createMediaNote(MediaNoteEntity body) {
+        try{
+            if (body.getMediaId()==null){
+                throw new IllegalArgumentException("MediaId is required");
+            }
+            if (mediaRepository.findById(body.getMediaId()).isEmpty()){
+                throw new IllegalArgumentException("MediaId is not found");
+            }
+            if (body.getUserId()==null){
+                throw new IllegalArgumentException("UserId is required");
+            }
+            if (userRepository.findById(body.getUserId()).isEmpty()){
+                throw new IllegalArgumentException("UserId is not found");
+            }
+            MediaNoteEntity mediaNoteEntity = modelMapperService.mapClass(body, MediaNoteEntity.class);
+            mediaNoteEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+            mediaNoteRepository.save(mediaNoteEntity);
+        }
+        catch (Exception e) {
+            log.error("Error in createMediaNote: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
+
+    }
+
+    @Override
+    public void updateMediaNote(MediaNoteEntity body) {
+        try{
+            MediaNoteEntity mediaNoteEntity= mediaNoteRepository.findById(body.getId()).orElseThrow(()->new IllegalArgumentException("Id is not found"));
+            if (body.getId()==null){
+                throw new IllegalArgumentException("Id is required");
+            }
+            if (mediaNoteEntity==null){
+                throw new IllegalArgumentException("MediaNote is not found");
+            }
+            if (body.getMediaId()==null){
+                throw new IllegalArgumentException("MediaId is required");
+            }
+            if (mediaRepository.findById(body.getMediaId()).isEmpty()){
+                throw new IllegalArgumentException("MediaId is not found");
+            }
+            if (body.getUserId()==null){
+                throw new IllegalArgumentException("UserId is required");
+            }
+            if (userRepository.findById(body.getUserId()).isEmpty()){
+                throw new IllegalArgumentException("UserId is not found");
+            }
+            if (body.getContent()!=null){
+                mediaNoteEntity.setContent(body.getContent());
+            }
+            mediaNoteRepository.save(mediaNoteEntity);
+        }
+        catch (Exception e) {
+            log.error("Error in updateMediaNote: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
+
+    }
+
+    @Override
+    public void deleteMediaNote(String noteId) {
+        try {
+            if (mediaNoteRepository.findById(noteId).isEmpty()) {
+                throw new IllegalArgumentException("NoteId is not found");
+            }
+            mediaNoteRepository.deleteById(noteId);
+
+        }
+        catch (Exception e) {
+            log.error("Error in deleteMediaNote: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
+
+    }
+
+    @Override
+    public MediaNoteEntity getMediaNote(String noteId) {
+        try{
+           return mediaNoteRepository.findById(noteId).orElseThrow(()->new IllegalArgumentException("Id is not found"));
+        }
+        catch (Exception e) {
+            log.error("Error in getMediaNote: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
+
+    }
+
+    @Override
+    public GetMediaNotesResponse getMediaNoteByMediaId(String mediaId, Integer page, Integer size) {
+        try {
+            Pageable pageAble = PageRequest.of(page, size);
+            Page<MediaNoteEntity> mediaNoteEntities = mediaNoteRepository.findByMediaId(mediaId, pageAble);
+            GetMediaNotesResponse getMediaResponse = new GetMediaNotesResponse();
+            List<GetMediaNotesResponse.MediaNoteResponse> mediaResponses = new ArrayList<>();
+            for (MediaNoteEntity mediaNoteEntity : mediaNoteEntities) {
+                GetMediaNotesResponse.MediaNoteResponse mediaResponse = modelMapperService.mapClass(mediaNoteEntity, GetMediaNotesResponse.MediaNoteResponse.class);
+                UserEntity userEntity = userRepository.findById(mediaNoteEntity.getUserId()).orElseThrow(()->new IllegalArgumentException("UserId is not found"));
+                mediaResponse.setUserName(userEntity.getFullname());
+                mediaResponse.setUserAvatar(userEntity.getAvatar());
+                mediaResponses.add(mediaResponse);
+
+            }
+            getMediaResponse.setMediaNotes(mediaResponses);
+            getMediaResponse.setTotalPage(mediaNoteEntities.getTotalPages());
+            getMediaResponse.setTotalElements(mediaNoteEntities.getTotalElements());
+
+            return getMediaResponse;
+
+        }
+        catch (Exception e) {
+            log.error("Error in getMediaNoteByMediaId: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public GetMediaNotesResponse getMediaNoteByUserId(String userId, Integer page, Integer size) {
+        try {
+            Pageable pageAble = PageRequest.of(page, size);
+            Page<MediaNoteEntity> mediaNoteEntities = mediaNoteRepository.findByUserId(userId, pageAble);
+            GetMediaNotesResponse getMediaResponse = new GetMediaNotesResponse();
+            List<GetMediaNotesResponse.MediaNoteResponse> mediaResponses = new ArrayList<>();
+            for (MediaNoteEntity mediaNoteEntity : mediaNoteEntities) {
+                GetMediaNotesResponse.MediaNoteResponse mediaResponse = modelMapperService.mapClass(mediaNoteEntity, GetMediaNotesResponse.MediaNoteResponse.class);
+                UserEntity userEntity = userRepository.findById(mediaNoteEntity.getUserId()).orElseThrow(()->new IllegalArgumentException("UserId is not found"));
+                mediaResponse.setUserName(userEntity.getFullname());
+                mediaResponse.setUserAvatar(userEntity.getAvatar());
+                mediaResponses.add(mediaResponse);
+
+            }
+            getMediaResponse.setMediaNotes(mediaResponses);
+            getMediaResponse.setTotalPage(mediaNoteEntities.getTotalPages());
+            getMediaResponse.setTotalElements(mediaNoteEntities.getTotalElements());
+
+            return getMediaResponse;
+
+        }
+        catch (Exception e) {
+            log.error("Error in getMediaNoteByUserId: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
     }
 }

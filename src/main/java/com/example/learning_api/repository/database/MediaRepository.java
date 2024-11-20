@@ -7,4 +7,5 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface MediaRepository extends MongoRepository<MediaEntity, String>{
     Page<MediaEntity> findByLessonId(String lessonId, Pageable pageable);
+    Page<MediaEntity> findByClassroomId(String classroomId, Pageable pageable);
 }
