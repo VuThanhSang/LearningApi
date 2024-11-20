@@ -11,6 +11,7 @@ public class CreateMediaRequest {
     @NotBlank
     private MultipartFile file;
     private String description;
+    private String filePath;
     @NotBlank
     private String name;
 

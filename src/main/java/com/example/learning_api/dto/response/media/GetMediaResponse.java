@@ -1,4 +1,4 @@
-package com.example.learning_api.dto.response.lesson;
+package com.example.learning_api.dto.response.media;
 
 
 import com.example.learning_api.entity.sql.database.MediaEntity;
@@ -30,8 +30,8 @@ public class GetMediaResponse {
         private String description;
         private FileResponse file;
         private String name;
-        private Date createdAt;
-        private Date updatedAt;
+        private String createdAt;
+        private String updatedAt;
         public static MediaResponse fromMediaEntity(MediaEntity mediaEntity){
             MediaResponse mediaResponse = new MediaResponse();
             mediaResponse.setId(mediaEntity.getId());
@@ -43,9 +43,7 @@ public class GetMediaResponse {
             mediaResponse.setUpdatedAt(mediaEntity.getUpdatedAt());
             FileResponse fileResponse = new FileResponse();
             fileResponse.setUrl(mediaEntity.getFilePath());
-            fileResponse.setFileType(mediaEntity.getFileType());
-            fileResponse.setFileName(mediaEntity.getFileName());
-            fileResponse.setFileSize(mediaEntity.getFileSize());
+
             mediaResponse.setFile(fileResponse);
             return mediaResponse;
         }
