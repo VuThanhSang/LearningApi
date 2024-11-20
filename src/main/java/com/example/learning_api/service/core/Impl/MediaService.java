@@ -402,16 +402,16 @@ public class MediaService implements IMediaService {
     public GetMediaCommentsResponse getMediaCommentByMediaId(String mediaId, Integer page, Integer size) {
         try {
             Pageable pageAble = PageRequest.of(page, size);
-            Page<MediaCommentEntity> mediaCommentEntities = mediaCommentRepository.findByMediaId(mediaId, pageAble);
+            Page<MediaCommentEntity> mediaCommentEntities = mediaCommentRepository.findByMediaIdAndIsReplyFalse(mediaId, pageAble);
             GetMediaCommentsResponse getMediaResponse = new GetMediaCommentsResponse();
             List<GetMediaCommentsResponse.MediaCommentResponse> mediaResponses = new ArrayList<>();
             for (MediaCommentEntity mediaCommentEntity : mediaCommentEntities) {
                 GetMediaCommentsResponse.MediaCommentResponse mediaResponse = modelMapperService.mapClass(mediaCommentEntity, GetMediaCommentsResponse.MediaCommentResponse.class);
-                UserEntity userEntity = userRepository.findById(mediaCommentEntity.getUserId()).orElseThrow(()->new IllegalArgumentException("UserId is not found"));
+                UserEntity userEntity = userRepository.findById(mediaCommentEntity.getUserId()).orElseThrow(() -> new IllegalArgumentException("UserId is not found"));
                 mediaResponse.setUserName(userEntity.getFullname());
                 mediaResponse.setUserAvatar(userEntity.getAvatar());
+                mediaResponse.setTotalReply(mediaCommentRepository.countByReplyTo(mediaCommentEntity.getId()));
                 mediaResponses.add(mediaResponse);
-
             }
             getMediaResponse.setMediaComments(mediaResponses);
             getMediaResponse.setTotalPage(mediaCommentEntities.getTotalPages());
@@ -419,13 +419,11 @@ public class MediaService implements IMediaService {
 
             return getMediaResponse;
 
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.error("Error in getMediaCommentByMediaId: ", e);
             throw new IllegalArgumentException(e.getMessage());
         }
     }
-
     @Override
     public GetMediaCommentsResponse getMediaCommentByUserId(String userId, Integer page, Integer size) {
         try {
@@ -438,6 +436,7 @@ public class MediaService implements IMediaService {
                 UserEntity userEntity = userRepository.findById(mediaCommentEntity.getUserId()).orElseThrow(()->new IllegalArgumentException("UserId is not found"));
                 mediaResponse.setUserName(userEntity.getFullname());
                 mediaResponse.setUserAvatar(userEntity.getAvatar());
+                mediaResponse.setTotalReply(mediaCommentRepository.countByReplyTo(mediaCommentEntity.getId()));
                 mediaResponses.add(mediaResponse);
 
             }
@@ -450,6 +449,34 @@ public class MediaService implements IMediaService {
         }
         catch (Exception e) {
             log.error("Error in getMediaCommentByUserId: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public GetMediaCommentsResponse getCommentReply(String commentId, Integer page, Integer size) {
+        try {
+            Pageable pageAble = PageRequest.of(page, size);
+            Page<MediaCommentEntity> mediaCommentEntities = mediaCommentRepository.findByReplyTo(commentId, pageAble);
+            GetMediaCommentsResponse getMediaResponse = new GetMediaCommentsResponse();
+            List<GetMediaCommentsResponse.MediaCommentResponse> mediaResponses = new ArrayList<>();
+            for (MediaCommentEntity mediaCommentEntity : mediaCommentEntities) {
+                GetMediaCommentsResponse.MediaCommentResponse mediaResponse = modelMapperService.mapClass(mediaCommentEntity, GetMediaCommentsResponse.MediaCommentResponse.class);
+                UserEntity userEntity = userRepository.findById(mediaCommentEntity.getUserId()).orElseThrow(()->new IllegalArgumentException("UserId is not found"));
+                mediaResponse.setUserName(userEntity.getFullname());
+                mediaResponse.setUserAvatar(userEntity.getAvatar());
+                mediaResponses.add(mediaResponse);
+
+            }
+            getMediaResponse.setMediaComments(mediaResponses);
+            getMediaResponse.setTotalPage(mediaCommentEntities.getTotalPages());
+            getMediaResponse.setTotalElements(mediaCommentEntities.getTotalElements());
+
+            return getMediaResponse;
+
+        }
+        catch (Exception e) {
+            log.error("Error in getCommentReply: ", e);
             throw new IllegalArgumentException(e.getMessage());
         }
     }

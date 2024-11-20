@@ -27,6 +27,7 @@ public interface IMediaService {
     MediaCommentEntity getMediaComment(String commentId);
     GetMediaCommentsResponse getMediaCommentByMediaId(String mediaId, Integer page, Integer size);
     GetMediaCommentsResponse getMediaCommentByUserId(String userId, Integer page, Integer size);
+    GetMediaCommentsResponse getCommentReply(String commentId, Integer page, Integer size);
     // media note
     void createMediaNote(MediaNoteEntity body);
     void updateMediaNote(MediaNoteEntity body);
