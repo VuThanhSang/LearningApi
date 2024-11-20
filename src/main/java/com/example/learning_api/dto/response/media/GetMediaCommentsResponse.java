@@ -20,5 +20,8 @@ public class GetMediaCommentsResponse {
         private String userAvatar;
         private String createdAt;
         private String updatedAt;
+        private Boolean isReply;
+        private String replyTo;
+        private Integer totalReply;
     }
 }
