@@ -445,6 +445,27 @@ public class ClassRoomController {
     }
 
 
+    @GetMapping(path = "/{classroomId}/student/{studentId}")
+    @PreAuthorize("hasAnyAuthority('TEACHER')")
+    public ResponseEntity<ResponseAPI<GetDetailStudentInClassResponse>> removeStudentFromClass(@PathVariable String classroomId,
+                                                                      @PathVariable String studentId) {
+        try {
+            GetDetailStudentInClassResponse data = classRoomService.getDetailStudentInClass(classroomId, studentId);
+            ResponseAPI<GetDetailStudentInClassResponse> res = ResponseAPI.<GetDetailStudentInClassResponse>builder()
+                    .timestamp(new Date())
+                    .message("Remove student from class successfully")
+                    .data(data)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        } catch (Exception e) {
+            ResponseAPI<GetDetailStudentInClassResponse> res = ResponseAPI.<GetDetailStudentInClassResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
 
 
 }

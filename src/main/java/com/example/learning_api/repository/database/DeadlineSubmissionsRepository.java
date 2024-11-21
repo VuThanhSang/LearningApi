@@ -87,4 +87,31 @@ public interface DeadlineSubmissionsRepository extends MongoRepository<DeadlineS
             "{ $count: 'total' }"
     })
     long countAllByDeadlineIdWithFilters(String deadlineId, String search, String status);
+
+
+    @Aggregation(pipeline = {
+            "{ $match: { studentId: ?0 } }",
+            "{$addFields: {_deadlineId: {$toObjectId: '$deadlineId'}}}",
+            "{ $lookup: { " +
+                    "from: 'deadlines', " +
+                    "localField: '_deadlineId', " +
+                    "foreignField: '_id', " +
+                    "as: 'deadlineInfo' " +
+                    "} }",
+            "{ $unwind: '$deadlineInfo' }",
+            "{ $match: { 'deadlineInfo.classroomId': ?1 } }",
+            "{ $project: { " +
+                    "_id: 1, " +
+                    "title: 1, " +
+                    "deadlineId: 1, " +
+                    "studentId: 1, " +
+                    "submission: 1, " +
+                    "grade: 1, " +
+                    "feedback: 1, " +
+                    "status: 1, " +
+                    "createdAt: 1, " +
+                    "updatedAt: 1 " +
+                    "} }"
+    })
+    List<DeadlineSubmissionsEntity> findByStudentIdAndClassroomId(String studentId, String classroomId);
 }

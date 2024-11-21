@@ -133,6 +133,29 @@ public interface TestResultRepository extends MongoRepository<TestResultEntity, 
 //            "{ $sort: { _id: 1 } }"
 //    })
 //    List<ScoreDistributionResponse> getScoreDistribution(String testId);
-
-
+        @Aggregation(pipeline = {
+                "{ $match: { studentId: ?0 } }",
+                "{$addFields: {_testId: {$toObjectId: '$testId'}}}",
+                "{ $lookup: { " +
+                        "from: 'test', " +
+                        "localField: '_testId', " +
+                        "foreignField: '_id', " +
+                        "as: 'testInfo' " +
+                        "} }",
+                "{ $unwind: '$testInfo' }",
+                "{ $match: { 'testInfo.classroomId': ?1 } }",
+                "{ $project: { " +
+                        "_id: 0, " +
+                        "studentId: 1, " +
+                        "testId: 1, " +
+                        "grade: 1, " +
+                        "resultId: '$_id', " +
+                        "isPassed: 1, " +
+                        "attendedAt: 1, " +
+                        "finishedAt: 1, " +
+                        "state: 1, " +
+                        "testInfo: 1 " +
+                        "} }"
+        })
+        List<TestResultOfTestResponse> findByStudentIdAndClassroomId(String studentId, String classroomId);
 }

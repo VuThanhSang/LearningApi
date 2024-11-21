@@ -129,8 +129,8 @@ public class UserAuthService  implements IUserAuthService {
         modelMapperService.map(userEntity, resData);
         userEntity.setPassword(passwordEncoder.encode(userEntity.getPassword()));
         userEntity.setAuthType("normal");
-        userEntity.setCreatedAt(new Date());
-        userEntity.setUpdatedAt(new Date());
+        userEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+        userEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
         userEntity.setStatus(UserStatus.INACTIVE);
         userEntity = userRepository.save(userEntity);
         var accessToken = jwtService.issueAccessToken(userEntity.getId(), userEntity.getEmail(), userEntity.getRole());
@@ -167,8 +167,8 @@ public class UserAuthService  implements IUserAuthService {
                 user.setRole(RoleEnum.USER);
                 user.setAuthType("google");
                 user.setStatus(UserStatus.ACTIVE);
-                user.setCreatedAt(new Date());
-                user.setUpdatedAt(new Date());
+                user.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+                user.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
                 user = userRepository.save(user);
             }
             String jwt = jwtService.issueAccessToken(user.getId(), user.getEmail(), user.getRole());
