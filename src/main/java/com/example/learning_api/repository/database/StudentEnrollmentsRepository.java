@@ -9,6 +9,7 @@ import com.example.learning_api.dto.response.test.TestResultForStudentResponse;
 import com.example.learning_api.dto.response.test.TestResultsForClassroomResponse;
 import com.example.learning_api.entity.sql.database.ClassRoomEntity;
 import com.example.learning_api.entity.sql.database.StudentEnrollmentsEntity;
+import com.example.learning_api.enums.StudentEnrollmentStatus;
 import org.bson.Document;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -180,5 +181,5 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
     );
 
     StudentEnrollmentsEntity findByStudentIdAndClassroomId(String studentId, String classroomId);
-
+    List<StudentEnrollmentsEntity> findByClassroomIdAndStatus(String classroomId, StudentEnrollmentStatus status);
 }

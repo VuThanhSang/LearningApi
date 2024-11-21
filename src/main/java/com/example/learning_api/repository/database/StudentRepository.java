@@ -17,4 +17,9 @@ public interface StudentRepository extends MongoRepository<StudentEntity, String
     StudentEntity findByEmail(String email);
     @Query("{'classroomId': ?0}")
     List<StudentEntity> findByClassroomId(String classroomId);
+    @Query("{ '_id': { $in: ?0 }, $or: [ " +
+            "{ 'studentCode': { $regex: ?1, $options: 'i' } }, " +
+            "{ 'user.fullname': { $regex: ?1, $options: 'i' } } " +
+            "]}")
+    List<StudentEntity> findByIdInAndSearch(List<String> studentIds, String search);
 }
