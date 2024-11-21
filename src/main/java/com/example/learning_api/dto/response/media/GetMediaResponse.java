@@ -26,7 +26,6 @@ public class GetMediaResponse {
     public static class MediaResponse {
         private String id;
         private String lessonId;
-        private String filePath;
         private String description;
         private FileResponse file;
         private String name;
@@ -37,12 +36,15 @@ public class GetMediaResponse {
             mediaResponse.setId(mediaEntity.getId());
             mediaResponse.setLessonId(mediaEntity.getLessonId());
             mediaResponse.setName(mediaEntity.getName());
-            mediaResponse.setFilePath(mediaEntity.getFilePath());
             mediaResponse.setDescription(mediaEntity.getDescription());
             mediaResponse.setCreatedAt(mediaEntity.getCreatedAt());
             mediaResponse.setUpdatedAt(mediaEntity.getUpdatedAt());
             FileResponse fileResponse = new FileResponse();
-            fileResponse.setUrl(mediaEntity.getFilePath());
+            fileResponse.setUrl(mediaEntity.getUrl());
+            fileResponse.setFileType(mediaEntity.getFileType());
+            fileResponse.setFileName(mediaEntity.getFileName());
+            fileResponse.setFileSize(mediaEntity.getFileSize());
+
 
             mediaResponse.setFile(fileResponse);
             return mediaResponse;

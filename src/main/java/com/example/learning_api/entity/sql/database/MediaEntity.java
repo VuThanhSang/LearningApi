@@ -14,7 +14,10 @@ public class MediaEntity {
     @Id
     private String id;
     private String lessonId;
-    private String filePath;
+    private String url;
+    private String fileType;
+    private String fileName;
+    private String fileSize;
     private String thumbnailPath;
     private Integer duration;
     private String classroomId;

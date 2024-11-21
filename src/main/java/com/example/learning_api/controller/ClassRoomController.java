@@ -13,6 +13,7 @@ import com.example.learning_api.model.ResponseAPI;
 import com.example.learning_api.repository.database.StudentRepository;
 import com.example.learning_api.service.common.JwtService;
 import com.example.learning_api.service.core.IClassRoomService;
+import com.example.learning_api.service.core.IStudentEnrollmentsService;
 import com.example.learning_api.service.core.IStudentService;
 import com.example.learning_api.service.core.ITeacherService;
 import com.example.learning_api.service.core.Impl.StudentService;
@@ -38,6 +39,7 @@ public class ClassRoomController {
     private final JwtService jwtService;
     private final IStudentService studentService;
     private final ITeacherService teacherService;
+    private final IStudentEnrollmentsService studentEnrollmentsService;
     @PostMapping(path = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<CreateClassRoomResponse>> createClassRoom(@ModelAttribute @Valid CreateClassRoomRequest body,@CookieValue(name = "refreshToken", required = false) String refreshToken) {
@@ -413,6 +415,33 @@ public class ClassRoomController {
             return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
         }
 
+    }
+
+
+    @GetMapping(path = "/{classroomId}/students")
+    @PreAuthorize("hasAnyAuthority('TEACHER')")
+    public ResponseEntity<ResponseAPI<GetStudentInClassResponse>> getStudentsByClassroomId(@PathVariable String classroomId,
+                                                                                     @RequestParam(name="page",required = false,defaultValue = "1") int page,
+                                                                                     @RequestParam(name="size",required = false,defaultValue = "10") int size,
+                                                                                        @RequestParam(name="search",required = false,defaultValue = "") String search,
+                                                                                        @RequestParam(name="sort",required = false,defaultValue = "createdAt") String sortBy,
+                                                                                        @RequestParam(name="oder",required = false,defaultValue = "desc") String sortDirection)
+                                                                                      {
+        try {
+            GetStudentInClassResponse data = studentEnrollmentsService.getStudentInClass(classroomId, page - 1, size,search,sortBy,sortDirection);
+            ResponseAPI<GetStudentInClassResponse> res = ResponseAPI.<GetStudentInClassResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get students by classroomId successfully")
+                    .data(data)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        } catch (Exception e) {
+            ResponseAPI<GetStudentInClassResponse> res = ResponseAPI.<GetStudentInClassResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
     }
 
 

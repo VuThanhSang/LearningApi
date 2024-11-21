@@ -1,16 +1,30 @@
 package com.example.learning_api.service.core.Impl;
 
 import com.example.learning_api.dto.request.student_enrollments.EnrollStudentRequest;
+import com.example.learning_api.dto.response.classroom.GetStudentInClassResponse;
 import com.example.learning_api.entity.sql.database.ClassRoomEntity;
 import com.example.learning_api.entity.sql.database.StudentEnrollmentsEntity;
+import com.example.learning_api.entity.sql.database.StudentEntity;
 import com.example.learning_api.enums.StudentEnrollmentStatus;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.core.IStudentEnrollmentsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +34,8 @@ public class StudentEnrollmentsService implements IStudentEnrollmentsService {
     private final StudentRepository studentRepository;
     private final CourseRepository courseRepository;
     private final ClassRoomRepository classroomRepository;
+    @Autowired
+    private MongoTemplate mongoTemplate;
     @Override
     public void enrollStudent(EnrollStudentRequest body) {
         try {
@@ -126,6 +142,85 @@ public class StudentEnrollmentsService implements IStudentEnrollmentsService {
             studentEnrollmentsRepository.save(studentEnrollmentsEntity);
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public GetStudentInClassResponse getStudentInClass(String classroomId, Integer page, Integer limit, String search, String sort, String order) {
+        try {
+            // Validate classroom exists (you might want to add a classroom repository check)
+
+            // Clean up and validate search parameter
+            search = (search == null) ? "" : search;
+
+            // Validate and sanitize sort parameter
+            List<String> allowedSortFields = Arrays.asList("id", "userId", "fullname", "gradeLevel");
+            if (sort == null || !allowedSortFields.contains(sort)) {
+                sort = "fullname"; // default sort
+            }
+
+            // Validate pagination parameters
+            page = (page == null || page < 0) ? 0 : page;
+            limit = (limit == null || limit <= 0) ? 10 : limit; // default limit
+
+            // Fetch students enrolled in the classroom
+            List<StudentEnrollmentsEntity> enrollments = studentEnrollmentsRepository
+                    .findByClassroomIdAndStatus(classroomId, StudentEnrollmentStatus.IN_PROGRESS);
+
+            // Collect student IDs from enrollments
+            List<String> studentIds = enrollments.stream()
+                    .map(StudentEnrollmentsEntity::getStudentId)
+                    .collect(Collectors.toList());
+
+            // Fetch students with filtering
+            List<StudentEntity> allStudents = studentRepository.findByIdInAndSearch(studentIds, search);
+
+            // Sort students
+            Comparator<StudentEntity> comparator;
+            switch (sort) {
+                case "id":
+                    comparator = Comparator.comparing(StudentEntity::getId);
+                    break;
+                case "userId":
+                    comparator = Comparator.comparing(StudentEntity::getUserId);
+                    break;
+                case "gradeLevel":
+                    comparator = Comparator.comparing(StudentEntity::getGradeLevel);
+                    break;
+                default: // fullname
+                    comparator = Comparator.comparing(student ->
+                            student.getUser() != null ? student.getUser().getFullname() : ""
+                    );
+            }
+
+            // Apply sorting direction
+            if ("desc".equalsIgnoreCase(order)) {
+                comparator = comparator.reversed();
+            }
+
+            // Sort the students
+            allStudents.sort(comparator);
+
+            // Paginate the results
+            int start = page * limit;
+            int end = Math.min((start + limit), allStudents.size());
+            List<StudentEntity> paginatedStudents = allStudents.subList(start, end);
+
+            // Convert to response DTOs
+            List<GetStudentInClassResponse.StudentResponse> studentResponses = paginatedStudents.stream()
+                    .map(GetStudentInClassResponse.StudentResponse::formStudentEntity)
+                    .collect(Collectors.toList());
+
+            // Prepare the response
+            GetStudentInClassResponse response = new GetStudentInClassResponse();
+            response.setStudents(studentResponses);
+            response.setTotalElements((long) allStudents.size());
+            response.setTotalPage((int) Math.ceil((double) allStudents.size() / limit));
+
+            return response;
+        } catch (Exception e) {
+            log.error("Error in getStudentInClass: ", e);
+            throw new IllegalArgumentException("Error retrieving students in class: " + e.getMessage());
         }
     }
 

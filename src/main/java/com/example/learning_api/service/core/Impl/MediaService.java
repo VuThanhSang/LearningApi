@@ -59,7 +59,10 @@ public class MediaService implements IMediaService {
             }
             MediaEntity mediaEntity = modelMapperService.mapClass(body, MediaEntity.class);
             if (body.getFilePath() != null) {
-                mediaEntity.setFilePath(body.getFilePath());
+                mediaEntity.setUrl(body.getFilePath());
+                mediaEntity.setFileType(body.getFilePath().substring(body.getFilePath().lastIndexOf(".")));
+                mediaEntity.setFileName(body.getFilePath().substring(body.getFilePath().lastIndexOf("/") + 1));
+                mediaEntity.setFileSize("0");
 
                 // Get video duration from URL
                 URL url = new URL(body.getFilePath());
@@ -82,7 +85,10 @@ public class MediaService implements IMediaService {
                         fileBytes,
                         "video"
                 );
-                mediaEntity.setFilePath(fileUploaded.getUrl());
+                mediaEntity.setUrl(fileUploaded.getUrl());
+                mediaEntity.setFileType(fileType);
+                mediaEntity.setFileName(body.getFile().getOriginalFilename());
+                mediaEntity.setFileSize(String.valueOf(body.getFile().getSize()));
 
                 // Get video duration from URL
                 URL url = new URL(fileUploaded.getUrl());
@@ -140,7 +146,10 @@ public class MediaService implements IMediaService {
                         fileBytes,
                         "video"
                 );
-                mediaEntity.setFilePath(fileUploaded.getUrl());
+                mediaEntity.setUrl(fileUploaded.getUrl());
+                mediaEntity.setFileType(fileType);
+                mediaEntity.setFileName(body.getFile().getOriginalFilename());
+                mediaEntity.setFileSize(String.valueOf(body.getFile().getSize()));
             }
             if (body.getName()!=null){
                 mediaEntity.setName(body.getName());
@@ -178,7 +187,10 @@ public class MediaService implements IMediaService {
                 for (MediaEntity mediaEntity : mediaEntities) {
                     GetMediaResponse.MediaResponse mediaResponse = modelMapperService.mapClass(mediaEntity, GetMediaResponse.MediaResponse.class);
                     GetMediaResponse.FileResponse fileResponse = new GetMediaResponse.FileResponse();
-                    fileResponse.setUrl(mediaEntity.getFilePath());
+                    fileResponse.setUrl(mediaEntity.getUrl());
+                    fileResponse.setFileType(mediaEntity.getFileType());
+                    fileResponse.setFileName(mediaEntity.getFileName());
+                    fileResponse.setFileSize(mediaEntity.getFileSize());
                     mediaResponse.setFile(fileResponse);
                     mediaResponses.add(mediaResponse);
 
@@ -206,7 +218,10 @@ public class MediaService implements IMediaService {
             for (MediaEntity mediaEntity : mediaEntities) {
                 GetMediaResponse.MediaResponse mediaResponse = modelMapperService.mapClass(mediaEntity, GetMediaResponse.MediaResponse.class);
                 GetMediaResponse.FileResponse fileResponse = new GetMediaResponse.FileResponse();
-                fileResponse.setUrl(mediaEntity.getFilePath());
+                fileResponse.setUrl(mediaEntity.getUrl());
+                fileResponse.setFileType(mediaEntity.getFileType());
+                fileResponse.setFileName(mediaEntity.getFileName());
+                fileResponse.setFileSize(mediaEntity.getFileSize());
                 mediaResponse.setFile(fileResponse);
                 mediaResponses.add(mediaResponse);
 
