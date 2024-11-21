@@ -7,15 +7,18 @@ import com.example.learning_api.dto.response.classroom.*;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.lesson.GetLessonDetailResponse;
 import com.example.learning_api.dto.response.section.GetSectionsResponse;
+import com.example.learning_api.dto.response.test.TestResultOfTestResponse;
 import com.example.learning_api.entity.sql.database.*;
+import com.example.learning_api.enums.DeadlineSubmissionStatus;
 import com.example.learning_api.enums.JoinRequestStatus;
 import com.example.learning_api.enums.StudentEnrollmentStatus;
+import com.example.learning_api.enums.TestState;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
 import com.example.learning_api.service.common.ExcelReader;
 import com.example.learning_api.service.common.ModelMapperService;
-import com.example.learning_api.service.core.IClassRoomService;
+import com.example.learning_api.service.core.*;
 import com.example.learning_api.utils.ImageUtils;
 import com.example.learning_api.utils.StringUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,14 +46,16 @@ public class ClassRoomService implements IClassRoomService {
     private final TeacherRepository teacherRepository;
     private final StudentRepository studentRepository;
     private final StudentEnrollmentsRepository studentEnrollmentsRepository;
-    private final LessonRepository lessonRepository;
     private final ScheduleRepository scheduleRepository;
     private final TermsRepository termRepository;
     private final FacultyRepository facultyRepository;
     private final ExcelReader excelReader;
     private final RecentClassRepository recentClassRepository;
     private final JoinClassRequestRepository joinClassRequestRepository;
-    private final UserRepository userRepository;
+    private final TestResultRepository testResultRepository;
+    private final TestRepository testRepository;
+    private final DeadlineRepository deadlineRepository;
+    private final DeadlineSubmissionsRepository deadlineSubmissionsRepository;
     @Override
     public CreateClassRoomResponse createClassRoom(CreateClassRoomRequest body) {
         try{
@@ -636,6 +641,71 @@ public class ClassRoomService implements IClassRoomService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
+    @Override
+    public GetDetailStudentInClassResponse getDetailStudentInClass(String classroomId, String studentId) {
+        try {
+            ClassRoomEntity classRoom = classRoomRepository.findById(classroomId)
+                    .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
+            StudentEntity student = studentRepository.findById(studentId)
+                    .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
+            StudentEnrollmentsEntity studentEnrollment = studentEnrollmentsRepository.findByStudentIdAndClassroomId(studentId, classroomId);
+            if (studentEnrollment == null) {
+                throw new IllegalArgumentException("Student is not enrolled in this class");
+            }
+            GetDetailStudentInClassResponse res = modelMapperService.mapClass(student, GetDetailStudentInClassResponse.class);
+            List<DeadlineEntity> listDeadlineOfClass = deadlineRepository.findAllByClassroomId(classroomId);
+            List<TestResultOfTestResponse> listTestResult = testResultRepository.findByStudentIdAndClassroomId(studentId, classroomId);
+            List<DeadlineSubmissionsEntity> listDeadlineSubmission = deadlineSubmissionsRepository.findByStudentIdAndClassroomId(studentId, classroomId);
+            Pageable pageable = PageRequest.of(0, 99);
+            Page<TestEntity> listTestOfClass = testRepository.findByClassroomId(classroomId, pageable);
+            List<TestEntity> listTest = listTestOfClass.getContent();
 
+            // Fetch all test results
+            List<TestResultEntity> allTestResults = listTest.stream()
+                    .map(test -> listTestResult.stream()
+                            .filter(result -> result.getTestId().equals(test.getId()))
+                            .findFirst()
+                            .map(result -> {
+                                TestResultEntity entity = new TestResultEntity();
+                                entity.setId(result.getResultId());
+                                entity.setTestId(result.getTestId());
+                                entity.setStudentId(result.getStudentId());
+                                entity.setGrade(result.getGrade());
+                                entity.setPassed(result.isPassed());
+                                entity.setAttendedAt(result.getAttendedAt());
+                                entity.setFinishedAt(result.getFinishedAt());
+                                entity.setState(TestState.valueOf(result.getState()));
+                                return entity;
+                            })
+                            .orElseGet(() -> {
+                                TestResultEntity notAttempted = new TestResultEntity();
+                                notAttempted.setTestId(test.getId());
+                                notAttempted.setStudentId(studentId);
+                                notAttempted.setState(TestState.NOT_STARTED);
+                                return notAttempted;
+                            }))
+                    .collect(Collectors.toList());
+            // Fetch all deadline submissions
+            List<DeadlineSubmissionsEntity> allDeadlineSubmissions = listDeadlineOfClass.stream()
+                    .map(deadline -> listDeadlineSubmission.stream()
+                            .filter(submission -> submission.getDeadlineId().equals(deadline.getId()))
+                            .findFirst()
+                            .orElseGet(() -> {
+                                DeadlineSubmissionsEntity notAttempted = new DeadlineSubmissionsEntity();
+                                notAttempted.setDeadlineId(deadline.getId());
+                                notAttempted.setStudentId(studentId);
+                                notAttempted.setStatus(DeadlineSubmissionStatus.NOT_SUBMITTED);
+                                return notAttempted;
+                            }))
+                    .collect(Collectors.toList());
 
+            res.setStudentAvatar(student.getUser().getAvatar());
+            res.setStudentName(student.getUser().getFullname());
+            res.setTestResults(allTestResults);
+            res.setDeadlineSubmissions(allDeadlineSubmissions);
+            return res;
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
 }

@@ -30,8 +30,8 @@ public class UserEntity implements UserDetails  {
     private String authType;
     private StudentEntity student;
     private TeacherEntity teacher;
-    private Date createdAt;
-    private Date updatedAt;
+    private String createdAt;
+    private String updatedAt;
 
     public String getUsername() {
         return email;

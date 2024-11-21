@@ -1,24 +1,19 @@
-package com.example.learning_api.entity.sql.database;
+package com.example.learning_api.dto.response.classroom;
 
+import com.example.learning_api.entity.sql.database.DeadlineSubmissionsEntity;
+import com.example.learning_api.entity.sql.database.TestResultEntity;
 import com.example.learning_api.enums.StudentStatus;
 import jakarta.persistence.Id;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.springframework.data.mongodb.core.mapping.DBRef;
-import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.Date;
 import java.util.List;
 
 @Data
-@NoArgsConstructor
-@Document(collection = "students")
-public class StudentEntity {
+public class GetDetailStudentInClassResponse {
     @Id
     private String id;
     private String userId;
     private String gradeLevel;
-    private UserEntity user;
     private String studentCode;
     private String gender;
     private String address;
@@ -28,8 +23,9 @@ public class StudentEntity {
     private String academicYearId;
     private String majorId;
     private StudentStatus status;
-    private String createdAt;
-    private String updatedAt;
-    @DBRef
-    private List<ClassRoomEntity> classRooms;
+    private String studentName;
+    private String studentAvatar;
+
+    List<TestResultEntity> testResults;
+    List<DeadlineSubmissionsEntity> deadlineSubmissions;
 }

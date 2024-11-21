@@ -48,4 +48,7 @@ public interface TestRepository extends MongoRepository<TestEntity, String> {
 
     @Query("{'classroomId': ?0, 'status': {$in: ['UPCOMING', 'ONGOING', 'FINISHED']}}")
     Page<TestEntity> findByClassroomIdAndStatus(String classroomId, Pageable pageable);
+
+    @Query("{'classroomId': ?0")
+    List<TestEntity> findByClassroomIdToList(String classroomId);
 }

@@ -27,4 +27,5 @@ public interface IClassRoomService {
     void acceptJoinClass(String classroomId, String studentId);
     void rejectJoinClass(String classroomId, String studentId);
     InviteClassByEmailResponse inviteStudentByEmail(InviteStudentByEmailRequest body);
+    GetDetailStudentInClassResponse getDetailStudentInClass(String classroomId, String studentId);
 }

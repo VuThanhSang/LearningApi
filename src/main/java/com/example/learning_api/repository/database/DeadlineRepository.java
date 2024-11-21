@@ -81,4 +81,6 @@ public interface DeadlineRepository extends MongoRepository<DeadlineEntity, Stri
             "{ $count: 'total' }"
     })
     long countDeadlinesByClassroomId(String classroomId);
+
+    List<DeadlineEntity> findAllByClassroomId(String classroomId);
 }
