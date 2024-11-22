@@ -14,17 +14,19 @@ import java.util.Date;
 import java.util.List;
 
 public interface TestRepository extends MongoRepository<TestEntity, String> {
-    @Query("{'name': {$regex: ?0, $options: 'i'}}")
+    @Query("{'name': {$regex: ?0, $options: 'i'}, 'status': {$in: ['UPCOMING', 'ONGOING', 'FINISHED']}}")
     Page<TestEntity> findByNameContaining(String name, Pageable pageable);
+
     @Aggregation({
             "{ $lookup: { from: 'student_enrollments', let: { classroomId: '$classroomId' }, pipeline: [ { $match: { $expr: { $and: [ { $eq: ['$classroomId', '$$classroomId'] }, { $eq: ['$studentId', ?0] } ] } } } ], as: 'enrollments' } }",
-            "{ $match: { $and: [ { 'enrollments': { $not: { $size: 0 } } }, { 'startTime': { $lte: ?1 } }, { 'endTime': { $gt: ?1 } } ] } }",
+            "{ $match: { $and: [ { 'enrollments': { $not: { $size: 0 } } }, { 'startTime': { $lte: ?1 } }, { 'endTime': { $gt: ?1 } }, { 'status': {$in: ['UPCOMING', 'ONGOING', 'FINISHED']} } ] } }",
             "{ $project: { _id: 1, name: 1, description: 1, duration: 1, classroomId: 1, teacherId: 1, source: 1, startTime: 1, endTime: 1, status: 1, createdAt: 1, updatedAt: 1 } }"
     })
     Slice<TestEntity> findTestInProgressByStudentId(String studentId, String currentTimestamp, Pageable pageable);
+
     @Aggregation({
             "{ $lookup: { from: 'student_enrollments', let: { classroomId: '$classroomId' }, pipeline: [ { $match: { $expr: { $and: [ { $eq: ['$classroomId', '$$classroomId'] }, { $eq: ['$studentId', ?0] } ] } } } ], as: 'enrollments' } }",
-            "{ $match: { $and: [ { 'enrollments': { $not: { $size: 0 } } }, { 'startTime': { $gte: ?1 } }, { 'startTime': { $lt: { $add: [?1, 86400000] } } } ] } }",
+            "{ $match: { $and: [ { 'enrollments': { $not: { $size: 0 } } }, { 'startTime': { $gte: ?1 } }, { 'startTime': { $lt: { $add: [?1, 86400000] } } }, { 'status': {$in: ['UPCOMING', 'ONGOING', 'FINISHED']} } ] } }",
             "{ $project: { _id: 1, name: 1, description: 1, duration: 1, classroomId: 1, teacherId: 1, source: 1, startTime: 1, endTime: 1, status: 1, createdAt: 1, updatedAt: 1, showResultType: 1 } }",
             "{ $sort: { 'startTime': 1 } }"
     })
@@ -33,6 +35,7 @@ public interface TestRepository extends MongoRepository<TestEntity, String> {
             String dateTimestamp,
             Pageable pageable
     );
+
     @Aggregation(pipeline = {
             "{ $addFields: { 'dayOfWeek': { $let: { vars: { 'days': [ 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' ] }, in: { $arrayElemAt: [ '$$days', { $subtract: [ { $dayOfWeek: '$startTime' }, 1 ] } ] } } } } }",
             "{ $group: { _id: '$dayOfWeek', count: { $sum: 1 } } }",
@@ -43,12 +46,12 @@ public interface TestRepository extends MongoRepository<TestEntity, String> {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) String endOfWeek
     );
 
-    @Query("{'classroomId': ?0}")
+    @Query("{'classroomId': ?0, 'status': {$in: ['UPCOMING', 'ONGOING', 'FINISHED']}}")
     Page<TestEntity> findByClassroomId(String classroomId, Pageable pageable);
 
-    @Query("{'classroomId': ?0, 'status': {$in: ['UPCOMING', 'ONGOING', 'FINISHED']}}")
+    @Query("{'classroomId': ?0)")
     Page<TestEntity> findByClassroomIdAndStatus(String classroomId, Pageable pageable);
 
-    @Query("{'classroomId': ?0")
-    List<TestEntity> findByClassroomIdToList(String classroomId);
+    @Query("{'classroomId': ?0}")
+    List<TestEntity> findAllByClassroomId(String classroomId);
 }

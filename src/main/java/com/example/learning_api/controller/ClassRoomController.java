@@ -83,6 +83,30 @@ public class ClassRoomController {
         }
 
     }
+
+    @GetMapping(path = "/teacher/{teacherId}")
+    public ResponseEntity<ResponseAPI<GetClassRoomsResponse>> getClassRoomByTeacherId(
+            @RequestParam(name="page",required = false,defaultValue = "1") int page,
+            @RequestParam(name="size",required = false,defaultValue = "10") int size,
+            @PathVariable(name="teacherId",required = true) String teacherId) {
+        try{
+            GetClassRoomsResponse resData = classRoomService.getClassRoomsByTeacherId( page-1, size,teacherId);
+            ResponseAPI<GetClassRoomsResponse> res = ResponseAPI.<GetClassRoomsResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get class room by teacherId successfully")
+                    .data(resData)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetClassRoomsResponse> res = ResponseAPI.<GetClassRoomsResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
     @GetMapping(path = "")
     public ResponseEntity<ResponseAPI<GetClassRoomsResponse>> getClassRoom(
             @RequestParam(name="name",required = false,defaultValue = "") String search,
@@ -106,6 +130,7 @@ public class ClassRoomController {
         }
 
     }
+
     @DeleteMapping(path = "/{classroomId}")
     @PreAuthorize("hasAnyAuthority('TEACHER')")
     public ResponseEntity<ResponseAPI<String>> deleteClassRoom(@PathVariable String classroomId) {
@@ -287,7 +312,7 @@ public class ClassRoomController {
         }
     }
 
-    @GetMapping(path = "/invitation/{classroomId}/accept-request/{studentId}")
+    @PostMapping(path = "/invitation/{classroomId}/accept-request/{studentId}")
     @PreAuthorize("hasAnyAuthority('TEACHER')")
     public ResponseEntity<ResponseAPI<String>> acceptJoinClass(@PathVariable String classroomId,
                                                                @PathVariable String studentId) {
@@ -307,7 +332,7 @@ public class ClassRoomController {
         }
     }
 
-    @GetMapping(path = "/invitation/{classroomId}/reject-request/{studentId}")
+    @PostMapping(path = "/invitation/{classroomId}/reject-request/{studentId}")
     @PreAuthorize("hasAnyAuthority('TEACHER')")
     public ResponseEntity<ResponseAPI<String>> rejectJoinClass(@PathVariable String classroomId,
                                                                @PathVariable String studentId) {
@@ -326,6 +351,31 @@ public class ClassRoomController {
             return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
         }
     }
+
+    @PostMapping(path = "/{classroomId}/remove-student/{studentId}")
+    @PreAuthorize("hasAnyAuthority('TEACHER')")
+    public ResponseEntity<ResponseAPI<String>> removeStudentFromClass(@PathVariable String classroomId,
+                                                                     @PathVariable String studentId,
+                                                                     @RequestHeader(name = "Authorization") String authorizationHeader) {
+        try {
+            String accessToken = authorizationHeader.replace("Bearer ", "");
+            String userId = jwtService.extractUserId(accessToken);
+            String teacherId = teacherService.getTeacherByUserId(userId).getId();
+            classRoomService.removeStudentFromClass(classroomId, studentId, teacherId);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message("Remove student from class successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        } catch (Exception e) {
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
     @PostMapping(path = "/invite",  consumes = "multipart/form-data")
     @PreAuthorize("hasAnyAuthority('TEACHER')")
     public ResponseEntity<ResponseAPI<InviteClassByEmailResponse>> inviteStudentByEmail(@ModelAttribute @Valid InviteStudentByEmailRequest body, @RequestHeader(name = "Authorization") String authorizationHeader){

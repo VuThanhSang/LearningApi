@@ -40,13 +40,40 @@ public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, St
             "{ $unwind: '$sections' }",
             "{ $lookup: { from: 'lessons', let: { sectionId: { $toString: '$sections._id' } }, pipeline: [{ $match: { $expr: { $eq: ['$sectionId', '$$sectionId'] } } }], as: 'lessons' } }",
             "{ $unwind: '$lessons' }",
-            "{ $lookup: { from: 'deadlines', let: { lessonId: { $toString: '$lessons._id' } }, pipeline: [{ $match: { $expr: { $eq: ['$lessonId', '$$lessonId'] } } }], as: 'deadlines' } }",
+            "{ $lookup: { from: 'deadlines', let: { lessonId: { $toString: '$lessons._id' } }, pipeline: [{ $match: { $expr: { $and: [ { $eq: ['$lessonId', '$$lessonId'] }, { $ne: ['$status', 'NOT_PUBLISHED'] } ] } } }], as: 'deadlines' } }",
             "{ $unwind: '$deadlines' }",
             "{ $project: { _id: '$deadlines._id', title: '$deadlines.title', description: '$deadlines.description', type: '$deadlines.type', status: '$deadlines.status', startDate : '$deadlines.startDate ',endDate : '$deadlines.endDate', lessonName: '$lessons.name', lessonDescription: '$lessons.description', sectionName: '$sections.name', sectionDescription: '$sections.description', classroomName: '$name', classroomDescription: '$description' } }",
             "{ $skip: ?1 }",
             "{ $limit: ?2 }"
     })
     List<ClassroomDeadlineResponse.DeadlineResponse> getDeadlinesForClassroom(String classroomId, int skip, int limit);
+
+    @Aggregation(pipeline = {
+            "{ $match: { _id: ObjectId(?0) } }",
+            "{ $lookup: { from: 'sections', let: { classroomId: { $toString: '$_id' } }, pipeline: [{ $match: { $expr: { $eq: ['$classRoomId', '$$classroomId'] } } }], as: 'sections' } }",
+            "{ $unwind: '$sections' }",
+            "{ $lookup: { from: 'lessons', let: { sectionId: { $toString: '$sections._id' } }, pipeline: [{ $match: { $expr: { $eq: ['$sectionId', '$$sectionId'] } } }], as: 'lessons' } }",
+            "{ $unwind: '$lessons' }",
+            "{ $lookup: { from: 'deadlines', let: { lessonId: { $toString: '$lessons._id' } }, pipeline: [{ $match: { $expr: { $and: [ { $eq: ['$lessonId', '$$lessonId'] }, { $ne: ['$status', 'NOT_PUBLISHED'] } ] } } }], as: 'deadlines' } }",
+            "{ $unwind: '$deadlines' }",
+            "{ $count: 'total' }"
+    })
+    long countDeadlinesForClassroom(String classroomId);
+
+    @Aggregation(pipeline = {
+            "{ $match: { _id: ObjectId(?0) } }",
+            "{ $lookup: { from: 'sections', let: { classroomId: { $toString: '$_id' } }, pipeline: [{ $match: { $expr: { $eq: ['$classRoomId', '$$classroomId'] } } }], as: 'sections' } }",
+            "{ $unwind: '$sections' }",
+            "{ $lookup: { from: 'lessons', let: { sectionId: { $toString: '$sections._id' } }, pipeline: [{ $match: { $expr: { $eq: ['$sectionId', '$$sectionId'] } } }], as: 'lessons' } }",
+            "{ $unwind: '$lessons' }",
+            "{ $lookup: { from: 'deadlines', let: { lessonId: { $toString: '$lessons._id' } }, pipeline: [{ $match: { $expr: { $eq: ['$lessonId', '$$lessonId'] } } }], as: 'deadlines' } }",
+            "{ $unwind: '$deadlines' }",
+            "{ $project: { _id: '$deadlines._id', title: '$deadlines.title', description: '$deadlines.description', type: '$deadlines.type', status: '$deadlines.status', startDate : '$deadlines.startDate ',endDate : '$deadlines.endDate', lessonName: '$lessons.name', lessonDescription: '$lessons.description', sectionName: '$sections.name', sectionDescription: '$sections.description', classroomName: '$name', classroomDescription: '$description' } }",
+            "{ $skip: ?1 }",
+            "{ $limit: ?2 }"
+    })
+    List<ClassroomDeadlineResponse.DeadlineResponse> getDeadlinesForClassroomForTeacher(String classroomId, int skip, int limit);
+
     @Aggregation(pipeline = {
             "{ $match: { _id: ObjectId(?0) } }",
             "{ $lookup: { from: 'sections', let: { classroomId: { $toString: '$_id' } }, pipeline: [{ $match: { $expr: { $eq: ['$classRoomId', '$$classroomId'] } } }], as: 'sections' } }",
@@ -57,8 +84,11 @@ public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, St
             "{ $unwind: '$deadlines' }",
             "{ $count: 'total' }"
     })
-    long countDeadlinesForClassroom(String classroomId);
+    long countDeadlinesForClassroomForTeacher(String classroomId);
 
     @Query("{ 'inviteCode' : ?0 }")
     ClassRoomEntity findClassRoomEntityByInviteCode(String inviteCode);
+
+    @Query("{ 'teacherId' : ?0 }")
+    Page<ClassRoomEntity> findByTeacherId(String teacherId, Pageable pageable);
 }

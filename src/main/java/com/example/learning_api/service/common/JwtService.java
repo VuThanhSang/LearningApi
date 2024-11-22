@@ -57,6 +57,13 @@ public class JwtService {
         if(claim.isNull()) return List.of();
         return claim.asList(SimpleGrantedAuthority.class);
     }
+    public String extractRole(String token) {
+        return JWT.require(Algorithm.HMAC256(properties.getAccessTokenKey()))
+                .build()
+                .verify(token)
+                .getClaim(ROLES_CLAIM_KEY)
+                .asString();
+    }
     public String extractUsername(String token) {
         return JWT.require(Algorithm.HMAC256(properties.getAccessTokenKey()))
                 .build()

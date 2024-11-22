@@ -20,10 +20,12 @@ public interface IDeadlineService {
     void updateScoringCriteria(ScoringCriteriaEntity body, String scoringCriteriaId);
     void deleteScoringCriteria(String scoringCriteriaId);
     DeadlineResponse getDeadline(String deadlineId);
-    GetDeadlinesResponse getDeadlinesByLessonId(String classroomId, Integer page, Integer size);
+    GetDeadlinesResponse getDeadlinesByLessonId(String classroomId, Integer page, Integer size,String role);
     GetUpcomingDeadlineResponse getUpcomingDeadlineByStudentId(String studentId,String filterType, Integer page, Integer size);
-    ClassroomDeadlineResponse getClassroomDeadlinesByClassroomId(String classroomId, Integer page, Integer size);
+    ClassroomDeadlineResponse getClassroomDeadlinesByClassroomId(String classroomId, Integer page, Integer size,String role);
     GetDeadlinesResponse getDeadlinesByTeacherId(String teacherId, String search,String status,String startDate,String enDate,Integer page, Integer size);
     GetDeadlinesResponse getDeadlinesByStudentId(String studentId, String search,String status,String startDate,String enDate,String classroomId,Integer page, Integer size, String sort, Sort.Direction order);
     GetDeadlineStatistics getDeadlineStatistics(String classroomId, int page, int size);
+    GetDeadlinesResponse getDeadlinesByTeacherIdForTeacher(String teacherId, String search, String status, String startDate, String endDate, Integer page, Integer size);
+    List<DeadlineEntity> getAllDeadlinesByTeacherId(String teacherId);
 }
