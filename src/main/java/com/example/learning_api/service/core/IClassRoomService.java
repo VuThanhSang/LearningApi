@@ -14,6 +14,7 @@ public interface IClassRoomService {
     void updateClassRoom(UpdateClassRoomRequest body);
     void deleteClassRoom(String classroomId);
     GetClassRoomsResponse getClassRooms(int page,int size, String search);
+    GetClassRoomsResponse getClassRoomsByTeacherId(int page,int size, String teacherId);
     GetSectionsResponse getSectionsByClassroomId(int page, int size, String search);
     GetClassRoomsResponse getScheduleByDay(String studentId, String day);
     List<GetScheduleResponse> getScheduleByStudentId(String studentId);
@@ -26,6 +27,7 @@ public interface IClassRoomService {
     GetJoinClassResponse getJoinClassRequests(int page, int size, String classroomId,String teacherId,String email,String name);
     void acceptJoinClass(String classroomId, String studentId);
     void rejectJoinClass(String classroomId, String studentId);
+    void removeStudentFromClass(String classroomId, String studentId, String teacherId);
     InviteClassByEmailResponse inviteStudentByEmail(InviteStudentByEmailRequest body);
     GetDetailStudentInClassResponse getDetailStudentInClass(String classroomId, String studentId);
 }

@@ -9,6 +9,7 @@ import com.example.learning_api.entity.sql.database.ScoringCriteriaEntity;
 import com.example.learning_api.enums.DeadlineSubmissionStatus;
 import com.example.learning_api.model.ResponseAPI;
 import com.example.learning_api.service.common.ExcelExportService;
+import com.example.learning_api.service.common.JwtService;
 import com.example.learning_api.service.core.IDeadlineService;
 import com.example.learning_api.service.core.IDeadlineSubmissionsService;
 import jakarta.validation.Valid;
@@ -18,9 +19,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.*;
+import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import javax.swing.*;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -41,6 +44,7 @@ import static com.example.learning_api.constant.RouterConstant.*;
 public class DeadlineController {
     private final IDeadlineService deadlineService;
     private final IDeadlineSubmissionsService deadlineSubmissionsService;
+    private final JwtService jwtService;
     @Autowired
     private ExcelExportService excelExportService;
     @PostMapping(path = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -133,9 +137,13 @@ public class DeadlineController {
     public ResponseEntity<ResponseAPI<GetDeadlinesResponse>> getDeadlines(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
-            @PathVariable String lessonId)  {
+            @PathVariable String lessonId,
+            @RequestHeader(value = "Authorization") String authorizationHeader){
         try{
-            GetDeadlinesResponse data =  deadlineService.getDeadlinesByLessonId(lessonId, page-1, size);
+            String accessToken = authorizationHeader.replace("Bearer ", "");
+            String userId = jwtService.extractUserId(accessToken);
+            String extractAuthoritiesFromClaim = jwtService.extractRole(accessToken);
+            GetDeadlinesResponse data =  deadlineService.getDeadlinesByLessonId(lessonId, page-1, size,extractAuthoritiesFromClaim);
             ResponseAPI<GetDeadlinesResponse> res = ResponseAPI.<GetDeadlinesResponse>builder()
                     .timestamp(new Date())
                     .message("Get deadlines successfully")
@@ -182,10 +190,13 @@ public class DeadlineController {
     @GetMapping(path="/classroom/{classroomId}")
     public ResponseEntity<ResponseAPI<ClassroomDeadlineResponse>> getClassroomDeadlinesByClassroomId(@PathVariable String classroomId,
     @RequestParam(defaultValue = "1") int page,
-    @RequestParam(defaultValue = "10") int size
+    @RequestParam(defaultValue = "10") int size,
+                                                                                                     @RequestHeader(value = "Authorization") String authorizationHeader
     ){
         try{
-            ClassroomDeadlineResponse data = deadlineService.getClassroomDeadlinesByClassroomId(classroomId, page-1, size);
+            String accessToken = authorizationHeader.replace("Bearer ", "");
+            String role = jwtService.extractRole(accessToken);
+            ClassroomDeadlineResponse data = deadlineService.getClassroomDeadlinesByClassroomId(classroomId, page-1, size,role);
             ResponseAPI<ClassroomDeadlineResponse> res = ResponseAPI.<ClassroomDeadlineResponse>builder()
                     .timestamp(new Date())
                     .message("Get classroom deadlines successfully")
@@ -605,5 +616,8 @@ public class DeadlineController {
             throw new IllegalArgumentException("Error downloading deadline submissions excel: " + e.getMessage());
         }
     }
+
+
+
 
 }

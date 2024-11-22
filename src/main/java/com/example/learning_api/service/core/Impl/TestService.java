@@ -527,10 +527,10 @@ public class TestService implements ITestService {
             Pageable pageAble = PageRequest.of(page, size);
             Page<TestEntity> testEntities = null;
             if (role.equals("USER")){
-                testEntities = testRepository.findByClassroomIdAndStatus(classroomId, pageAble);
+                testEntities = testRepository.findByClassroomId(classroomId, pageAble);
             }
             else{
-                 testEntities = testRepository.findByClassroomId(classroomId, pageAble);
+                 testEntities = testRepository.findByClassroomIdAndStatus(classroomId, pageAble);
 
             }
             GetTestsResponse resData = new GetTestsResponse();

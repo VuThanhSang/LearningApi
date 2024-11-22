@@ -248,6 +248,27 @@ public class ClassRoomService implements IClassRoomService {
     }
 
     @Override
+    public GetClassRoomsResponse getClassRoomsByTeacherId(int page, int size, String teacherId) {
+        try{
+            Pageable pageAble = PageRequest.of(page, size);
+            Page<ClassRoomEntity> classRooms = classRoomRepository.findByTeacherId(teacherId, pageAble);
+            List<GetClassRoomsResponse.ClassRoomResponse> resData = new ArrayList<>();
+            for (ClassRoomEntity classRoom : classRooms){
+                GetClassRoomsResponse.ClassRoomResponse classRoomResponse = modelMapperService.mapClass(classRoom, GetClassRoomsResponse.ClassRoomResponse.class);
+                resData.add(classRoomResponse);
+            }
+            GetClassRoomsResponse res = new GetClassRoomsResponse();
+            res.setClassRooms(resData);
+            res.setTotalPage(classRooms.getTotalPages());
+            res.setTotalElements(classRooms.getTotalElements());
+            return res;
+        }
+        catch (Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
     public GetSectionsResponse getSectionsByClassroomId(int page, int size, String classroomId) {
         try{
             Pageable pageAble = PageRequest.of(page, size);
@@ -567,6 +588,29 @@ public class ClassRoomService implements IClassRoomService {
             throw new IllegalArgumentException(e.getMessage());
         }
 
+    }
+
+    @Override
+    public void removeStudentFromClass(String classroomId, String studentId, String teacherId) {
+        try{
+            ClassRoomEntity classRoom = classRoomRepository.findById(classroomId)
+                    .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
+            if (!classRoom.getTeacherId().equals(teacherId)) {
+                throw new IllegalArgumentException("TeacherId is not authorized to remove students");
+
+            }
+            StudentEnrollmentsEntity studentEnrollmentsEntity = studentEnrollmentsRepository.findByStudentIdAndClassroomId(studentId, classroomId);
+            if (studentEnrollmentsEntity == null) {
+                throw new IllegalArgumentException("Student is not enrolled in this class");
+            }
+            studentEnrollmentsRepository.delete(studentEnrollmentsEntity);
+            classRoom.setCurrentEnrollment(classRoom.getCurrentEnrollment() - 1);
+            classRoomRepository.save(classRoom);
+
+        }
+        catch (Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
     }
 
     @Override
