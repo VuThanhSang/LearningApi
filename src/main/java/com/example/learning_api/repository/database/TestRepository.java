@@ -49,7 +49,7 @@ public interface TestRepository extends MongoRepository<TestEntity, String> {
     @Query("{'classroomId': ?0, 'status': {$in: ['UPCOMING', 'ONGOING', 'FINISHED']}}")
     Page<TestEntity> findByClassroomId(String classroomId, Pageable pageable);
 
-    @Query("{'classroomId': ?0)")
+    @Query("{'classroomId': ?0}")
     Page<TestEntity> findByClassroomIdAndStatus(String classroomId, Pageable pageable);
 
     @Query("{'classroomId': ?0}")

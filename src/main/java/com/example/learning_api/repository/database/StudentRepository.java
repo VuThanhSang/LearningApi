@@ -4,6 +4,7 @@ import com.example.learning_api.entity.sql.database.StudentEntity;
 import com.example.learning_api.entity.sql.database.TeacherEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
@@ -22,4 +23,18 @@ public interface StudentRepository extends MongoRepository<StudentEntity, String
             "{ 'user.fullname': { $regex: ?1, $options: 'i' } } " +
             "]}")
     List<StudentEntity> findByIdInAndSearch(List<String> studentIds, String search);
+    @Query(value = "{" +
+            "'_id': { $nin: ?0 }," +
+            "$or: [" +
+            "  { 'user.email': { $regex: ?1, $options: 'i' } }," +
+            "  { 'user.fullname': { $regex: ?1, $options: 'i' } }" +
+            "]" +
+            "}")
+    List<StudentEntity> findStudentsNotInClassroom(List<String> enrolledStudentIds, String search);
+
+    @Query(value = "{" +
+            "'_id': { $nin: ?0 }" +
+            "}")
+    List<StudentEntity> findStudentsNotInClassroom(List<String> enrolledStudentIds);
+
 }

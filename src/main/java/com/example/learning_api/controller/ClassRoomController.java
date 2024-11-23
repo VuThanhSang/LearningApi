@@ -9,6 +9,7 @@ import com.example.learning_api.dto.request.classroom.UpdateClassRoomRequest;
 import com.example.learning_api.dto.request.faculty.ImportFacultyRequest;
 import com.example.learning_api.dto.response.classroom.*;
 import com.example.learning_api.dto.response.section.GetSectionsResponse;
+import com.example.learning_api.dto.response.student.StudentsResponse;
 import com.example.learning_api.model.ResponseAPI;
 import com.example.learning_api.repository.database.StudentRepository;
 import com.example.learning_api.service.common.JwtService;
@@ -241,6 +242,31 @@ public class ClassRoomController {
 
     }
 
+    @GetMapping(path = "/invitation/student-not-in-class/{classroomId}")
+    public ResponseEntity<ResponseAPI<StudentsResponse>> getStudentInSystem(@RequestParam(name="page",required = false,defaultValue = "1") int page,
+                                                                            @RequestParam(name="size",required = false,defaultValue = "10") int size,
+                                                                            @RequestParam(name="search",required = false,defaultValue = "") String search,
+                                                                            @RequestParam(name="sort",required = false,defaultValue = "createdAt") String sortBy,
+                                                                            @RequestParam(name="order",required = false,defaultValue = "desc") String sortDirection,
+                                                                            @PathVariable String classroomId) {
+        try{
+            StudentsResponse data= studentEnrollmentsService.getStudents(page-1,size,search,sortBy,sortDirection,classroomId);
+            ResponseAPI<StudentsResponse> res = ResponseAPI.<StudentsResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get student in system successfully")
+                    .data(data)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<StudentsResponse> res = ResponseAPI.<StudentsResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
     @GetMapping(path = "/invitation/{invitationCode}")
     public ResponseEntity<ResponseAPI<GetClassRoomDetailResponse>> getClassRoomByInvitationCode(@PathVariable String invitationCode) {
         try{
@@ -503,7 +529,6 @@ public class ClassRoomController {
             GetDetailStudentInClassResponse data = classRoomService.getDetailStudentInClass(classroomId, studentId);
             ResponseAPI<GetDetailStudentInClassResponse> res = ResponseAPI.<GetDetailStudentInClassResponse>builder()
                     .timestamp(new Date())
-                    .message("Remove student from class successfully")
                     .data(data)
                     .build();
             return new ResponseEntity<>(res, StatusCode.OK);
