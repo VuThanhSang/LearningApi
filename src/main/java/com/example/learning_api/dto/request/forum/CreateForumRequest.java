@@ -10,7 +10,7 @@ public class CreateForumRequest {
     private String title;
     private String content;
     private String authorId;
-    private List<MultipartFile> files;
+    private List<MultipartFile> sources;
     private String status;
     private List<String> tags;
     private String role;

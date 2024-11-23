@@ -1,5 +1,6 @@
 package com.example.learning_api.dto.response.forum;
 
+import com.example.learning_api.entity.sql.database.FileEntity;
 import com.example.learning_api.entity.sql.database.StudentEntity;
 import com.example.learning_api.entity.sql.database.TeacherEntity;
 import com.example.learning_api.enums.ForumStatus;
@@ -32,7 +33,7 @@ public class GetForumDetailResponse {
         private int downvote;
         private int replyCount;
         private ForumStatus status;
-        private String image;
+        private List<FileEntity> sources;
         private RoleEnum role;
         private String createdAt;
         private String updatedAt;

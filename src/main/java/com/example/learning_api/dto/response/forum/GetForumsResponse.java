@@ -1,6 +1,8 @@
 package com.example.learning_api.dto.response.forum;
 
+import com.example.learning_api.entity.sql.database.FileEntity;
 import com.example.learning_api.entity.sql.database.ForumEntity;
+import com.example.learning_api.entity.sql.database.TagEntity;
 import lombok.Data;
 
 import java.util.List;
@@ -19,9 +21,9 @@ public class GetForumsResponse {
         private int upvote;
         private int downvote;
         private int commentCount;
-        private List<ForumEntity.SourceDto> sources;
+        private List<FileEntity> sources;
         private String status;
-        private List<String> tags;
+        private List<TagEntity> tags;
         private int upvoteCount;
         private int downvoteCount;
         private String createdAt;

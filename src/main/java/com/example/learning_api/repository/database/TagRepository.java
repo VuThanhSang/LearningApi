@@ -1,0 +1,15 @@
+package com.example.learning_api.repository.database;
+
+import com.example.learning_api.entity.sql.database.TagEntity;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
+
+import java.util.List;
+
+public interface TagRepository extends MongoRepository<TagEntity, String> {
+    TagEntity findByName(String name);
+    @Query("{'name': {$in: ?0}}")
+    List<TagEntity> findByNameIn(List<String> names);
+    @Query("{'_id': {$in: ?0}}")
+    List<TagEntity> findByIdIn(List<String> ids);
+}
