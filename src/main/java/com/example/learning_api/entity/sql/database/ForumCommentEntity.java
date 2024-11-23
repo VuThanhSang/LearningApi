@@ -19,7 +19,7 @@ public class ForumCommentEntity {
     private String authorId;
     private int replyCount;
     private ForumStatus status;
-    private List<SourceDto> attachments;
+    private List<FileEntity> attachments;
     private RoleEnum role;
     private String parentId;
     private String createdAt;

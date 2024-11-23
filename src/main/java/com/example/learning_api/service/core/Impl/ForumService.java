@@ -9,6 +9,7 @@ import com.example.learning_api.dto.response.forum.GetForumDetailResponse;
 import com.example.learning_api.dto.response.forum.GetForumsResponse;
 import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.FaqSourceType;
+import com.example.learning_api.enums.FileOwnerType;
 import com.example.learning_api.enums.ForumStatus;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
@@ -27,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +41,73 @@ public class ForumService implements IForumService {
     private final TeacherRepository teacherRepository;
     private final StudentRepository studentRepository;
     private final VoteRepository voteRepository;
+    private final TagRepository tagRepository;
+    private final FileRepository fileRepository;
+    public void processFiles (List<MultipartFile> files,String title, String ownerId, FileOwnerType ownerType){
+        if (files == null) {
+            return;
+        }
+        if (files.isEmpty()) {
+            return;
+        }
+        for (MultipartFile file : files) {
+            try {
+                FAQEntity.SourceDto fileDto = processFile(file, title);
+                if (fileDto == null) {
+                    continue;
+                }
+                FileEntity fileEntity = new FileEntity();
+                fileEntity.setUrl(fileDto.getPath());
+                fileEntity.setType(fileDto.getType().name());
+                fileEntity.setOwnerType(ownerType);
+                fileEntity.setOwnerId(ownerId);
+                fileEntity.setExtension(fileDto.getPath().substring(fileDto.getPath().lastIndexOf(".") + 1));
+                fileEntity.setName(file.getOriginalFilename());
+                fileEntity.setSize(String.valueOf(file.getSize()));
+                fileEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+                fileEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+                fileRepository.save(fileEntity);
+            } catch (IOException e) {
+                log.error("Error processing file: ", e);
+                throw new IllegalArgumentException("Error processing file: " + e.getMessage());
+            }
+        }
+    }
+
+    public FAQEntity.SourceDto processFile(MultipartFile file, String title) throws IOException {
+        if (file.getOriginalFilename().equals("")){
+            return null;
+        }
+        byte[] fileBytes = file.getBytes();
+        String fileName = StringUtils.generateFileName(file.getOriginalFilename(), "deadline");
+        CloudinaryUploadResponse response;
+
+        String contentType = file.getContentType();
+        if (contentType.startsWith("image/")) {
+            byte[] resizedImage = ImageUtils.resizeImage(fileBytes, 400, 400);
+            response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName, resizedImage, "image");
+        } else if (contentType.startsWith("video/")) {
+            String videoFileType = getFileExtension(file.getOriginalFilename());
+            response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + videoFileType, fileBytes, "video");
+        } else if (contentType.startsWith("application/")) {
+            String docFileType = getFileExtension(file.getOriginalFilename());
+            response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + docFileType, fileBytes, "raw");
+        }  else if (contentType.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document")) {
+            response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + ".docx", fileBytes, "raw");
+        }
+        else {
+            throw new IllegalArgumentException("Unsupported source type");
+        }
+
+        return FAQEntity.SourceDto.builder()
+                .path(response.getSecureUrl())
+                .type(contentType.startsWith("image/") ? FaqSourceType.IMAGE : contentType.startsWith("video/") ? FaqSourceType.VIDEO : FaqSourceType.DOCUMENT)
+                .build();
+    }
+    private String getFileExtension(String filename) {
+        return filename.substring(filename.lastIndexOf("."));
+    }
+
     @Override
     public void createForum(CreateForumRequest request) {
         try{
@@ -53,62 +122,31 @@ public class ForumService implements IForumService {
                 }
             }
             ForumEntity forumEntity = modelMapperService.mapClass(request, ForumEntity.class);
-            forumEntity.setSources(new ArrayList<>());
-            processSources(request.getFiles(), request.getTitle(), forumEntity);
+            List<String> tags = new ArrayList<>();
+            for (String tag : request.getTags()) {
+                TagEntity tagEntity = tagRepository.findByName(tag);
+                if (tagEntity == null) {
+                    tagEntity = new TagEntity();
+                    tagEntity.setName(tag);
+                    tagEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+                    tagRepository.save(tagEntity);
+                }
+                tags.add(tagEntity.getId());
+
+            }
+            forumEntity.setTags(tags);
             forumEntity.setCommentCount(0);
             forumEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
             forumEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             forumRepository.save(forumEntity);
+            processFiles(request.getSources(), request.getTitle(), forumEntity.getId(), FileOwnerType.FORUM);
         }
         catch (Exception e){
             log.error(e.getMessage());
             throw new IllegalArgumentException(e.getMessage());
         }
     }
-    public void processSources(List<MultipartFile> sources, String question, ForumEntity forumEntity) {
-        if (sources.isEmpty()) {
-            return;
-        }
 
-        for (MultipartFile source : sources) {
-            try {
-                ForumEntity.SourceDto sourceDto = processSource(source, question);
-                forumEntity.getSources().add(sourceDto);
-            } catch (IOException e) {
-                log.error("Error processing source: " + e.getMessage());
-                throw new IllegalArgumentException("Error processing source");
-            }
-        }
-    }
-
-    private ForumEntity.SourceDto processSource(MultipartFile file, String title) throws IOException {
-        byte[] fileBytes = file.getBytes();
-        String fileName = StringUtils.generateFileName(title, "forum");
-        CloudinaryUploadResponse response;
-
-        String contentType = file.getContentType();
-        if (contentType.startsWith("image/")) {
-            byte[] resizedImage = ImageUtils.resizeImage(fileBytes, 400, 400);
-            response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName, resizedImage, "image");
-        } else if (contentType.startsWith("video/")) {
-            String videoFileType = getFileExtension(file.getOriginalFilename());
-            response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + videoFileType, fileBytes, "video");
-        } else if (contentType.startsWith("application/")) {
-            String docFileType = getFileExtension(file.getOriginalFilename());
-            response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + docFileType, fileBytes, "raw");
-        } else {
-            throw new IllegalArgumentException("Unsupported source type");
-        }
-
-        return ForumEntity.SourceDto.builder()
-                .path(response.getSecureUrl())
-                .type(contentType.startsWith("image/") ? FaqSourceType.IMAGE : contentType.startsWith("video/") ? FaqSourceType.VIDEO : FaqSourceType.DOCUMENT)
-                .build();
-    }
-
-    private String getFileExtension(String filename) {
-        return filename.substring(filename.lastIndexOf("."));
-    }
 
     @Override
     public void updateForum(UpdateForumRequest request) {
@@ -125,8 +163,7 @@ public class ForumService implements IForumService {
             }
 
             if (request.getSources()!=null) {
-                forumEntity.getSources().clear();
-                processSources(request.getSources(), request.getTitle(), forumEntity);
+                processFiles(request.getSources(), request.getTitle(), forumEntity.getId(), FileOwnerType.FORUM);
             }
             forumEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             forumRepository.save(forumEntity);
@@ -205,7 +242,9 @@ public class ForumService implements IForumService {
             List<GetForumsResponse.ForumResponse> data = new ArrayList<>();
             forumEntities.forEach(forumEntity -> {
                 GetForumsResponse.ForumResponse forumResponse = GetForumsResponse.ForumResponse.formForumEntity(forumEntity);
-                forumResponse.setSources(forumEntity.getSources());
+                List<FileEntity> fileEntities = fileRepository.findByOwnerIdAndOwnerType(forumEntity.getId(), FileOwnerType.FORUM.name());
+                forumResponse.setTags(tagRepository.findByIdIn(forumEntity.getTags()));
+                forumResponse.setSources(fileEntities);
                 forumResponse.setUpvote(voteRepository.countUpvoteByForumId(forumEntity.getId()));
                 forumResponse.setDownvote(voteRepository.countDownvoteByForumId(forumEntity.getId()));
                 data.add(forumResponse);
@@ -225,6 +264,7 @@ public class ForumService implements IForumService {
     public GetForumDetailResponse getForumDetail(String id) {
         try{
             ForumEntity forumEntity = forumRepository.findById(id).orElseThrow(()->new IllegalArgumentException("Id is not found"));
+            List<FileEntity> fileEntities = fileRepository.findByOwnerIdAndOwnerType(forumEntity.getId(), FileOwnerType.FORUM.name());
             GetForumDetailResponse getForumDetailResponse = modelMapperService.mapClass(forumEntity, GetForumDetailResponse.class);
             getForumDetailResponse.setUpvoteCount(voteRepository.countUpvoteByForumId(id));
             getForumDetailResponse.setDownvoteCount(voteRepository.countDownvoteByForumId(id));
@@ -232,6 +272,7 @@ public class ForumService implements IForumService {
             List<GetForumDetailResponse.ForumComment> forumComments = new ArrayList<>();
             forumCommentEntities.forEach(forumCommentEntity -> {
                 GetForumDetailResponse.ForumComment forumComment = modelMapperService.mapClass(forumCommentEntity, GetForumDetailResponse.ForumComment.class);
+                forumComment.setSources(fileRepository.findByOwnerIdAndOwnerType(forumCommentEntity.getId(), FileOwnerType.FORUM_COMMENT.name()));
                 if (String.valueOf(forumCommentEntity.getRole())== "USER"){
                     StudentEntity studentEntity = studentRepository.findById(forumCommentEntity.getAuthorId()).orElse(null);
                     forumComment.setStudent(studentEntity);
@@ -262,8 +303,9 @@ public class ForumService implements IForumService {
             List<GetForumsResponse.ForumResponse> data = new ArrayList<>();
             forumEntities.forEach(forumEntity -> {
                 GetForumsResponse.ForumResponse forumResponse = GetForumsResponse.ForumResponse.formForumEntity(forumEntity);
-                forumResponse.setSources(forumEntity.getSources());
-                forumResponse.setTags(forumEntity.getTags());
+                forumResponse.setSources(fileRepository.findByOwnerIdAndOwnerType(forumEntity.getId(), FileOwnerType.FORUM.name()));
+                List<TagEntity> tagEntities = tagRepository.findByIdIn(forumEntity.getTags());
+                forumResponse.setTags(tagEntities);
                 forumResponse.setUpvote(voteRepository.countUpvoteByForumId(forumEntity.getId()));
                 forumResponse.setDownvote(voteRepository.countDownvoteByForumId(forumEntity.getId()));
                 data.add(forumResponse);
@@ -278,34 +320,49 @@ public class ForumService implements IForumService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
-
     @Override
-    public GetForumsResponse getForumByTag(String tag, int page, int size) {
-        try{
+    public GetForumsResponse getForumByTag(List<String> tagNames, int page, int size) {
+        try {
+            // Đầu tiên lấy tag IDs từ tag names
+            List<String> tagIds = tagRepository.findByNameIn(tagNames)
+                    .stream()
+                    .map(TagEntity::getId)
+                    .collect(Collectors.toList());
+
+            // Sử dụng tag IDs để tìm forums
             Pageable pageAble = PageRequest.of(page, size);
-            Page<ForumEntity> forumEntities = forumRepository.findByTagsContaining(tag, pageAble);
+            Page<ForumEntity> forumEntities = forumRepository.findByTagIds(tagIds, pageAble);
+
             GetForumsResponse getForumsResponse = new GetForumsResponse();
             List<GetForumsResponse.ForumResponse> data = new ArrayList<>();
+
             forumEntities.forEach(forumEntity -> {
                 GetForumsResponse.ForumResponse forumResponse = GetForumsResponse.ForumResponse.formForumEntity(forumEntity);
-                forumResponse.setSources(forumEntity.getSources());
-                forumResponse.setTags(forumEntity.getTags());
+
+                // Thêm các thông tin bổ sung
+                forumResponse.setSources(fileRepository.findByOwnerIdAndOwnerType(
+                        forumEntity.getId(),
+                        FileOwnerType.FORUM.name()
+                ));
+
+                forumResponse.setTags(tagRepository.findByIdIn(forumEntity.getTags()));
                 forumResponse.setUpvote(voteRepository.countUpvoteByForumId(forumEntity.getId()));
                 forumResponse.setDownvote(voteRepository.countDownvoteByForumId(forumEntity.getId()));
 
                 data.add(forumResponse);
             });
+
+            // Set response data
             getForumsResponse.setForums(data);
             getForumsResponse.setTotalElements(forumEntities.getTotalElements());
             getForumsResponse.setTotalPage(forumEntities.getTotalPages());
+
             return getForumsResponse;
-        }
-        catch (Exception e){
-            log.error(e.getMessage());
-            throw new IllegalArgumentException(e.getMessage());
+        } catch (Exception e) {
+            log.error("Error in getForumByTag: {}", e.getMessage(), e);
+            throw new IllegalArgumentException("Failed to get forums by tags: " + e.getMessage());
         }
     }
-
     @Override
     public void createForumComment(CreateForumCommentRequest request) {
         try{
@@ -327,38 +384,14 @@ public class ForumService implements IForumService {
                 throw new IllegalArgumentException("Author Id is required");
             }
             ForumCommentEntity forumCommentEntity = modelMapperService.mapClass(request, ForumCommentEntity.class);
-            List<ForumCommentEntity.SourceDto> attachments = new ArrayList<>();
-            if (request.getSources() != null && !request.getSources().isEmpty()) {
-                forumCommentEntity.setAttachments(new ArrayList<>());
-                for (MultipartFile file : request.getSources()) {
-                    byte[] fileBytes = file.getBytes();
-                    String fileName = StringUtils.generateFileName("title", "forum");
-                    CloudinaryUploadResponse response;
 
-                    String contentType = file.getContentType();
-                    if (contentType.startsWith("image/")) {
-                        byte[] resizedImage = ImageUtils.resizeImage(fileBytes, 400, 400);
-                        response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName, resizedImage, "image");
-                    } else if (contentType.startsWith("video/")) {
-                        String videoFileType = getFileExtension(file.getOriginalFilename());
-                        response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + videoFileType, fileBytes, "video");
-                    } else if (contentType.startsWith("application/")) {
-                        String docFileType = getFileExtension(file.getOriginalFilename());
-                        response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + docFileType, fileBytes, "raw");
-                    } else {
-                        throw new IllegalArgumentException("Unsupported source type");
-                    }
-                    ForumCommentEntity.SourceDto sourceDto = new ForumCommentEntity.SourceDto();
-                    sourceDto.setPath(response.getUrl());
-                    sourceDto.setType(contentType.startsWith("image/") ? FaqSourceType.IMAGE : contentType.startsWith("video/") ? FaqSourceType.VIDEO : FaqSourceType.DOCUMENT);
-                    attachments.add(sourceDto);
-                }
-            }
-            forumCommentEntity.setAttachments(attachments);
             forumCommentEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
             forumCommentEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             forumCommentEntity.setReplyCount(0);
             forumCommentRepository.save(forumCommentEntity);
+            if (request.getSources() != null && !request.getSources().isEmpty()) {
+                processFiles(request.getSources(), request.getContent(), forumCommentEntity.getId(), FileOwnerType.FORUM_COMMENT);
+            }
             if (request.getParentId()!=null && forumCommentRepository.findById(request.getParentId()).isPresent()){
                 ForumCommentEntity parentComment = forumCommentRepository.findById(request.getParentId()).get();
                 parentComment.setReplyCount(parentComment.getReplyCount()+1);
@@ -386,34 +419,10 @@ public class ForumService implements IForumService {
             if (request.getStatus()!=null){
                 forumCommentEntity.setStatus(ForumStatus.valueOf(request.getStatus()));
             }
-            List<ForumCommentEntity.SourceDto> attachments = new ArrayList<>();
 
             if (request.getSources() != null && !request.getSources().isEmpty()) {
-                for (MultipartFile file : request.getSources()) {
-                    byte[] fileBytes = file.getBytes();
-                    String fileName = StringUtils.generateFileName("title", "forum");
-                    CloudinaryUploadResponse response;
-
-                    String contentType = file.getContentType();
-                    if (contentType.startsWith("image/")) {
-                        byte[] resizedImage = ImageUtils.resizeImage(fileBytes, 400, 400);
-                        response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName, resizedImage, "image");
-                    } else if (contentType.startsWith("video/")) {
-                        String videoFileType = getFileExtension(file.getOriginalFilename());
-                        response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + videoFileType, fileBytes, "video");
-                    } else if (contentType.startsWith("application/")) {
-                        String docFileType = getFileExtension(file.getOriginalFilename());
-                        response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + docFileType, fileBytes, "raw");
-                    } else {
-                        throw new IllegalArgumentException("Unsupported source type");
-                    }
-                    ForumCommentEntity.SourceDto sourceDto = new ForumCommentEntity.SourceDto();
-                    sourceDto.setPath(response.getUrl());
-                    sourceDto.setType(contentType.startsWith("image/") ? FaqSourceType.IMAGE : contentType.startsWith("video/") ? FaqSourceType.VIDEO : FaqSourceType.DOCUMENT);
-                    attachments.add(sourceDto);
-                }
+                processFiles(request.getSources(), request.getContent(),forumCommentEntity.getId() , FileOwnerType.FORUM_COMMENT);
             }
-            forumCommentEntity.setAttachments(attachments);
             forumCommentEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             forumCommentRepository.save(forumCommentEntity);
         }
@@ -458,6 +467,46 @@ public class ForumService implements IForumService {
             getForumCommentResponse.setTotalElements(forumCommentEntities.getTotalElements());
             getForumCommentResponse.setTotalPage(forumCommentEntities.getTotalPages());
             return getForumCommentResponse;
+        }
+        catch (Exception e){
+            log.error(e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void createTag(TagEntity request) {
+        try {
+            TagEntity tagEntity = modelMapperService.mapClass(request, TagEntity.class);
+            tagRepository.save(tagEntity);
+        }
+        catch (Exception e){
+            log.error(e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
+
+        }
+    }
+
+    @Override
+    public void updateTag(TagEntity request) {
+        try {
+            TagEntity tagEntity = tagRepository.findById(request.getId()).orElseThrow(()->new IllegalArgumentException("Id is not found"));
+            if (request.getName()!=null){
+                tagEntity.setName(request.getName());
+            }
+            tagRepository.save(tagEntity);
+        }
+        catch (Exception e){
+            log.error(e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void deleteTag(String id) {
+        try {
+            TagEntity tagEntity = tagRepository.findById(id).orElseThrow(()->new IllegalArgumentException("Id is not found"));
+            tagRepository.delete(tagEntity);
         }
         catch (Exception e){
             log.error(e.getMessage());

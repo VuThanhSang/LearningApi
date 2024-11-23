@@ -5,6 +5,9 @@ import com.example.learning_api.dto.response.forum.GetForumCommentResponse;
 import com.example.learning_api.dto.response.forum.GetForumDetailResponse;
 import com.example.learning_api.dto.response.forum.GetForumsResponse;
 import com.example.learning_api.model.ResponseAPI;
+import com.example.learning_api.repository.database.StudentRepository;
+import com.example.learning_api.repository.database.TeacherRepository;
+import com.example.learning_api.service.common.JwtService;
 import com.example.learning_api.service.core.IForumService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -13,16 +16,35 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @Slf4j
 @RequestMapping("/api/v1/forum")
 public class ForumController {
     private final IForumService forumService;
-
+    private final JwtService jwtService;
+    private final StudentRepository studentRepository;
+    private final TeacherRepository teacherRepository;
     @PostMapping(path = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ResponseAPI<String>> createForum(@ModelAttribute @Valid CreateForumRequest body) {
+    public ResponseEntity<ResponseAPI<String>> createForum(@ModelAttribute @Valid CreateForumRequest body,@RequestHeader("Authorization") String authorizationHeader){
         try{
+            String accessToken = authorizationHeader.replace("Bearer ", "");
+            String userId = jwtService.extractUserId(accessToken);
+            String role = jwtService.extractRole(accessToken);
+            String authorId ="";
+            if (role.equals("USER")){
+                authorId = studentRepository.findByUserId(userId).getId();
+            }
+            else if (role.equals("TEACHER")){
+                authorId = teacherRepository.findByUserId(userId).getId();
+            }
+            else{
+                throw new Exception("Role not found");
+            }
+            body.setAuthorId(authorId);
+            body.setRole(role);
             forumService.createForum(body);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
                     .message("Create forum successfully")
@@ -129,11 +151,11 @@ public class ForumController {
     }
 
     @GetMapping(path = "/tag")
-    public ResponseEntity<ResponseAPI<GetForumsResponse>> getForumByTag(@RequestParam(name="search",required = false,defaultValue = "") String tag,
+    public ResponseEntity<ResponseAPI<GetForumsResponse>> getForumByTag(@RequestParam List<String> tags,
                                                                                   @RequestParam(name="page",required = false,defaultValue = "1") int page,
                                                                                   @RequestParam(name="size",required = false,defaultValue = "10") int size) {
         try{
-            GetForumsResponse data = forumService.getForumByTag(tag, page-1, size);
+            GetForumsResponse data = forumService.getForumByTag(tags, page-1, size);
             ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
                     .message("Get forum by tag successfully")
                     .data(data)
@@ -168,8 +190,23 @@ public class ForumController {
 
 
     @PostMapping(path= "/comment", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ResponseAPI<String>> createForumComment(@ModelAttribute @Valid CreateForumCommentRequest body) {
+    public ResponseEntity<ResponseAPI<String>> createForumComment(@ModelAttribute @Valid CreateForumCommentRequest body, @RequestHeader("Authorization") String authorizationHeader){
         try{
+            String accessToken = authorizationHeader.replace("Bearer ", "");
+            String userId = jwtService.extractUserId(accessToken);
+            String role = jwtService.extractRole(accessToken);
+            String authorId ="";
+            if (role.equals("USER")){
+                authorId = studentRepository.findByUserId(userId).getId();
+            }
+            else if (role.equals("TEACHER")){
+                authorId =teacherRepository.findByUserId(userId).getId();
+            }
+            else{
+                throw new Exception("Role not found");
+            }
+            body.setAuthorId(authorId);
+            body.setRole(role);
             forumService.createForumComment(body);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
                     .message("Create forum comment successfully")
