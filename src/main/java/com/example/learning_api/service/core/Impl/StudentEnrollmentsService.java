@@ -2,6 +2,7 @@ package com.example.learning_api.service.core.Impl;
 
 import com.example.learning_api.dto.request.student_enrollments.EnrollStudentRequest;
 import com.example.learning_api.dto.response.classroom.GetStudentInClassResponse;
+import com.example.learning_api.dto.response.student.StudentsResponse;
 import com.example.learning_api.entity.sql.database.ClassRoomEntity;
 import com.example.learning_api.entity.sql.database.StudentEnrollmentsEntity;
 import com.example.learning_api.entity.sql.database.StudentEntity;
@@ -20,10 +21,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -221,6 +219,87 @@ public class StudentEnrollmentsService implements IStudentEnrollmentsService {
         } catch (Exception e) {
             log.error("Error in getStudentInClass: ", e);
             throw new IllegalArgumentException("Error retrieving students in class: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public StudentsResponse getStudents(Integer page, Integer limit, String search, String sort, String order, String classroomId) {
+        try {
+            // Clean up and validate search parameter
+            search = (search == null) ? "" : search.trim();
+
+            // Validate and sanitize sort parameter
+            List<String> allowedSortFields = Arrays.asList("id", "userId", "fullname", "gradeLevel", "email");
+            if (sort == null || !allowedSortFields.contains(sort)) {
+                sort = "fullname"; // default sort
+            }
+
+            // Validate pagination parameters
+            page = (page == null || page < 0) ? 0 : page;
+            limit = (limit == null || limit <= 0) ? 10 : limit;
+
+            // Get enrolled student IDs for the classroom
+            List<String> enrolledStudentIds = studentEnrollmentsRepository
+                    .findByClassroomId(classroomId)
+                    .stream()
+                    .map(StudentEnrollmentsEntity::getStudentId)
+                    .collect(Collectors.toList());
+
+            // Get students not in classroom
+            List<StudentEntity> allStudents;
+            if (search.isEmpty()) {
+                allStudents = studentRepository.findStudentsNotInClassroom(enrolledStudentIds);
+            } else {
+                allStudents = studentRepository.findStudentsNotInClassroom(enrolledStudentIds, search);
+            }
+
+            // Sort students
+            Comparator<StudentEntity> comparator;
+            switch (sort) {
+                case "id":
+                    comparator = Comparator.comparing(StudentEntity::getId);
+                    break;
+                case "userId":
+                    comparator = Comparator.comparing(StudentEntity::getUserId);
+                    break;
+                case "gradeLevel":
+                    comparator = Comparator.comparing(StudentEntity::getGradeLevel);
+                    break;
+                case "email":
+                    comparator = Comparator.comparing(student -> student.getUser().getEmail());
+                    break;
+                default: // fullname
+                    comparator = Comparator.comparing(student -> student.getUser().getFullname());
+            }
+
+            // Apply sorting direction
+            if ("desc".equalsIgnoreCase(order)) {
+                comparator = comparator.reversed();
+            }
+
+            // Sort the students
+            allStudents.sort(comparator);
+
+            // Paginate the results
+            int start = page * limit;
+            int end = Math.min((start + limit), allStudents.size());
+            List<StudentEntity> paginatedStudents = allStudents.subList(start, end);
+
+            // Convert to response DTOs
+            List<StudentsResponse.StudentResponse> studentResponses = paginatedStudents.stream()
+                    .map(StudentsResponse.StudentResponse::formStudentEntity)
+                    .collect(Collectors.toList());
+
+            // Prepare the response
+            StudentsResponse response = new StudentsResponse();
+            response.setStudents(studentResponses);
+            response.setTotalElements((long) allStudents.size());
+            response.setTotalPage((int) Math.ceil((double) allStudents.size() / limit));
+
+            return response;
+        } catch (Exception e) {
+            log.error("Error in getStudents: ", e);
+            throw new IllegalArgumentException("Error retrieving students: " + e.getMessage());
         }
     }
 

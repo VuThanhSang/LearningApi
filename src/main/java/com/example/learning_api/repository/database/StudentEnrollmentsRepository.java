@@ -182,4 +182,6 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
 
     StudentEnrollmentsEntity findByStudentIdAndClassroomId(String studentId, String classroomId);
     List<StudentEnrollmentsEntity> findByClassroomIdAndStatus(String classroomId, StudentEnrollmentStatus status);
+
+
 }

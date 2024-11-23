@@ -7,10 +7,7 @@ import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.forum.GetForumCommentResponse;
 import com.example.learning_api.dto.response.forum.GetForumDetailResponse;
 import com.example.learning_api.dto.response.forum.GetForumsResponse;
-import com.example.learning_api.entity.sql.database.FAQEntity;
-import com.example.learning_api.entity.sql.database.ForumCommentEntity;
-import com.example.learning_api.entity.sql.database.ForumEntity;
-import com.example.learning_api.entity.sql.database.VoteEntity;
+import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.FaqSourceType;
 import com.example.learning_api.enums.ForumStatus;
 import com.example.learning_api.repository.database.*;
@@ -236,10 +233,12 @@ public class ForumService implements IForumService {
             forumCommentEntities.forEach(forumCommentEntity -> {
                 GetForumDetailResponse.ForumComment forumComment = modelMapperService.mapClass(forumCommentEntity, GetForumDetailResponse.ForumComment.class);
                 if (String.valueOf(forumCommentEntity.getRole())== "USER"){
-                    forumComment.setStudent(studentRepository.findById(forumCommentEntity.getAuthorId()).get());
+                    StudentEntity studentEntity = studentRepository.findById(forumCommentEntity.getAuthorId()).orElse(null);
+                    forumComment.setStudent(studentEntity);
                 }
                 else{
-                    forumComment.setTeacher(teacherRepository.findById(forumCommentEntity.getAuthorId()).get());
+                    TeacherEntity teacherEntity = teacherRepository.findById(forumCommentEntity.getAuthorId()).orElse(null);
+                    forumComment.setTeacher(teacherEntity);
                 }
 
                 forumComments.add(forumComment);
