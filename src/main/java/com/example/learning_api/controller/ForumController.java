@@ -111,12 +111,13 @@ public class ForumController {
     }
     @GetMapping(path = "")
     public ResponseEntity<ResponseAPI<GetForumsResponse>> getForum(
-            @RequestParam(name="name",required = false,defaultValue = "") String search,
+            @RequestParam(name="search",required = false,defaultValue = "") String search,
             @RequestParam(name="page",required = false,defaultValue = "1") int page,
-            @RequestParam(name="size",required = false,defaultValue = "10") int size
+            @RequestParam(name="size",required = false,defaultValue = "10") int size,
+            @RequestParam(name="sortOrder",required = false,defaultValue = "desc") String sortOrder
     ) {
         try{
-            GetForumsResponse data = forumService.getForums(page-1, size, search);
+            GetForumsResponse data = forumService.getForums(page-1, size, search, sortOrder);
             ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
                     .message("Get forum successfully")
                     .data(data)
@@ -133,9 +134,11 @@ public class ForumController {
     @GetMapping(path = "/author/{authorId}")
     public ResponseEntity<ResponseAPI<GetForumsResponse>> getForumByAuthor(@PathVariable String authorId,
                                                                                      @RequestParam(name="page",required = false,defaultValue = "1") int page,
-                                                                                     @RequestParam(name="size",required = false,defaultValue = "10") int size) {
+                                                                                     @RequestParam(name="size",required = false,defaultValue = "10") int size,
+                                                                                     @RequestParam(name="search",required = false,defaultValue = "") String search,
+                                                                                     @RequestParam(name="sortOrder",required = false,defaultValue = "desc") String sortOrder) {
         try{
-            GetForumsResponse data = forumService.getForumByAuthor(authorId, page-1, size);
+            GetForumsResponse data = forumService.getForumByAuthor(authorId, page-1, size, search, sortOrder);
             ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
                     .message("Get forum by author successfully")
                     .data(data)
@@ -153,11 +156,34 @@ public class ForumController {
     @GetMapping(path = "/tag")
     public ResponseEntity<ResponseAPI<GetForumsResponse>> getForumByTag(@RequestParam List<String> tags,
                                                                                   @RequestParam(name="page",required = false,defaultValue = "1") int page,
-                                                                                  @RequestParam(name="size",required = false,defaultValue = "10") int size) {
+                                                                                  @RequestParam(name="size",required = false,defaultValue = "10") int size,
+                                                                                  @RequestParam(name="search",required = false,defaultValue = "") String search,
+                                                                                  @RequestParam(name="sortOrder",required = false,defaultValue = "desc") String sortOrder) {
         try{
-            GetForumsResponse data = forumService.getForumByTag(tags, page-1, size);
+            GetForumsResponse data = forumService.getForumByTag(tags, page-1, size, search, sortOrder);
             ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
                     .message("Get forum by tag successfully")
+                    .data(data)
+                    .build();
+            return ResponseEntity.ok(res);
+        }
+        catch (Exception e){
+            ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
+                    .message(e.getMessage())
+                    .build();
+            return ResponseEntity.badRequest().body(res);
+        }
+    }
+    @GetMapping(path = "/class/{classId}")
+    public ResponseEntity<ResponseAPI<GetForumsResponse>> getForumByClass(@PathVariable String classId,
+                                                                                   @RequestParam(name="page",required = false,defaultValue = "1") int page,
+                                                                                   @RequestParam(name="size",required = false,defaultValue = "10") int size,
+                                                                                   @RequestParam(name="search",required = false,defaultValue = "") String search,
+                                                                                   @RequestParam(name="sortOrder",required = false,defaultValue = "desc") String sortOrder) {
+        try{
+            GetForumsResponse data = forumService.getForumByClass(classId, page-1, size, search, sortOrder);
+            ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
+                    .message("Get forum by class successfully")
                     .data(data)
                     .build();
             return ResponseEntity.ok(res);
@@ -256,6 +282,26 @@ public class ForumController {
         }
     }
 
+    @GetMapping(path = "/{forumId}/comment")
+    public ResponseEntity<ResponseAPI<GetForumCommentResponse>> getForumComments(@PathVariable String forumId,
+                                                                                      @RequestParam(name="page",required = false,defaultValue = "1") int page,
+                                                                                      @RequestParam(name="size",required = false,defaultValue = "10") int size,
+                                                                                      @RequestParam(name="sortOrder",required = false,defaultValue = "desc") String sortOrder) {
+        try{
+            GetForumCommentResponse data = forumService.getForumComments(forumId, page-1, size, sortOrder);
+            ResponseAPI<GetForumCommentResponse> res = ResponseAPI.<GetForumCommentResponse>builder()
+                    .message("Get forum comments successfully")
+                    .data(data)
+                    .build();
+            return ResponseEntity.ok(res);
+        }
+        catch (Exception e){
+            ResponseAPI<GetForumCommentResponse> res = ResponseAPI.<GetForumCommentResponse>builder()
+                    .message(e.getMessage())
+                    .build();
+            return ResponseEntity.badRequest().body(res);
+        }
+    }
     @GetMapping(path = "/comment/reply/{parentId}")
     public ResponseEntity<ResponseAPI<GetForumCommentResponse>> getReplyComments(@PathVariable String parentId,
                                                                                       @RequestParam(name="page",required = false,defaultValue = "1") int page,
@@ -275,6 +321,8 @@ public class ForumController {
             return ResponseEntity.badRequest().body(res);
         }
     }
+
+
 
 
 }

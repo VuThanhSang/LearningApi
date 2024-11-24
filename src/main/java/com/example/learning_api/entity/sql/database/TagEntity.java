@@ -10,6 +10,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class TagEntity {
     private String id;
     private String name;
+    private String classId;
+    private Boolean isForClass;
     private String createdAt;
     private String updatedAt;
 }

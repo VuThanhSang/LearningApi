@@ -12,4 +12,7 @@ public interface TagRepository extends MongoRepository<TagEntity, String> {
     List<TagEntity> findByNameIn(List<String> names);
     @Query("{'_id': {$in: ?0}}")
     List<TagEntity> findByIdIn(List<String> ids);
+    @Query("{'classId': ?0}")
+    TagEntity findByClassId(String classId);
+
 }

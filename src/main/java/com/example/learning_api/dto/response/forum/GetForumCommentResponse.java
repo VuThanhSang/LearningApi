@@ -2,6 +2,7 @@ package com.example.learning_api.dto.response.forum;
 
 import com.example.learning_api.entity.sql.database.StudentEntity;
 import com.example.learning_api.entity.sql.database.TeacherEntity;
+import com.example.learning_api.entity.sql.database.UserEntity;
 import lombok.Data;
 
 import java.util.List;
@@ -17,13 +18,12 @@ public class GetForumCommentResponse {
         private String forumId;
         private String content;
         private String authorId;
+        private UserEntity author;
         private int upvote;
         private int downvote;
         private int replyCount;
         private String status;
         private String createdAt;
         private String updatedAt;
-        private StudentEntity student;
-        private TeacherEntity teacher;
     }
 }
