@@ -2,11 +2,13 @@ package com.example.learning_api.service.core.Impl;
 
 import com.example.learning_api.constant.CloudinaryConstant;
 import com.example.learning_api.dto.common.SourceUploadDto;
+import com.example.learning_api.dto.common.VoteAuthorDto;
 import com.example.learning_api.dto.request.forum.*;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.forum.GetForumCommentResponse;
 import com.example.learning_api.dto.response.forum.GetForumDetailResponse;
 import com.example.learning_api.dto.response.forum.GetForumsResponse;
+import com.example.learning_api.dto.response.forum.GetVotesResponse;
 import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.FaqSourceType;
 import com.example.learning_api.enums.FileOwnerType;
@@ -210,15 +212,83 @@ public class ForumService implements IForumService {
     public void voteForum(VoteRequest request) {
         try {
             validateRole(request);
-            ForumEntity forumEntity = forumRepository.findById(request.getForumId())
-                    .orElseThrow(() -> new IllegalArgumentException("Forum Id is not found"));
-            VoteEntity voteEntity = voteRepository.findByAuthorIdAndForumId(request.getAuthorId(), request.getForumId());
+            if (request.getTargetType().equals("FORUM")) {
+                ForumEntity forumEntity = forumRepository.findById(request.getTargetId()).orElseThrow(() -> new IllegalArgumentException("Forum Id is not found"));
+            } else if (request.getTargetType().equals("FORUM_COMMENT")) {
+                ForumCommentEntity forumCommentEntity = forumCommentRepository.findById(request.getTargetId()).orElseThrow(() -> new IllegalArgumentException("Forum Comment Id is not found"));
+            } else {
+                throw new IllegalArgumentException("Invalid target type");
+            }
+            VoteEntity voteEntity = voteRepository.findByAuthorIdAndTargetId(request.getAuthorId(), request.getTargetId());
 
             if (voteEntity != null) {
                 handleExistingVote(request, voteEntity);
             } else {
-                createNewVote(request, forumEntity);
+                VoteEntity newVote = modelMapperService.mapClass(request, VoteEntity.class);
+                newVote.setUpvote(request.getIsUpvote());
+                voteRepository.save(newVote);
             }
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+
+
+    @Override
+    public GetVotesResponse getVotedByForum(String forumId) {
+        try {
+            List<VoteEntity> upvotes= voteRepository.findUpVoteByTargetId(forumId, "FORUM");
+            List<VoteEntity> downvotes= voteRepository.findDownVoteByTargetId(forumId, "FORUM");
+            GetVotesResponse getVotesResponse = new GetVotesResponse();
+            List<UserEntity> upvoteData = new ArrayList<>();
+            List<UserEntity> downvoteData = new ArrayList<>();
+            for (VoteEntity voteEntity : upvotes) {
+                UserEntity vote = getUser(voteEntity.getAuthorId(), voteEntity.getRole().name());
+                upvoteData.add(vote);
+            }
+            for (VoteEntity voteEntity : downvotes) {
+                UserEntity vote = getUser(voteEntity.getAuthorId(), voteEntity.getRole().name());
+                downvoteData.add(vote);
+            }
+
+            getVotesResponse.setUpVotes(upvoteData);
+            getVotesResponse.setDownVotes(downvoteData);
+            getVotesResponse.setTotalElement(upvotes.size()+downvotes.size());
+            getVotesResponse.setTotalDownvote(upvotes.size());
+            getVotesResponse.setTotalUpvote(downvotes.size());
+            return getVotesResponse;
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public GetVotesResponse getVoteByComment(String commentId) {
+        try {
+            List<VoteEntity> upvotes= voteRepository.findUpVoteByTargetId(commentId, "FORUM_COMMENT");
+            List<VoteEntity> downvotes= voteRepository.findDownVoteByTargetId(commentId, "FORUM_COMMENT");
+            GetVotesResponse getVotesResponse = new GetVotesResponse();
+            List<UserEntity> upvoteData = new ArrayList<>();
+            List<UserEntity> downvoteData = new ArrayList<>();
+            for (VoteEntity voteEntity : upvotes) {
+                UserEntity vote = getUser(voteEntity.getAuthorId(), voteEntity.getRole().name());
+
+                upvoteData.add(vote);
+            }
+            for (VoteEntity voteEntity : downvotes) {
+                UserEntity vote = getUser(voteEntity.getAuthorId(), voteEntity.getRole().name());
+
+                downvoteData.add(vote);
+            }
+            getVotesResponse.setUpVotes(upvoteData);
+            getVotesResponse.setDownVotes(downvoteData);
+            getVotesResponse.setTotalElement(upvotes.size()+downvotes.size());
+            getVotesResponse.setTotalDownvote(upvotes.size());
+            getVotesResponse.setTotalUpvote(downvotes.size());
+            return getVotesResponse;
         } catch (Exception e) {
             log.error(e.getMessage());
             throw new IllegalArgumentException(e.getMessage());
@@ -234,21 +304,15 @@ public class ForumService implements IForumService {
     }
 
     private void handleExistingVote(VoteRequest request, VoteEntity voteEntity) {
-        boolean requestUpvote = request.getIsUpvote() == 1;
-        if (voteEntity.isUpvote() == requestUpvote) {
+        if (voteEntity.isUpvote() == request.getIsUpvote()) {
             voteRepository.delete(voteEntity);
         } else {
-            voteEntity.setUpvote(requestUpvote);
+            voteEntity.setUpvote(request.getIsUpvote());
             voteRepository.save(voteEntity);
         }
     }
 
-    private void createNewVote(VoteRequest request, ForumEntity forumEntity) {
-        VoteEntity voteEntity = modelMapperService.mapClass(request, VoteEntity.class);
-        voteEntity.setUpvote(request.getIsUpvote() == 1);
-        voteEntity.setForum(forumEntity);
-        voteRepository.save(voteEntity);
-    }
+
 
     UserEntity getUser(String authorId, String role) {
         if (role.equals("USER")) {
@@ -285,8 +349,8 @@ public class ForumService implements IForumService {
                 List<FileEntity> fileEntities = fileRepository.findByOwnerIdAndOwnerType(forumEntity.getId(), FileOwnerType.FORUM.name());
                 forumResponse.setTags(tagRepository.findByIdIn(forumEntity.getTags()));
                 forumResponse.setSources(fileEntities);
-                forumResponse.setUpvote(voteRepository.countUpvoteByForumId(forumEntity.getId()));
-                forumResponse.setDownvote(voteRepository.countDownvoteByForumId(forumEntity.getId()));
+                forumResponse.setUpvote(voteRepository.countUpvoteByTargetId(forumEntity.getId()));
+                forumResponse.setDownvote(voteRepository.countDownvoteByTargetId(forumEntity.getId()));
                 data.add(forumResponse);
             });
             getForumsResponse.setForums(data);
@@ -305,8 +369,10 @@ public class ForumService implements IForumService {
             ForumEntity forumEntity = forumRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Id is not found"));
             List<FileEntity> fileEntities = fileRepository.findByOwnerIdAndOwnerType(forumEntity.getId(), FileOwnerType.FORUM.name());
             GetForumDetailResponse getForumDetailResponse = modelMapperService.mapClass(forumEntity, GetForumDetailResponse.class);
-            getForumDetailResponse.setUpvoteCount(voteRepository.countUpvoteByForumId(id));
-            getForumDetailResponse.setDownvoteCount(voteRepository.countDownvoteByForumId(id));
+            getForumDetailResponse.setUpvoteCount(voteRepository.countUpvoteByTargetId(id));
+            getForumDetailResponse.setDownvoteCount(voteRepository.countDownvoteByTargetId(id));
+            getForumDetailResponse.setSources(fileEntities);
+            getForumDetailResponse.setAuthor(getUser(forumEntity.getAuthorId(), forumEntity.getRole().name()));
             List<ForumCommentEntity> forumCommentEntities = forumCommentRepository.findByForumId(id);
             List<GetForumDetailResponse.ForumComment> forumComments = new ArrayList<>();
             forumCommentEntities.forEach(forumCommentEntity -> {
@@ -336,8 +402,8 @@ public class ForumService implements IForumService {
                 List<TagEntity> tagEntities = tagRepository.findByIdIn(forumEntity.getTags());
                 forumResponse.setAuthor(getUser(forumEntity.getAuthorId(), forumEntity.getRole().name()));
                 forumResponse.setTags(tagEntities);
-                forumResponse.setUpvote(voteRepository.countUpvoteByForumId(forumEntity.getId()));
-                forumResponse.setDownvote(voteRepository.countDownvoteByForumId(forumEntity.getId()));
+                forumResponse.setUpvote(voteRepository.countUpvoteByTargetId(forumEntity.getId()));
+                forumResponse.setDownvote(voteRepository.countDownvoteByTargetId(forumEntity.getId()));
                 data.add(forumResponse);
             });
             getForumsResponse.setForums(data);
@@ -366,8 +432,8 @@ public class ForumService implements IForumService {
                 forumResponse.setSources(fileRepository.findByOwnerIdAndOwnerType(forumEntity.getId(), FileOwnerType.FORUM.name()));
                 forumResponse.setTags(tagRepository.findByIdIn(forumEntity.getTags()));
                 forumResponse.setAuthor(getUser(forumEntity.getAuthorId(), forumEntity.getRole().name()));
-                forumResponse.setUpvote(voteRepository.countUpvoteByForumId(forumEntity.getId()));
-                forumResponse.setDownvote(voteRepository.countDownvoteByForumId(forumEntity.getId()));
+                forumResponse.setUpvote(voteRepository.countUpvoteByTargetId(forumEntity.getId()));
+                forumResponse.setDownvote(voteRepository.countDownvoteByTargetId(forumEntity.getId()));
                 data.add(forumResponse);
             });
             getForumsResponse.setForums(data);
@@ -395,8 +461,8 @@ public class ForumService implements IForumService {
                 forumResponse.setSources(fileRepository.findByOwnerIdAndOwnerType(forumEntity.getId(), FileOwnerType.FORUM.name()));
                 forumResponse.setTags(tagRepository.findByIdIn(forumEntity.getTags()));
                 forumResponse.setAuthor(getUser(forumEntity.getAuthorId(), forumEntity.getRole().name()));
-                forumResponse.setUpvote(voteRepository.countUpvoteByForumId(forumEntity.getId()));
-                forumResponse.setDownvote(voteRepository.countDownvoteByForumId(forumEntity.getId()));
+                forumResponse.setUpvote(voteRepository.countUpvoteByTargetId(forumEntity.getId()));
+                forumResponse.setDownvote(voteRepository.countDownvoteByTargetId(forumEntity.getId()));
                 data.add(forumResponse);
             });
             getForumsResponse.setForums(data);
@@ -500,6 +566,7 @@ public class ForumService implements IForumService {
             List<GetForumCommentResponse.ForumCommentResponse> data = new ArrayList<>();
             forumCommentEntities.forEach(forumCommentEntity -> {
                 GetForumCommentResponse.ForumCommentResponse forumComment = modelMapperService.mapClass(forumCommentEntity, GetForumCommentResponse.ForumCommentResponse.class);
+                forumComment.setSources(fileRepository.findByOwnerIdAndOwnerType(forumCommentEntity.getId(), FileOwnerType.FORUM_COMMENT.name()));
                 forumComment.setAuthor(getUser(forumCommentEntity.getAuthorId(), forumCommentEntity.getRole().name()));
                 data.add(forumComment);
             });
@@ -523,6 +590,7 @@ public class ForumService implements IForumService {
             List<GetForumCommentResponse.ForumCommentResponse> data = new ArrayList<>();
             forumCommentEntities.forEach(forumCommentEntity -> {
                 GetForumCommentResponse.ForumCommentResponse forumComment = modelMapperService.mapClass(forumCommentEntity, GetForumCommentResponse.ForumCommentResponse.class);
+                forumComment.setSources(fileRepository.findByOwnerIdAndOwnerType(forumCommentEntity.getId(), FileOwnerType.FORUM_COMMENT.name()));
                 forumComment.setAuthor(getUser(forumCommentEntity.getAuthorId(), forumCommentEntity.getRole().name()));
                 data.add(forumComment);
             });

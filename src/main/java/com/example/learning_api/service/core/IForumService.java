@@ -4,7 +4,10 @@ import com.example.learning_api.dto.request.forum.*;
 import com.example.learning_api.dto.response.forum.GetForumCommentResponse;
 import com.example.learning_api.dto.response.forum.GetForumDetailResponse;
 import com.example.learning_api.dto.response.forum.GetForumsResponse;
+import com.example.learning_api.dto.response.forum.GetVotesResponse;
 import com.example.learning_api.entity.sql.database.TagEntity;
+import com.example.learning_api.entity.sql.database.UserEntity;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
@@ -13,6 +16,8 @@ public interface IForumService {
     void updateForum(UpdateForumRequest request);
     void deleteForum(String id);
     void voteForum(VoteRequest request);
+    GetVotesResponse getVotedByForum(String forumId);
+    GetVotesResponse getVoteByComment(String commentId);
     GetForumsResponse getForums(int page, int size , String search, String sortOrder);
     GetForumDetailResponse getForumDetail(String id);
     GetForumsResponse getForumByAuthor(String authorId, int page, int size,String search,String sortOrder);

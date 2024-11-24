@@ -24,6 +24,8 @@ public class GetForumDetailResponse {
     private int downvoteCount;
     private String createdAt;
     private String updatedAt;
+    private UserEntity author;
+    private List<FileEntity> sources;
     private List<ForumComment> comments;
     @Data
     public static class ForumComment {
