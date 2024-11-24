@@ -6,8 +6,9 @@ import lombok.Data;
 @Data
 public class VoteRequest {
     private String authorId;
-    private int isUpvote;
-    private String forumId;
+    private Boolean isUpvote;
+    private String targetId;
+    private String targetType;
     private RoleEnum role;
 
 }

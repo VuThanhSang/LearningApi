@@ -16,7 +16,8 @@ public class VoteEntity {
     private String authorId;
     private RoleEnum role;
     private boolean isUpvote;
-    private String forumId;
+    private String targetId;
+    private String targetType;
     @DBRef
     private ForumEntity forum;
 

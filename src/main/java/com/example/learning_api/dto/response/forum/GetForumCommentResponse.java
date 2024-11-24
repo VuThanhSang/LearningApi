@@ -1,5 +1,6 @@
 package com.example.learning_api.dto.response.forum;
 
+import com.example.learning_api.entity.sql.database.FileEntity;
 import com.example.learning_api.entity.sql.database.StudentEntity;
 import com.example.learning_api.entity.sql.database.TeacherEntity;
 import com.example.learning_api.entity.sql.database.UserEntity;
@@ -19,6 +20,8 @@ public class GetForumCommentResponse {
         private String content;
         private String authorId;
         private UserEntity author;
+        private List<FileEntity> sources;
+        private String parentId;
         private int upvote;
         private int downvote;
         private int replyCount;
