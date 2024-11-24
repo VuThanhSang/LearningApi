@@ -28,6 +28,7 @@ public class GetForumsResponse {
         private List<TagEntity> tags;
         private String createdAt;
         private String updatedAt;
+        private Boolean isUpvoted;
         public static ForumResponse formForumEntity(ForumEntity forumEntity){
             ForumResponse forumResponse = new ForumResponse();
             forumResponse.setId(forumEntity.getId());

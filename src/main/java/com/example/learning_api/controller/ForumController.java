@@ -40,6 +40,7 @@ public class ForumController {
         return jwtService.extractRole(accessToken);
     }
 
+
     @PostMapping(path = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ResponseAPI<String>> createForum(@ModelAttribute @Valid CreateForumRequest body, @RequestHeader("Authorization") String authorizationHeader) {
         try {
@@ -141,7 +142,16 @@ public class ForumController {
         try {
             String userId = extractUserId(authorizationHeader);
             String role = extractRole(authorizationHeader);
-            GetForumsResponse data = forumService.getForums(page - 1, size, search, sortOrder);
+            String authorId = "";
+            if (role.equals("USER")) {
+                authorId = studentRepository.findByUserId(userId).getId();
+            } else if (role.equals("TEACHER")) {
+                authorId = teacherRepository.findByUserId(userId).getId();
+            } else {
+                throw new Exception("Role not found");
+            }
+
+            GetForumsResponse data = forumService.getForums(page - 1, size, search, sortOrder, authorId);
             ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
                     .message("Get forum successfully")
                     .data(data)
@@ -163,9 +173,17 @@ public class ForumController {
                                                                            @RequestParam(name = "sortOrder", required = false, defaultValue = "desc") String sortOrder,
                                                                            @RequestHeader("Authorization") String authorizationHeader) {
         try {
-            String userId = extractUserId(authorizationHeader);
+            String callId = extractUserId(authorizationHeader);
             String role = extractRole(authorizationHeader);
-            GetForumsResponse data = forumService.getForumByAuthor(authorId, page - 1, size, search, sortOrder);
+            String userId = "";
+            if (role.equals("USER")) {
+                userId = studentRepository.findByUserId(callId).getId();
+            } else if (role.equals("TEACHER")) {
+                userId = teacherRepository.findByUserId(callId).getId();
+            } else {
+                throw new Exception("Role not found");
+            }
+            GetForumsResponse data = forumService.getForumByAuthor(authorId, page - 1, size, search, sortOrder,userId);
             ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
                     .message("Get forum by author successfully")
                     .data(data)
@@ -187,9 +205,17 @@ public class ForumController {
                                                                         @RequestParam(name = "sortOrder", required = false, defaultValue = "desc") String sortOrder,
                                                                         @RequestHeader("Authorization") String authorizationHeader) {
         try {
-            String userId = extractUserId(authorizationHeader);
+            String callId = extractUserId(authorizationHeader);
             String role = extractRole(authorizationHeader);
-            GetForumsResponse data = forumService.getForumByTag(tags, page - 1, size, search, sortOrder);
+            String userId = "";
+            if (role.equals("USER")) {
+                userId = studentRepository.findByUserId(callId).getId();
+            } else if (role.equals("TEACHER")) {
+                userId = teacherRepository.findByUserId(callId).getId();
+            } else {
+                throw new Exception("Role not found");
+            }
+            GetForumsResponse data = forumService.getForumByTag(tags, page - 1, size, search, sortOrder,userId);
             ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
                     .message("Get forum by tag successfully")
                     .data(data)
@@ -211,9 +237,17 @@ public class ForumController {
                                                                           @RequestParam(name = "sortOrder", required = false, defaultValue = "desc") String sortOrder,
                                                                           @RequestHeader("Authorization") String authorizationHeader) {
         try {
-            String userId = extractUserId(authorizationHeader);
+            String callId = extractUserId(authorizationHeader);
             String role = extractRole(authorizationHeader);
-            GetForumsResponse data = forumService.getForumByClass(classId, page - 1, size, search, sortOrder);
+            String userId = "";
+            if (role.equals("USER")) {
+                userId = studentRepository.findByUserId(callId).getId();
+            } else if (role.equals("TEACHER")) {
+                userId = teacherRepository.findByUserId(callId).getId();
+            } else {
+                throw new Exception("Role not found");
+            }
+            GetForumsResponse data = forumService.getForumByClass(classId, page - 1, size, search, sortOrder,userId);
             ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
                     .message("Get forum by class successfully")
                     .data(data)
@@ -230,9 +264,17 @@ public class ForumController {
     @GetMapping(path = "/{forumId}")
     public ResponseEntity<ResponseAPI<GetForumDetailResponse>> getForumDetail(@PathVariable String forumId, @RequestHeader("Authorization") String authorizationHeader) {
         try {
-            String userId = extractUserId(authorizationHeader);
+            String callId = extractUserId(authorizationHeader);
             String role = extractRole(authorizationHeader);
-            GetForumDetailResponse data = forumService.getForumDetail(forumId);
+            String userId = "";
+            if (role.equals("USER")) {
+                userId = studentRepository.findByUserId(callId).getId();
+            } else if (role.equals("TEACHER")) {
+                userId = teacherRepository.findByUserId(callId).getId();
+            } else {
+                throw new Exception("Role not found");
+            }
+            GetForumDetailResponse data = forumService.getForumDetail(forumId,userId);
             ResponseAPI<GetForumDetailResponse> res = ResponseAPI.<GetForumDetailResponse>builder()
                     .message("Get forum detail successfully")
                     .data(data)
@@ -318,9 +360,17 @@ public class ForumController {
                                                                                  @RequestParam(name = "sortOrder", required = false, defaultValue = "desc") String sortOrder,
                                                                                  @RequestHeader("Authorization") String authorizationHeader) {
         try {
-            String userId = extractUserId(authorizationHeader);
+            String callId = extractUserId(authorizationHeader);
             String role = extractRole(authorizationHeader);
-            GetForumCommentResponse data = forumService.getForumComments(forumId, page - 1, size, sortOrder);
+            String userId = "";
+            if (role.equals("USER")) {
+                userId = studentRepository.findByUserId(callId).getId();
+            } else if (role.equals("TEACHER")) {
+                userId = teacherRepository.findByUserId(callId).getId();
+            } else {
+                throw new Exception("Role not found");
+            }
+            GetForumCommentResponse data = forumService.getForumComments(forumId, page - 1, size, sortOrder,userId);
             ResponseAPI<GetForumCommentResponse> res = ResponseAPI.<GetForumCommentResponse>builder()
                     .message("Get forum comments successfully")
                     .data(data)
@@ -340,9 +390,17 @@ public class ForumController {
                                                                                  @RequestParam(name = "size", required = false, defaultValue = "10") int size,
                                                                                  @RequestHeader("Authorization") String authorizationHeader) {
         try {
-            String userId = extractUserId(authorizationHeader);
+            String callId = extractUserId(authorizationHeader);
             String role = extractRole(authorizationHeader);
-            GetForumCommentResponse data = forumService.getReplyComments(parentId, page - 1, size);
+            String userId = "";
+            if (role.equals("USER")) {
+                userId = studentRepository.findByUserId(callId).getId();
+            } else if (role.equals("TEACHER")) {
+                userId = teacherRepository.findByUserId(callId).getId();
+            } else {
+                throw new Exception("Role not found");
+            }
+            GetForumCommentResponse data = forumService.getReplyComments(parentId, page - 1, size,userId);
             ResponseAPI<GetForumCommentResponse> res = ResponseAPI.<GetForumCommentResponse>builder()
                     .message("Get reply comments successfully")
                     .data(data)
@@ -356,7 +414,7 @@ public class ForumController {
         }
     }
 
-    @GetMapping(path = "/vote/forum/{forumId}")
+    @GetMapping(path = "/{forumId}/vote")
     public ResponseEntity<ResponseAPI<GetVotesResponse>> getVotedByForum(@PathVariable String forumId,
 
                                                                          @RequestHeader("Authorization") String authorizationHeader) {
@@ -376,7 +434,7 @@ public class ForumController {
             return ResponseEntity.badRequest().body(res);
         }
     }
-    @GetMapping(path = "/vote/comment/{commentId}")
+    @GetMapping(path = "/comment/{commentId}/vote")
     public ResponseEntity<ResponseAPI<GetVotesResponse>> getVoteByComment(@PathVariable String commentId,
 
                                                                          @RequestHeader("Authorization") String authorizationHeader) {

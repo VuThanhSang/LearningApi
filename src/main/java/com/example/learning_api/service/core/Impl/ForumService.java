@@ -256,8 +256,8 @@ public class ForumService implements IForumService {
             getVotesResponse.setUpVotes(upvoteData);
             getVotesResponse.setDownVotes(downvoteData);
             getVotesResponse.setTotalElement(upvotes.size()+downvotes.size());
-            getVotesResponse.setTotalDownvote(upvotes.size());
-            getVotesResponse.setTotalUpvote(downvotes.size());
+            getVotesResponse.setTotalDownvote(downvotes.size());
+            getVotesResponse.setTotalUpvote(upvotes.size());
             return getVotesResponse;
         } catch (Exception e) {
             log.error(e.getMessage());
@@ -336,7 +336,7 @@ public class ForumService implements IForumService {
         }
     }
     @Override
-    public GetForumsResponse getForums(int page, int size, String search, String sortOrder) {
+    public GetForumsResponse getForums(int page, int size, String search, String sortOrder,String userId) {
         try {
             Pageable pageable = PageRequest.of(page, size, sortOrder.equalsIgnoreCase("desc") ? Sort.by("createdAt").descending() : Sort.by("createdAt").ascending());
             Page<ForumEntity> forumEntities = forumRepository.findByTitleOrContentRegex(search, pageable);
@@ -351,6 +351,10 @@ public class ForumService implements IForumService {
                 forumResponse.setSources(fileEntities);
                 forumResponse.setUpvote(voteRepository.countUpvoteByTargetId(forumEntity.getId()));
                 forumResponse.setDownvote(voteRepository.countDownvoteByTargetId(forumEntity.getId()));
+                VoteEntity voteEntity = voteRepository.findByAuthorIdAndTargetId(userId, forumEntity.getId());
+                if (voteEntity != null) {
+                    forumResponse.setIsUpvoted(voteEntity.isUpvote());
+                }
                 data.add(forumResponse);
             });
             getForumsResponse.setForums(data);
@@ -364,7 +368,7 @@ public class ForumService implements IForumService {
     }
 
     @Override
-    public GetForumDetailResponse getForumDetail(String id) {
+    public GetForumDetailResponse getForumDetail(String id, String userId) {
         try {
             ForumEntity forumEntity = forumRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Id is not found"));
             List<FileEntity> fileEntities = fileRepository.findByOwnerIdAndOwnerType(forumEntity.getId(), FileOwnerType.FORUM.name());
@@ -372,6 +376,10 @@ public class ForumService implements IForumService {
             getForumDetailResponse.setUpvoteCount(voteRepository.countUpvoteByTargetId(id));
             getForumDetailResponse.setDownvoteCount(voteRepository.countDownvoteByTargetId(id));
             getForumDetailResponse.setSources(fileEntities);
+            VoteEntity voteEntity = voteRepository.findByAuthorIdAndTargetId(userId, forumEntity.getId());
+            if (voteEntity != null) {
+                getForumDetailResponse.setIsUpvoted(voteEntity.isUpvote());
+            }
             getForumDetailResponse.setAuthor(getUser(forumEntity.getAuthorId(), forumEntity.getRole().name()));
             List<ForumCommentEntity> forumCommentEntities = forumCommentRepository.findByForumId(id);
             List<GetForumDetailResponse.ForumComment> forumComments = new ArrayList<>();
@@ -379,6 +387,10 @@ public class ForumService implements IForumService {
                 GetForumDetailResponse.ForumComment forumComment = modelMapperService.mapClass(forumCommentEntity, GetForumDetailResponse.ForumComment.class);
                 forumComment.setSources(fileRepository.findByOwnerIdAndOwnerType(forumCommentEntity.getId(), FileOwnerType.FORUM_COMMENT.name()));
                 forumComment.setAuthor(getUser(forumCommentEntity.getAuthorId(), forumCommentEntity.getRole().name()));
+                VoteEntity voteEntity2 = voteRepository.findByAuthorIdAndTargetId(userId, forumEntity.getId());
+                if (voteEntity2 != null) {
+                    forumComment.setIsUpvoted(voteEntity.isUpvote());
+                }
                 forumComments.add(forumComment);
             });
             getForumDetailResponse.setComments(forumComments);
@@ -390,7 +402,7 @@ public class ForumService implements IForumService {
     }
 
     @Override
-    public GetForumsResponse getForumByAuthor(String authorId, int page, int size, String search, String sortOrder) {
+    public GetForumsResponse getForumByAuthor(String authorId, int page, int size, String search, String sortOrder, String userId) {
         try {
             Pageable pageable = PageRequest.of(page, size, sortOrder.equalsIgnoreCase("desc") ? Sort.by("createdAt").descending() : Sort.by("createdAt").ascending());
             Page<ForumEntity> forumEntities = forumRepository.findByAuthorIdAndTitleOrContentRegex(authorId, search, pageable);
@@ -404,6 +416,10 @@ public class ForumService implements IForumService {
                 forumResponse.setTags(tagEntities);
                 forumResponse.setUpvote(voteRepository.countUpvoteByTargetId(forumEntity.getId()));
                 forumResponse.setDownvote(voteRepository.countDownvoteByTargetId(forumEntity.getId()));
+                VoteEntity voteEntity = voteRepository.findByAuthorIdAndTargetId(userId, forumEntity.getId());
+                if (voteEntity != null) {
+                    forumResponse.setIsUpvoted(voteEntity.isUpvote());
+                }
                 data.add(forumResponse);
             });
             getForumsResponse.setForums(data);
@@ -417,7 +433,7 @@ public class ForumService implements IForumService {
     }
 
     @Override
-    public GetForumsResponse getForumByTag(List<String> tagNames, int page, int size, String search, String sortOrder) {
+    public GetForumsResponse getForumByTag(List<String> tagNames, int page, int size, String search, String sortOrder, String userId) {
         try {
             List<String> tagIds = tagRepository.findByNameIn(tagNames)
                     .stream()
@@ -434,6 +450,10 @@ public class ForumService implements IForumService {
                 forumResponse.setAuthor(getUser(forumEntity.getAuthorId(), forumEntity.getRole().name()));
                 forumResponse.setUpvote(voteRepository.countUpvoteByTargetId(forumEntity.getId()));
                 forumResponse.setDownvote(voteRepository.countDownvoteByTargetId(forumEntity.getId()));
+                VoteEntity voteEntity = voteRepository.findByAuthorIdAndTargetId(userId, forumEntity.getId());
+                if (voteEntity != null) {
+                    forumResponse.setIsUpvoted(voteEntity.isUpvote());
+                }
                 data.add(forumResponse);
             });
             getForumsResponse.setForums(data);
@@ -447,7 +467,7 @@ public class ForumService implements IForumService {
     }
 
     @Override
-    public GetForumsResponse getForumByClass(String classId, int page, int size, String search, String sortOrder) {
+    public GetForumsResponse getForumByClass(String classId, int page, int size, String search, String sortOrder, String userId) {
         try {
             Pageable pageable = PageRequest.of(page, size, sortOrder.equalsIgnoreCase("desc") ? Sort.by("createdAt").descending() : Sort.by("createdAt").ascending());
             TagEntity tagEntities = tagRepository.findByClassId(classId);
@@ -463,6 +483,10 @@ public class ForumService implements IForumService {
                 forumResponse.setAuthor(getUser(forumEntity.getAuthorId(), forumEntity.getRole().name()));
                 forumResponse.setUpvote(voteRepository.countUpvoteByTargetId(forumEntity.getId()));
                 forumResponse.setDownvote(voteRepository.countDownvoteByTargetId(forumEntity.getId()));
+                VoteEntity voteEntity = voteRepository.findByAuthorIdAndTargetId(userId, forumEntity.getId());
+                if (voteEntity != null) {
+                    forumResponse.setIsUpvoted(voteEntity.isUpvote());
+                }
                 data.add(forumResponse);
             });
             getForumsResponse.setForums(data);
@@ -558,7 +582,7 @@ public class ForumService implements IForumService {
     }
 
     @Override
-    public GetForumCommentResponse getReplyComments(String parentIdm, int page, int size) {
+    public GetForumCommentResponse getReplyComments(String parentIdm, int page, int size, String userId) {
         try{
             Pageable pageAble = PageRequest.of(page, size);
             Page<ForumCommentEntity> forumCommentEntities = forumCommentRepository.findByParentId(parentIdm, pageAble);
@@ -568,6 +592,10 @@ public class ForumService implements IForumService {
                 GetForumCommentResponse.ForumCommentResponse forumComment = modelMapperService.mapClass(forumCommentEntity, GetForumCommentResponse.ForumCommentResponse.class);
                 forumComment.setSources(fileRepository.findByOwnerIdAndOwnerType(forumCommentEntity.getId(), FileOwnerType.FORUM_COMMENT.name()));
                 forumComment.setAuthor(getUser(forumCommentEntity.getAuthorId(), forumCommentEntity.getRole().name()));
+                VoteEntity voteEntity = voteRepository.findByAuthorIdAndTargetId(userId, forumComment.getId());
+                if (voteEntity != null) {
+                    forumComment.setIsUpvoted(voteEntity.isUpvote());
+                }
                 data.add(forumComment);
             });
             getForumCommentResponse.setComments(data);
@@ -582,7 +610,7 @@ public class ForumService implements IForumService {
     }
 
     @Override
-    public GetForumCommentResponse getForumComments(String forumId, int page, int size, String sortOrder) {
+    public GetForumCommentResponse getForumComments(String forumId, int page, int size, String sortOrder, String userId) {
         try{
             Pageable pageAble = PageRequest.of(page, size);
             Page<ForumCommentEntity> forumCommentEntities = forumCommentRepository.findByForumId(forumId, pageAble);
@@ -592,6 +620,10 @@ public class ForumService implements IForumService {
                 GetForumCommentResponse.ForumCommentResponse forumComment = modelMapperService.mapClass(forumCommentEntity, GetForumCommentResponse.ForumCommentResponse.class);
                 forumComment.setSources(fileRepository.findByOwnerIdAndOwnerType(forumCommentEntity.getId(), FileOwnerType.FORUM_COMMENT.name()));
                 forumComment.setAuthor(getUser(forumCommentEntity.getAuthorId(), forumCommentEntity.getRole().name()));
+                VoteEntity voteEntity = voteRepository.findByAuthorIdAndTargetId(userId, forumComment.getId());
+                if (voteEntity != null) {
+                    forumComment.setIsUpvoted(voteEntity.isUpvote());
+                }
                 data.add(forumComment);
             });
             getForumCommentResponse.setComments(data);

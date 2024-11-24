@@ -27,6 +27,7 @@ public class GetForumDetailResponse {
     private UserEntity author;
     private List<FileEntity> sources;
     private List<ForumComment> comments;
+    private Boolean isUpvoted;
     @Data
     public static class ForumComment {
         private String id;
@@ -42,6 +43,8 @@ public class GetForumDetailResponse {
         private RoleEnum role;
         private String createdAt;
         private String updatedAt;
+        private Boolean isUpvoted;
+
         private StudentEntity student;
         private TeacherEntity teacher;
     }
