@@ -5,10 +5,7 @@ import com.example.learning_api.dto.common.SourceUploadDto;
 import com.example.learning_api.dto.common.VoteAuthorDto;
 import com.example.learning_api.dto.request.forum.*;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
-import com.example.learning_api.dto.response.forum.GetForumCommentResponse;
-import com.example.learning_api.dto.response.forum.GetForumDetailResponse;
-import com.example.learning_api.dto.response.forum.GetForumsResponse;
-import com.example.learning_api.dto.response.forum.GetVotesResponse;
+import com.example.learning_api.dto.response.forum.*;
 import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.FaqSourceType;
 import com.example.learning_api.enums.FileOwnerType;
@@ -138,6 +135,10 @@ public class ForumService implements IForumService {
                     tagEntity.setIsForClass(true);
                     tagEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
                     tagEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+                    tagEntity.setPostCount(1);
+                    tagRepository.save(tagEntity);
+                }else{
+                    tagEntity.setPostCount(tagEntity.getPostCount()+1);
                     tagRepository.save(tagEntity);
                 }
                 tags.add(tagEntity.getId());
@@ -148,6 +149,10 @@ public class ForumService implements IForumService {
                     tagEntity = new TagEntity();
                     tagEntity.setName(tag);
                     tagEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+                    tagEntity.setPostCount(1);
+                    tagRepository.save(tagEntity);
+                }else {
+                    tagEntity.setPostCount(tagEntity.getPostCount()+1);
                     tagRepository.save(tagEntity);
                 }
                 tags.add(tagEntity.getId());
@@ -672,6 +677,27 @@ public class ForumService implements IForumService {
             tagRepository.delete(tagEntity);
         }
         catch (Exception e){
+            log.error(e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public GetTagsResponse getTagEntity(String search, String sortOrder, int page, int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size, sortOrder.equalsIgnoreCase("desc") ? Sort.by("createdAt").descending() : Sort.by("createdAt").ascending());
+            Page<TagEntity> tagEntities = tagRepository.findByNameRegexOrderByPostCount(search, pageable);
+            GetTagsResponse getTagsResponse = new GetTagsResponse();
+            List<GetTagsResponse.Tag> data = new ArrayList<>();
+            tagEntities.forEach(tagEntity -> {
+                GetTagsResponse.Tag tag = modelMapperService.mapClass(tagEntity, GetTagsResponse.Tag.class);
+                data.add(tag);
+            });
+            getTagsResponse.setTags(data);
+            getTagsResponse.setTotalElement((int)tagEntities.getTotalElements());
+            getTagsResponse.setTotalPage(tagEntities.getTotalPages());
+            return getTagsResponse;
+        } catch (Exception e) {
             log.error(e.getMessage());
             throw new IllegalArgumentException(e.getMessage());
         }
