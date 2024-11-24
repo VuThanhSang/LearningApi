@@ -1,10 +1,7 @@
 package com.example.learning_api.controller;
 
 import com.example.learning_api.dto.request.forum.*;
-import com.example.learning_api.dto.response.forum.GetForumCommentResponse;
-import com.example.learning_api.dto.response.forum.GetForumDetailResponse;
-import com.example.learning_api.dto.response.forum.GetForumsResponse;
-import com.example.learning_api.dto.response.forum.GetVotesResponse;
+import com.example.learning_api.dto.response.forum.*;
 import com.example.learning_api.enums.RoleEnum;
 import com.example.learning_api.model.ResponseAPI;
 import com.example.learning_api.repository.database.StudentRepository;
@@ -449,6 +446,28 @@ public class ForumController {
             return ResponseEntity.ok(res);
         } catch (Exception e) {
             ResponseAPI<GetVotesResponse> res = ResponseAPI.<GetVotesResponse>builder()
+                    .message(e.getMessage())
+                    .build();
+            return ResponseEntity.badRequest().body(res);
+        }
+    }
+
+
+    @GetMapping(path = "/tags")
+    public ResponseEntity<ResponseAPI<GetTagsResponse>> getTagEntity(
+            @RequestParam(name = "search", required = false, defaultValue = "") String search,
+            @RequestParam(name = "page", required = false, defaultValue = "1") int page,
+            @RequestParam(name = "size", required = false, defaultValue = "10") int size,
+            @RequestParam(name = "sortOrder", required = false, defaultValue = "desc") String sortOrder) {
+        try {
+            GetTagsResponse data = forumService.getTagEntity(search, sortOrder, page - 1, size);
+            ResponseAPI<GetTagsResponse> res = ResponseAPI.<GetTagsResponse>builder()
+                    .message("Get tag entity successfully")
+                    .data(data)
+                    .build();
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            ResponseAPI<GetTagsResponse> res = ResponseAPI.<GetTagsResponse>builder()
                     .message(e.getMessage())
                     .build();
             return ResponseEntity.badRequest().body(res);
