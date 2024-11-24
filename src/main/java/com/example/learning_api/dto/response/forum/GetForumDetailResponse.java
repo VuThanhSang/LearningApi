@@ -3,6 +3,7 @@ package com.example.learning_api.dto.response.forum;
 import com.example.learning_api.entity.sql.database.FileEntity;
 import com.example.learning_api.entity.sql.database.StudentEntity;
 import com.example.learning_api.entity.sql.database.TeacherEntity;
+import com.example.learning_api.entity.sql.database.UserEntity;
 import com.example.learning_api.enums.ForumStatus;
 import com.example.learning_api.enums.RoleEnum;
 import lombok.Data;
@@ -29,6 +30,8 @@ public class GetForumDetailResponse {
         private String id;
         private String forumId;
         private String content;
+        private String authorId;
+        private UserEntity author;
         private int upvote;
         private int downvote;
         private int replyCount;

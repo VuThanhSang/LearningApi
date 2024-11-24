@@ -9,6 +9,7 @@ import java.util.List;
 
 public interface ForumCommentRepository extends MongoRepository<ForumCommentEntity, String>{
     List<ForumCommentEntity> findByForumId(String forumId);
+    Page<ForumCommentEntity> findByForumId(String forumId, Pageable pageable);
     Page<ForumCommentEntity> findByParentId(String parentId, Pageable pageable);
     void deleteByForumId(String forumId);
 }

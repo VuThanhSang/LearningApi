@@ -13,16 +13,16 @@ public interface IForumService {
     void updateForum(UpdateForumRequest request);
     void deleteForum(String id);
     void voteForum(VoteRequest request);
-    GetForumsResponse getForums(int page, int size , String search);
+    GetForumsResponse getForums(int page, int size , String search, String sortOrder);
     GetForumDetailResponse getForumDetail(String id);
-    GetForumsResponse getForumByAuthor(String authorId, int page, int size);
-    GetForumsResponse getForumByTag(List<String> tags, int page, int size);
-
+    GetForumsResponse getForumByAuthor(String authorId, int page, int size,String search,String sortOrder);
+    GetForumsResponse getForumByTag(List<String> tags, int page, int size,String search,String sortOrder);
+    GetForumsResponse getForumByClass(String classId, int page, int size,String search,String sortOrder);
     void createForumComment(CreateForumCommentRequest request);
     void updateForumComment(UpdateForumCommentRequest request);
     void deleteForumComment(String id);
     GetForumCommentResponse getReplyComments(String parentIdm, int page, int size);
-
+    GetForumCommentResponse getForumComments(String forumId, int page, int size, String sortOrder);
 
     void createTag(TagEntity request);
     void updateTag(TagEntity request);

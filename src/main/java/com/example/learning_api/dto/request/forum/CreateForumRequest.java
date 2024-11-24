@@ -13,5 +13,7 @@ public class CreateForumRequest {
     private List<MultipartFile> sources;
     private String status;
     private List<String> tags;
+    private Boolean isForClass;
+    private String classId;
     private String role;
 }

@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -43,6 +44,8 @@ public class ForumService implements IForumService {
     private final VoteRepository voteRepository;
     private final TagRepository tagRepository;
     private final FileRepository fileRepository;
+    private final ClassRoomRepository classRoomRepository;
+    private final UserRepository userRepository;
     public void processFiles (List<MultipartFile> files,String title, String ownerId, FileOwnerType ownerType){
         if (files == null) {
             return;
@@ -123,6 +126,20 @@ public class ForumService implements IForumService {
             }
             ForumEntity forumEntity = modelMapperService.mapClass(request, ForumEntity.class);
             List<String> tags = new ArrayList<>();
+            if (request.getIsForClass()){
+                ClassRoomEntity classRoomEntity = classRoomRepository.findById(request.getClassId()).orElseThrow(()->new IllegalArgumentException("Class Id is not found"));
+                TagEntity tagEntity = tagRepository.findByClassId(request.getClassId());
+                if (tagEntity == null) {
+                    tagEntity = new TagEntity();
+                    tagEntity.setName(classRoomEntity.getName());
+                    tagEntity.setClassId(classRoomEntity.getId());
+                    tagEntity.setIsForClass(true);
+                    tagEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+                    tagEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+                    tagRepository.save(tagEntity);
+                }
+                tags.add(tagEntity.getId());
+            }
             for (String tag : request.getTags()) {
                 TagEntity tagEntity = tagRepository.findByName(tag);
                 if (tagEntity == null) {
@@ -233,15 +250,38 @@ public class ForumService implements IForumService {
         voteRepository.save(voteEntity);
     }
 
+    UserEntity getUser(String authorId, String role) {
+        if (role.equals("USER")) {
+            StudentEntity studentEntity = studentRepository.findById(authorId).orElse(null);
+            if (studentEntity == null) {
+                throw new IllegalArgumentException("Student Id is not found");
+            }
+            UserEntity user = userRepository.findById(studentEntity.getUserId()).orElse(null);
+            studentEntity.setUser(null);
+            user.setStudent(studentEntity);
+            return user;
+        } else {
+            TeacherEntity teacherEntity = teacherRepository.findById(authorId).orElse(null);
+            if (teacherEntity == null) {
+                throw new IllegalArgumentException("Teacher Id is not found");
+            }
+            UserEntity user = userRepository.findById(teacherEntity.getUserId()).orElse(null);
+            teacherEntity.setUser(null);
+            user.setTeacher(teacherEntity);
+            return user;
+        }
+    }
     @Override
-    public GetForumsResponse getForums(int page, int size, String search) {
-        try{
-            Pageable pageAble = PageRequest.of(page, size);
-            Page<ForumEntity> forumEntities = forumRepository.findAllByTitleContaining(search, pageAble);
+    public GetForumsResponse getForums(int page, int size, String search, String sortOrder) {
+        try {
+            Pageable pageable = PageRequest.of(page, size, sortOrder.equalsIgnoreCase("desc") ? Sort.by("createdAt").descending() : Sort.by("createdAt").ascending());
+            Page<ForumEntity> forumEntities = forumRepository.findByTitleOrContentRegex(search, pageable);
             GetForumsResponse getForumsResponse = new GetForumsResponse();
             List<GetForumsResponse.ForumResponse> data = new ArrayList<>();
             forumEntities.forEach(forumEntity -> {
                 GetForumsResponse.ForumResponse forumResponse = GetForumsResponse.ForumResponse.formForumEntity(forumEntity);
+
+                forumResponse.setAuthor(getUser(forumEntity.getAuthorId(), forumEntity.getRole().name()));
                 List<FileEntity> fileEntities = fileRepository.findByOwnerIdAndOwnerType(forumEntity.getId(), FileOwnerType.FORUM.name());
                 forumResponse.setTags(tagRepository.findByIdIn(forumEntity.getTags()));
                 forumResponse.setSources(fileEntities);
@@ -253,8 +293,7 @@ public class ForumService implements IForumService {
             getForumsResponse.setTotalElements(forumEntities.getTotalElements());
             getForumsResponse.setTotalPage(forumEntities.getTotalPages());
             return getForumsResponse;
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             log.error(e.getMessage());
             throw new IllegalArgumentException(e.getMessage());
         }
@@ -262,8 +301,8 @@ public class ForumService implements IForumService {
 
     @Override
     public GetForumDetailResponse getForumDetail(String id) {
-        try{
-            ForumEntity forumEntity = forumRepository.findById(id).orElseThrow(()->new IllegalArgumentException("Id is not found"));
+        try {
+            ForumEntity forumEntity = forumRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Id is not found"));
             List<FileEntity> fileEntities = fileRepository.findByOwnerIdAndOwnerType(forumEntity.getId(), FileOwnerType.FORUM.name());
             GetForumDetailResponse getForumDetailResponse = modelMapperService.mapClass(forumEntity, GetForumDetailResponse.class);
             getForumDetailResponse.setUpvoteCount(voteRepository.countUpvoteByForumId(id));
@@ -273,38 +312,29 @@ public class ForumService implements IForumService {
             forumCommentEntities.forEach(forumCommentEntity -> {
                 GetForumDetailResponse.ForumComment forumComment = modelMapperService.mapClass(forumCommentEntity, GetForumDetailResponse.ForumComment.class);
                 forumComment.setSources(fileRepository.findByOwnerIdAndOwnerType(forumCommentEntity.getId(), FileOwnerType.FORUM_COMMENT.name()));
-                if (String.valueOf(forumCommentEntity.getRole())== "USER"){
-                    StudentEntity studentEntity = studentRepository.findById(forumCommentEntity.getAuthorId()).orElse(null);
-                    forumComment.setStudent(studentEntity);
-                }
-                else{
-                    TeacherEntity teacherEntity = teacherRepository.findById(forumCommentEntity.getAuthorId()).orElse(null);
-                    forumComment.setTeacher(teacherEntity);
-                }
-
+                forumComment.setAuthor(getUser(forumCommentEntity.getAuthorId(), forumCommentEntity.getRole().name()));
                 forumComments.add(forumComment);
             });
             getForumDetailResponse.setComments(forumComments);
             return getForumDetailResponse;
-
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             log.error(e.getMessage());
             throw new IllegalArgumentException(e.getMessage());
         }
     }
 
     @Override
-    public GetForumsResponse getForumByAuthor(String authorId, int page, int size) {
-        try{
-            Pageable pageAble = PageRequest.of(page, size);
-            Page<ForumEntity> forumEntities = forumRepository.findByAuthorId(authorId, pageAble);
+    public GetForumsResponse getForumByAuthor(String authorId, int page, int size, String search, String sortOrder) {
+        try {
+            Pageable pageable = PageRequest.of(page, size, sortOrder.equalsIgnoreCase("desc") ? Sort.by("createdAt").descending() : Sort.by("createdAt").ascending());
+            Page<ForumEntity> forumEntities = forumRepository.findByAuthorIdAndTitleOrContentRegex(authorId, search, pageable);
             GetForumsResponse getForumsResponse = new GetForumsResponse();
             List<GetForumsResponse.ForumResponse> data = new ArrayList<>();
             forumEntities.forEach(forumEntity -> {
                 GetForumsResponse.ForumResponse forumResponse = GetForumsResponse.ForumResponse.formForumEntity(forumEntity);
                 forumResponse.setSources(fileRepository.findByOwnerIdAndOwnerType(forumEntity.getId(), FileOwnerType.FORUM.name()));
                 List<TagEntity> tagEntities = tagRepository.findByIdIn(forumEntity.getTags());
+                forumResponse.setAuthor(getUser(forumEntity.getAuthorId(), forumEntity.getRole().name()));
                 forumResponse.setTags(tagEntities);
                 forumResponse.setUpvote(voteRepository.countUpvoteByForumId(forumEntity.getId()));
                 forumResponse.setDownvote(voteRepository.countDownvoteByForumId(forumEntity.getId()));
@@ -314,53 +344,68 @@ public class ForumService implements IForumService {
             getForumsResponse.setTotalElements(forumEntities.getTotalElements());
             getForumsResponse.setTotalPage(forumEntities.getTotalPages());
             return getForumsResponse;
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             log.error(e.getMessage());
             throw new IllegalArgumentException(e.getMessage());
         }
     }
+
     @Override
-    public GetForumsResponse getForumByTag(List<String> tagNames, int page, int size) {
+    public GetForumsResponse getForumByTag(List<String> tagNames, int page, int size, String search, String sortOrder) {
         try {
-            // Đầu tiên lấy tag IDs từ tag names
             List<String> tagIds = tagRepository.findByNameIn(tagNames)
                     .stream()
                     .map(TagEntity::getId)
                     .collect(Collectors.toList());
-
-            // Sử dụng tag IDs để tìm forums
-            Pageable pageAble = PageRequest.of(page, size);
-            Page<ForumEntity> forumEntities = forumRepository.findByTagIds(tagIds, pageAble);
-
+            Pageable pageable = PageRequest.of(page, size, sortOrder.equalsIgnoreCase("desc") ? Sort.by("createdAt").descending() : Sort.by("createdAt").ascending());
+            Page<ForumEntity> forumEntities = forumRepository.findByTagIdsAndTitleOrContentRegex(tagIds, search, pageable);
             GetForumsResponse getForumsResponse = new GetForumsResponse();
             List<GetForumsResponse.ForumResponse> data = new ArrayList<>();
-
             forumEntities.forEach(forumEntity -> {
                 GetForumsResponse.ForumResponse forumResponse = GetForumsResponse.ForumResponse.formForumEntity(forumEntity);
-
-                // Thêm các thông tin bổ sung
-                forumResponse.setSources(fileRepository.findByOwnerIdAndOwnerType(
-                        forumEntity.getId(),
-                        FileOwnerType.FORUM.name()
-                ));
-
+                forumResponse.setSources(fileRepository.findByOwnerIdAndOwnerType(forumEntity.getId(), FileOwnerType.FORUM.name()));
                 forumResponse.setTags(tagRepository.findByIdIn(forumEntity.getTags()));
+                forumResponse.setAuthor(getUser(forumEntity.getAuthorId(), forumEntity.getRole().name()));
                 forumResponse.setUpvote(voteRepository.countUpvoteByForumId(forumEntity.getId()));
                 forumResponse.setDownvote(voteRepository.countDownvoteByForumId(forumEntity.getId()));
-
                 data.add(forumResponse);
             });
-
-            // Set response data
             getForumsResponse.setForums(data);
             getForumsResponse.setTotalElements(forumEntities.getTotalElements());
             getForumsResponse.setTotalPage(forumEntities.getTotalPages());
-
             return getForumsResponse;
         } catch (Exception e) {
             log.error("Error in getForumByTag: {}", e.getMessage(), e);
             throw new IllegalArgumentException("Failed to get forums by tags: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public GetForumsResponse getForumByClass(String classId, int page, int size, String search, String sortOrder) {
+        try {
+            Pageable pageable = PageRequest.of(page, size, sortOrder.equalsIgnoreCase("desc") ? Sort.by("createdAt").descending() : Sort.by("createdAt").ascending());
+            TagEntity tagEntities = tagRepository.findByClassId(classId);
+            List<String> tagIds = new ArrayList<>();
+            tagIds.add(tagEntities.getId());
+            Page<ForumEntity> forumEntities = forumRepository.findByAnyTagIdsAndTitleOrContentRegex(tagIds, search, pageable);
+            GetForumsResponse getForumsResponse = new GetForumsResponse();
+            List<GetForumsResponse.ForumResponse> data = new ArrayList<>();
+            forumEntities.forEach(forumEntity -> {
+                GetForumsResponse.ForumResponse forumResponse = GetForumsResponse.ForumResponse.formForumEntity(forumEntity);
+                forumResponse.setSources(fileRepository.findByOwnerIdAndOwnerType(forumEntity.getId(), FileOwnerType.FORUM.name()));
+                forumResponse.setTags(tagRepository.findByIdIn(forumEntity.getTags()));
+                forumResponse.setAuthor(getUser(forumEntity.getAuthorId(), forumEntity.getRole().name()));
+                forumResponse.setUpvote(voteRepository.countUpvoteByForumId(forumEntity.getId()));
+                forumResponse.setDownvote(voteRepository.countDownvoteByForumId(forumEntity.getId()));
+                data.add(forumResponse);
+            });
+            getForumsResponse.setForums(data);
+            getForumsResponse.setTotalElements(forumEntities.getTotalElements());
+            getForumsResponse.setTotalPage(forumEntities.getTotalPages());
+            return getForumsResponse;
+        } catch (Exception e) {
+            log.error("Error in getForumByClass: {}", e.getMessage(), e);
+            throw new IllegalArgumentException("Failed to get forums by class: " + e.getMessage());
         }
     }
     @Override
@@ -455,12 +500,30 @@ public class ForumService implements IForumService {
             List<GetForumCommentResponse.ForumCommentResponse> data = new ArrayList<>();
             forumCommentEntities.forEach(forumCommentEntity -> {
                 GetForumCommentResponse.ForumCommentResponse forumComment = modelMapperService.mapClass(forumCommentEntity, GetForumCommentResponse.ForumCommentResponse.class);
-                if (String.valueOf(forumCommentEntity.getRole())== "USER"){
-                    forumComment.setStudent(studentRepository.findById(forumCommentEntity.getAuthorId()).get());
-                }
-                else{
-                    forumComment.setTeacher(teacherRepository.findById(forumCommentEntity.getAuthorId()).get());
-                }
+                forumComment.setAuthor(getUser(forumCommentEntity.getAuthorId(), forumCommentEntity.getRole().name()));
+                data.add(forumComment);
+            });
+            getForumCommentResponse.setComments(data);
+            getForumCommentResponse.setTotalElements(forumCommentEntities.getTotalElements());
+            getForumCommentResponse.setTotalPage(forumCommentEntities.getTotalPages());
+            return getForumCommentResponse;
+        }
+        catch (Exception e){
+            log.error(e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public GetForumCommentResponse getForumComments(String forumId, int page, int size, String sortOrder) {
+        try{
+            Pageable pageAble = PageRequest.of(page, size);
+            Page<ForumCommentEntity> forumCommentEntities = forumCommentRepository.findByForumId(forumId, pageAble);
+            GetForumCommentResponse getForumCommentResponse = new GetForumCommentResponse();
+            List<GetForumCommentResponse.ForumCommentResponse> data = new ArrayList<>();
+            forumCommentEntities.forEach(forumCommentEntity -> {
+                GetForumCommentResponse.ForumCommentResponse forumComment = modelMapperService.mapClass(forumCommentEntity, GetForumCommentResponse.ForumCommentResponse.class);
+                forumComment.setAuthor(getUser(forumCommentEntity.getAuthorId(), forumCommentEntity.getRole().name()));
                 data.add(forumComment);
             });
             getForumCommentResponse.setComments(data);
