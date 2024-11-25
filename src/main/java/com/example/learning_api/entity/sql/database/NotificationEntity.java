@@ -37,6 +37,7 @@ public class NotificationEntity {
     private String authorId;
 
     private RoleEnum authorRole;
+    private String notificationSettingId;
 
     @Builder.Default
     private NotificationStatus status = NotificationStatus.PENDING;
