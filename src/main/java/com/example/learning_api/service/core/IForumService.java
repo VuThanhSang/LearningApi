@@ -32,5 +32,5 @@ public interface IForumService {
 
 
     GetTagsResponse getTagEntity(String search, String sortOrder, int page, int size);
-
+    GetForumsResponse getBalancedPersonalizedNewsfeed(String userId, int page, int size, String sortOrder, String sortBy);
 }

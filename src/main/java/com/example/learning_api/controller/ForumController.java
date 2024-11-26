@@ -262,6 +262,29 @@ public class ForumController {
             return ResponseEntity.badRequest().body(res);
         }
     }
+    @GetMapping(path = "/newsfeed")
+    public ResponseEntity<ResponseAPI<GetForumsResponse>> getBalancedPersonalizedNewsfeed(
+            @RequestParam(name = "page", required = false, defaultValue = "1") int page,
+            @RequestParam(name = "size", required = false, defaultValue = "10") int size,
+            @RequestParam(name = "sortOrder", required = false, defaultValue = "desc") String sortOrder,
+            @RequestParam(name = "sortBy", required = false, defaultValue = "createdAt") String sortBy,
+            @RequestHeader("Authorization") String authorizationHeader) {
+        try {
+            String userId = extractUserId(authorizationHeader);
+            String studentId = studentRepository.findByUserId(userId).getId();
+            GetForumsResponse data = forumService.getBalancedPersonalizedNewsfeed(studentId, page - 1, size, sortOrder, sortBy);
+            ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
+                    .message("Get balanced personalized newsfeed successfully")
+                    .data(data)
+                    .build();
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
+                    .message(e.getMessage())
+                    .build();
+            return ResponseEntity.badRequest().body(res);
+        }
+    }
 
     @GetMapping(path = "/{forumId}")
     public ResponseEntity<ResponseAPI<GetForumDetailResponse>> getForumDetail(@PathVariable String forumId, @RequestHeader("Authorization") String authorizationHeader) {
@@ -289,6 +312,7 @@ public class ForumController {
             return ResponseEntity.badRequest().body(res);
         }
     }
+
 
     @PostMapping(path = "/comment", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ResponseAPI<String>> createForumComment(@ModelAttribute @Valid CreateForumCommentRequest body, @RequestHeader("Authorization") String authorizationHeader) {
