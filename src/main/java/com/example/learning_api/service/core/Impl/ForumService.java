@@ -2,6 +2,7 @@ package com.example.learning_api.service.core.Impl;
 
 import com.example.learning_api.constant.CloudinaryConstant;
 import com.example.learning_api.dto.common.SourceUploadDto;
+import com.example.learning_api.dto.common.TagVoteAggregate;
 import com.example.learning_api.dto.common.VoteAuthorDto;
 import com.example.learning_api.dto.request.forum.*;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
@@ -18,10 +19,7 @@ import com.example.learning_api.utils.ImageUtils;
 import com.example.learning_api.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -724,5 +722,101 @@ public class ForumService implements IForumService {
         }
     }
 
+    @Override
+    public GetForumsResponse getBalancedPersonalizedNewsfeed(String userId, int page, int size, String sortOrder, String sortBy) {
+        try {
+            // Xác định cách sắp xếp
+            Sort sort;
+            if ("vote".equalsIgnoreCase(sortBy)) {
+                sort = sortOrder.equalsIgnoreCase("desc")
+                        ? Sort.by(Sort.Order.desc("upvote + downvote"))
+                        : Sort.by(Sort.Order.asc("upvote + downvote"));
+            } else {
+                sort = sortOrder.equalsIgnoreCase("desc")
+                        ? Sort.by(sortBy).descending()
+                        : Sort.by(sortBy).ascending();
+            }
+
+            // Tạo pageable với sắp xếp
+            Pageable pageable = PageRequest.of(page, size, sort);
+
+            // Lấy top tags user đã tương tác
+            List<String> personalTags = voteRepository.findTopTagsByUserVotes(userId).stream()
+                    .limit(3)
+                    .map(TagVoteAggregate::get_id)
+                    .collect(Collectors.toList());
+
+            // Tìm forums
+            Page<ForumEntity> forumEntities;
+            if (personalTags.isEmpty()) {
+                // Nếu không có tags cá nhân hóa, lấy forums chung
+                forumEntities = forumRepository.findAll(pageable);
+            } else {
+                // Lấy forums theo tags cá nhân
+                forumEntities = forumRepository.findByTagsIn(personalTags, pageable);
+
+                // Nếu không đủ forums, bổ sung thêm forums chung
+                if (forumEntities.getContent().size() < size) {
+                    Page<ForumEntity> generalForums = forumRepository.findAll(pageable);
+
+                    // Kết hợp các forums
+                    List<ForumEntity> combinedForums = new ArrayList<>(forumEntities.getContent());
+                    combinedForums.addAll(
+                            generalForums.getContent().subList(
+                                    0,
+                                    Math.min(size - combinedForums.size(), generalForums.getContent().size())
+                            )
+                    );
+
+                    // Tạo page mới từ combined forums
+                    forumEntities = new PageImpl<>(combinedForums, pageable, forumEntities.getTotalElements());
+                }
+            }
+
+            // Tạo response
+            GetForumsResponse getForumsResponse = new GetForumsResponse();
+            List<GetForumsResponse.ForumResponse> data = new ArrayList<>();
+
+            // Xử lý từng forum
+            forumEntities.forEach(forumEntity -> {
+                GetForumsResponse.ForumResponse forumResponse = GetForumsResponse.ForumResponse.formForumEntity(forumEntity);
+
+                // Lấy thông tin user
+                forumResponse.setAuthor(getUser(forumEntity.getAuthorId(), forumEntity.getRole().name()));
+
+                // Lấy files
+                List<FileEntity> fileEntities = fileRepository.findByOwnerIdAndOwnerType(
+                        forumEntity.getId(),
+                        FileOwnerType.FORUM.name()
+                );
+                forumResponse.setSources(fileEntities);
+
+                // Lấy tags
+                forumResponse.setTags(tagRepository.findByIdIn(forumEntity.getTags()));
+
+                // Tính toán votes
+                forumResponse.setUpvote(voteRepository.countUpvoteByTargetId(forumEntity.getId()));
+                forumResponse.setDownvote(voteRepository.countDownvoteByTargetId(forumEntity.getId()));
+
+                // Kiểm tra vote của user
+                VoteEntity voteEntity = voteRepository.findByAuthorIdAndTargetId(userId, forumEntity.getId());
+                if (voteEntity != null) {
+                    forumResponse.setIsUpvoted(voteEntity.isUpvote());
+                }
+
+                data.add(forumResponse);
+            });
+
+            // Điền thông tin response
+            getForumsResponse.setForums(data);
+            getForumsResponse.setTotalElements(forumEntities.getTotalElements());
+            getForumsResponse.setTotalPage(forumEntities.getTotalPages());
+
+            return getForumsResponse;
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
 
 }

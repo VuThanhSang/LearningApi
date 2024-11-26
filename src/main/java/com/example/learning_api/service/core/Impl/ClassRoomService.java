@@ -225,10 +225,19 @@ public class ClassRoomService implements IClassRoomService {
     }
 
     @Override
-    public GetClassRoomsResponse getClassRooms(int page, int size, String search) {
+    public GetClassRoomsResponse getClassRooms(int page, int size, String search,String studentId,String role) {
         try{
             Pageable pageAble = PageRequest.of(page, size);
-            Page<ClassRoomEntity> classRooms = classRoomRepository.findByNameContaining(search, pageAble);
+            Page<ClassRoomEntity> classRooms;
+            if (role.equals("USER")){
+                List<String> classRoomIds = studentEnrollmentsRepository.findByStudentId(studentId).stream()
+                        .map(StudentEnrollmentsEntity::getClassroomId)
+                        .collect(Collectors.toList());
+                classRooms = classRoomRepository.findByIdInAndNameContaining(classRoomIds,search, pageAble);
+            }
+            else{
+                classRooms = classRoomRepository.findByTeacherIdAndNameContaining(studentId,search, pageAble);
+            }
             List<GetClassRoomsResponse.ClassRoomResponse> resData = new ArrayList<>();
             for (ClassRoomEntity classRoom : classRooms){
                 log.info("classRoom: {}", classRoom);
@@ -267,6 +276,8 @@ public class ClassRoomService implements IClassRoomService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
+
+
 
     @Override
     public GetSectionsResponse getSectionsByClassroomId(int page, int size, String classroomId) {

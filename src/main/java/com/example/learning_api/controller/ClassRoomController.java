@@ -112,9 +112,23 @@ public class ClassRoomController {
     public ResponseEntity<ResponseAPI<GetClassRoomsResponse>> getClassRoom(
             @RequestParam(name="name",required = false,defaultValue = "") String search,
                                                             @RequestParam(name="page",required = false,defaultValue = "1") int page,
-                                                            @RequestParam(name="size",required = false,defaultValue = "10") int size) {
+                                                            @RequestParam(name="size",required = false,defaultValue = "10") int size,
+                                @RequestHeader(name = "Authorization") String authorizationHeader) {
         try{
-            GetClassRoomsResponse resData = classRoomService.getClassRooms( page-1, size,search);
+            String token = authorizationHeader.replace("Bearer ", "");
+            String userId = jwtService.extractUserId(token);
+            String role = jwtService.extractRole(token);
+            String callId = "";
+            if (role.equals("USER")){
+               callId = studentService.getStudentByUserId(userId).getId();
+            }
+            else if (role.equals("TEACHER")){
+                callId = teacherService.getTeacherByUserId(userId).getId();
+            }
+            else{
+                callId = "";
+            }
+            GetClassRoomsResponse resData = classRoomService.getClassRooms( page-1, size,search,callId,role);
             ResponseAPI<GetClassRoomsResponse> res = ResponseAPI.<GetClassRoomsResponse>builder()
                     .timestamp(new Date())
                     .message("Get class room successfully")

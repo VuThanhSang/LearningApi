@@ -16,7 +16,10 @@ import java.util.List;
 public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, String> {
     @Query("{ 'name' : { $regex: ?0, $options: 'i' } }")
     Page<ClassRoomEntity> findByNameContaining(String search, Pageable pageable);
-
+    @Query("{ '_id' : { $in: ?0 }, 'name' : { $regex: ?1, $options: 'i' } }")
+    Page<ClassRoomEntity> findByIdInAndNameContaining(List<String> classroomIds, String search, Pageable pageable);
+    @Query("{ 'teacherId' : ?0, 'name' : { $regex: ?1, $options: 'i' } }")
+    Page<ClassRoomEntity> findByTeacherIdAndNameContaining(String teacherId, String search, Pageable pageable);
     @Query("{ 'courseId' : ?0 }")
     Page<ClassRoomEntity> findByCourseId(String courseId, Pageable pageable);
 

@@ -21,5 +21,7 @@ public interface ForumRepository extends MongoRepository<ForumEntity, String> {
     Page<ForumEntity> findByTagIdsAndTitleOrContentRegex(List<String> tagIds, String regex, Pageable pageable);
 
     @Query("{$and: [{'tags': {$in: ?0}}, {$or: [{'title': {$regex: ?1, $options: 'i'}}, {'content': {$regex: ?1, $options: 'i'}}]}]}")
+
     Page<ForumEntity> findByAnyTagIdsAndTitleOrContentRegex(List<String> tagIds, String regex, Pageable pageable);
+    Page<ForumEntity> findByTagsIn(List<String> tagIds, Pageable pageable);
 }
