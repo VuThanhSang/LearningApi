@@ -135,6 +135,8 @@ public class ForumController {
             @RequestParam(name = "page", required = false, defaultValue = "1") int page,
             @RequestParam(name = "size", required = false, defaultValue = "10") int size,
             @RequestParam(name = "sortOrder", required = false, defaultValue = "desc") String sortOrder,
+            @RequestParam(name = "sortBy", required = false, defaultValue = "createdAt") String sortBy,
+            @RequestParam(name = "tag", required = false, defaultValue = "") String tag,
             @RequestHeader("Authorization") String authorizationHeader) {
         try {
             String userId = extractUserId(authorizationHeader);
@@ -148,7 +150,7 @@ public class ForumController {
                 throw new Exception("Role not found");
             }
 
-            GetForumsResponse data = forumService.getForums(page - 1, size, search, sortOrder, authorId);
+            GetForumsResponse data = forumService.getForums(page - 1, size, search, sortOrder, authorId,tag,sortBy);
             ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
                     .message("Get forum successfully")
                     .data(data)
@@ -168,6 +170,7 @@ public class ForumController {
                                                                            @RequestParam(name = "size", required = false, defaultValue = "10") int size,
                                                                            @RequestParam(name = "search", required = false, defaultValue = "") String search,
                                                                            @RequestParam(name = "sortOrder", required = false, defaultValue = "desc") String sortOrder,
+                                                                           @RequestHeader(name = "sortBy", required = false, defaultValue = "createdAt") String sortBy,
                                                                            @RequestHeader("Authorization") String authorizationHeader) {
         try {
             String callId = extractUserId(authorizationHeader);
@@ -180,7 +183,7 @@ public class ForumController {
             } else {
                 throw new Exception("Role not found");
             }
-            GetForumsResponse data = forumService.getForumByAuthor(authorId, page - 1, size, search, sortOrder,userId);
+            GetForumsResponse data = forumService.getForumByAuthor(authorId, page - 1, size, search, sortOrder,userId,sortBy);
             ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
                     .message("Get forum by author successfully")
                     .data(data)
@@ -200,6 +203,7 @@ public class ForumController {
                                                                         @RequestParam(name = "size", required = false, defaultValue = "10") int size,
                                                                         @RequestParam(name = "search", required = false, defaultValue = "") String search,
                                                                         @RequestParam(name = "sortOrder", required = false, defaultValue = "desc") String sortOrder,
+                                                                        @RequestParam(name = "sortBy", required = false, defaultValue = "createdAt") String sortBy,
                                                                         @RequestHeader("Authorization") String authorizationHeader) {
         try {
             String callId = extractUserId(authorizationHeader);
@@ -212,7 +216,7 @@ public class ForumController {
             } else {
                 throw new Exception("Role not found");
             }
-            GetForumsResponse data = forumService.getForumByTag(tags, page - 1, size, search, sortOrder,userId);
+            GetForumsResponse data = forumService.getForumByTag(tags, page - 1, size, search, sortOrder,userId,sortBy);
             ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
                     .message("Get forum by tag successfully")
                     .data(data)
@@ -232,6 +236,7 @@ public class ForumController {
                                                                           @RequestParam(name = "size", required = false, defaultValue = "10") int size,
                                                                           @RequestParam(name = "search", required = false, defaultValue = "") String search,
                                                                           @RequestParam(name = "sortOrder", required = false, defaultValue = "desc") String sortOrder,
+                                                                          @RequestParam(name = "sortBy", required = false, defaultValue = "createdAt") String sortBy,
                                                                           @RequestHeader("Authorization") String authorizationHeader) {
         try {
             String callId = extractUserId(authorizationHeader);
@@ -244,7 +249,7 @@ public class ForumController {
             } else {
                 throw new Exception("Role not found");
             }
-            GetForumsResponse data = forumService.getForumByClass(classId, page - 1, size, search, sortOrder,userId);
+            GetForumsResponse data = forumService.getForumByClass(classId, page - 1, size, search, sortOrder,userId,sortBy);
             ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
                     .message("Get forum by class successfully")
                     .data(data)

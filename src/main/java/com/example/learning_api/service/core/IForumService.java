@@ -15,11 +15,11 @@ public interface IForumService {
     void voteForum(VoteRequest request);
     GetVotesResponse getVotedByForum(String forumId);
     GetVotesResponse getVoteByComment(String commentId);
-    GetForumsResponse getForums(int page, int size , String search, String sortOrder, String userId);
+    GetForumsResponse getForums(int page, int size , String search, String sortOrder, String userId,String tag,String sortBy);
     GetForumDetailResponse getForumDetail(String id, String userId);
-    GetForumsResponse getForumByAuthor(String authorId, int page, int size,String search,String sortOrder,String userId);
-    GetForumsResponse getForumByTag(List<String> tags, int page, int size,String search,String sortOrder,String userId);
-    GetForumsResponse getForumByClass(String classId, int page, int size,String search,String sortOrder,String userId);
+    GetForumsResponse getForumByAuthor(String authorId, int page, int size,String search,String sortOrder,String userId,String sortBy);
+    GetForumsResponse getForumByTag(List<String> tags, int page, int size,String search,String sortOrder,String userId,String sortBy);
+    GetForumsResponse getForumByClass(String classId, int page, int size,String search,String sortOrder,String userId,String sortBy);
     void createForumComment(CreateForumCommentRequest request);
     void updateForumComment(UpdateForumCommentRequest request);
     void deleteForumComment(String id);

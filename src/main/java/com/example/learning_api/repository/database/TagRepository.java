@@ -18,5 +18,7 @@ public interface TagRepository extends MongoRepository<TagEntity, String> {
     TagEntity findByClassId(String classId);
     @Query("{'name': {$regex: ?0, $options: 'i'}}")
     Page<TagEntity> findByNameRegexOrderByPostCount(String name, Pageable pageable);
+    @Query("{'name': {$regex: ?0, $options: 'i'}}")
+    List<TagEntity> findByNameRegexOrderByPostCount(String name);
 
 }

@@ -16,9 +16,9 @@ public enum NotificationFormType {
     TEST_GRADED,            // Bài kiểm tra đã có điểm
 
     // Thông báo tương tác
-    DISCUSSION_NEW_POST,     // Bài đăng mới trong diễn đàn
-    DISCUSSION_REPLY,        // Phản hồi trong diễn đàn
-    DISCUSSION_MENTION,      // Được nhắc đến trong diễn đàn
+    FORUM_NEW_POST,     // Bài đăng mới trong diễn đàn
+    FORUM_REPLY,        // Phản hồi trong diễn đàn
+    FORUM_MENTION,      // Được nhắc đến trong diễn đàn
 
 
     // Thông báo về lớp học trực tuyến

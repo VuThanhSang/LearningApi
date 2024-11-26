@@ -340,37 +340,6 @@ public class ForumService implements IForumService {
             return user;
         }
     }
-    @Override
-    public GetForumsResponse getForums(int page, int size, String search, String sortOrder,String userId) {
-        try {
-            Pageable pageable = PageRequest.of(page, size, sortOrder.equalsIgnoreCase("desc") ? Sort.by("createdAt").descending() : Sort.by("createdAt").ascending());
-            Page<ForumEntity> forumEntities = forumRepository.findByTitleOrContentRegex(search, pageable);
-            GetForumsResponse getForumsResponse = new GetForumsResponse();
-            List<GetForumsResponse.ForumResponse> data = new ArrayList<>();
-            forumEntities.forEach(forumEntity -> {
-                GetForumsResponse.ForumResponse forumResponse = GetForumsResponse.ForumResponse.formForumEntity(forumEntity);
-
-                forumResponse.setAuthor(getUser(forumEntity.getAuthorId(), forumEntity.getRole().name()));
-                List<FileEntity> fileEntities = fileRepository.findByOwnerIdAndOwnerType(forumEntity.getId(), FileOwnerType.FORUM.name());
-                forumResponse.setTags(tagRepository.findByIdIn(forumEntity.getTags()));
-                forumResponse.setSources(fileEntities);
-                forumResponse.setUpvote(voteRepository.countUpvoteByTargetId(forumEntity.getId()));
-                forumResponse.setDownvote(voteRepository.countDownvoteByTargetId(forumEntity.getId()));
-                VoteEntity voteEntity = voteRepository.findByAuthorIdAndTargetId(userId, forumEntity.getId());
-                if (voteEntity != null) {
-                    forumResponse.setIsUpvoted(voteEntity.isUpvote());
-                }
-                data.add(forumResponse);
-            });
-            getForumsResponse.setForums(data);
-            getForumsResponse.setTotalElements(forumEntities.getTotalElements());
-            getForumsResponse.setTotalPage(forumEntities.getTotalPages());
-            return getForumsResponse;
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            throw new IllegalArgumentException(e.getMessage());
-        }
-    }
 
     @Override
     public GetForumDetailResponse getForumDetail(String id, String userId) {
@@ -405,11 +374,54 @@ public class ForumService implements IForumService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
+    @Override
+    public GetForumsResponse getForums(int page, int size, String search, String sortOrder, String userId, String tag, String sortBy) {
+        try {
+            Sort sort;
+            if ("vote".equalsIgnoreCase(sortBy)) {
+                sort = sortOrder.equalsIgnoreCase("desc") ? Sort.by(Sort.Order.desc("upvote + downvote")) : Sort.by(Sort.Order.asc("upvote + downvote"));
+            } else {
+                sort = sortOrder.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+            }
+            Pageable pageable = PageRequest.of(page, size, sort);
+            List<String> tagIds = tagRepository.findByNameRegexOrderByPostCount(tag).stream().map(TagEntity::getId).collect(Collectors.toList());
+            Page<ForumEntity> forumEntities = forumRepository.findByAnyTagIdsAndTitleOrContentRegex(tagIds, search, pageable);
+            GetForumsResponse getForumsResponse = new GetForumsResponse();
+            List<GetForumsResponse.ForumResponse> data = new ArrayList<>();
+            forumEntities.forEach(forumEntity -> {
+                GetForumsResponse.ForumResponse forumResponse = GetForumsResponse.ForumResponse.formForumEntity(forumEntity);
+                forumResponse.setAuthor(getUser(forumEntity.getAuthorId(), forumEntity.getRole().name()));
+                List<FileEntity> fileEntities = fileRepository.findByOwnerIdAndOwnerType(forumEntity.getId(), FileOwnerType.FORUM.name());
+                forumResponse.setTags(tagRepository.findByIdIn(forumEntity.getTags()));
+                forumResponse.setSources(fileEntities);
+                forumResponse.setUpvote(voteRepository.countUpvoteByTargetId(forumEntity.getId()));
+                forumResponse.setDownvote(voteRepository.countDownvoteByTargetId(forumEntity.getId()));
+                VoteEntity voteEntity = voteRepository.findByAuthorIdAndTargetId(userId, forumEntity.getId());
+                if (voteEntity != null) {
+                    forumResponse.setIsUpvoted(voteEntity.isUpvote());
+                }
+                data.add(forumResponse);
+            });
+            getForumsResponse.setForums(data);
+            getForumsResponse.setTotalElements(forumEntities.getTotalElements());
+            getForumsResponse.setTotalPage(forumEntities.getTotalPages());
+            return getForumsResponse;
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
 
     @Override
-    public GetForumsResponse getForumByAuthor(String authorId, int page, int size, String search, String sortOrder, String userId) {
+    public GetForumsResponse getForumByAuthor(String authorId, int page, int size, String search, String sortOrder, String userId, String sortBy) {
         try {
-            Pageable pageable = PageRequest.of(page, size, sortOrder.equalsIgnoreCase("desc") ? Sort.by("createdAt").descending() : Sort.by("createdAt").ascending());
+            Sort sort;
+            if ("vote".equalsIgnoreCase(sortBy)) {
+                sort = sortOrder.equalsIgnoreCase("desc") ? Sort.by(Sort.Order.desc("upvote + downvote")) : Sort.by(Sort.Order.asc("upvote + downvote"));
+            } else {
+                sort = sortOrder.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+            }
+            Pageable pageable = PageRequest.of(page, size, sort);
             Page<ForumEntity> forumEntities = forumRepository.findByAuthorIdAndTitleOrContentRegex(authorId, search, pageable);
             GetForumsResponse getForumsResponse = new GetForumsResponse();
             List<GetForumsResponse.ForumResponse> data = new ArrayList<>();
@@ -438,13 +450,16 @@ public class ForumService implements IForumService {
     }
 
     @Override
-    public GetForumsResponse getForumByTag(List<String> tagNames, int page, int size, String search, String sortOrder, String userId) {
+    public GetForumsResponse getForumByTag(List<String> tagNames, int page, int size, String search, String sortOrder, String userId, String sortBy) {
         try {
-            List<String> tagIds = tagRepository.findByNameIn(tagNames)
-                    .stream()
-                    .map(TagEntity::getId)
-                    .collect(Collectors.toList());
-            Pageable pageable = PageRequest.of(page, size, sortOrder.equalsIgnoreCase("desc") ? Sort.by("createdAt").descending() : Sort.by("createdAt").ascending());
+            Sort sort;
+            if ("vote".equalsIgnoreCase(sortBy)) {
+                sort = sortOrder.equalsIgnoreCase("desc") ? Sort.by(Sort.Order.desc("upvote + downvote")) : Sort.by(Sort.Order.asc("upvote + downvote"));
+            } else {
+                sort = sortOrder.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+            }
+            List<String> tagIds = tagRepository.findByNameIn(tagNames).stream().map(TagEntity::getId).collect(Collectors.toList());
+            Pageable pageable = PageRequest.of(page, size, sort);
             Page<ForumEntity> forumEntities = forumRepository.findByTagIdsAndTitleOrContentRegex(tagIds, search, pageable);
             GetForumsResponse getForumsResponse = new GetForumsResponse();
             List<GetForumsResponse.ForumResponse> data = new ArrayList<>();
@@ -472,9 +487,15 @@ public class ForumService implements IForumService {
     }
 
     @Override
-    public GetForumsResponse getForumByClass(String classId, int page, int size, String search, String sortOrder, String userId) {
+    public GetForumsResponse getForumByClass(String classId, int page, int size, String search, String sortOrder, String userId, String sortBy) {
         try {
-            Pageable pageable = PageRequest.of(page, size, sortOrder.equalsIgnoreCase("desc") ? Sort.by("createdAt").descending() : Sort.by("createdAt").ascending());
+            Sort sort;
+            if ("vote".equalsIgnoreCase(sortBy)) {
+                sort = sortOrder.equalsIgnoreCase("desc") ? Sort.by(Sort.Order.desc("upvote + downvote")) : Sort.by(Sort.Order.asc("upvote + downvote"));
+            } else {
+                sort = sortOrder.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+            }
+            Pageable pageable = PageRequest.of(page, size, sort);
             TagEntity tagEntities = tagRepository.findByClassId(classId);
             List<String> tagIds = new ArrayList<>();
             tagIds.add(tagEntities.getId());
