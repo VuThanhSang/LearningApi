@@ -1,5 +1,6 @@
 package com.example.learning_api.entity.sql.database;
 
+import com.example.learning_api.enums.RoleEnum;
 import lombok.Data;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -10,6 +11,7 @@ public class MediaNoteEntity {
     private String mediaId;
     private String userId;
     private String content;
+    private RoleEnum role;
     private Integer time; // Thời điểm trong video (giây)
     private String createdAt;
 }
