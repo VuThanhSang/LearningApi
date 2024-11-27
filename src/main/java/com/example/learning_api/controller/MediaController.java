@@ -3,13 +3,18 @@ package com.example.learning_api.controller;
 import com.example.learning_api.dto.request.media.CreateMediaRequest;
 import com.example.learning_api.dto.request.media.UpdateMediaRequest;
 import com.example.learning_api.dto.response.media.GetMediaCommentsResponse;
+import com.example.learning_api.dto.response.media.GetMediaDetailResponse;
 import com.example.learning_api.dto.response.media.GetMediaNotesResponse;
 import com.example.learning_api.dto.response.media.GetMediaResponse;
 import com.example.learning_api.entity.sql.database.MediaCommentEntity;
 import com.example.learning_api.entity.sql.database.MediaEntity;
 import com.example.learning_api.entity.sql.database.MediaNoteEntity;
 import com.example.learning_api.entity.sql.database.MediaProgressEntity;
+import com.example.learning_api.enums.RoleEnum;
 import com.example.learning_api.model.ResponseAPI;
+import com.example.learning_api.repository.database.StudentRepository;
+import com.example.learning_api.repository.database.TeacherRepository;
+import com.example.learning_api.service.common.JwtService;
 import com.example.learning_api.service.core.IMediaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +24,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 import static com.example.learning_api.constant.RouterConstant.*;
 
 @RestController
@@ -27,6 +34,9 @@ import static com.example.learning_api.constant.RouterConstant.*;
 @RequestMapping(MEDIA_BASE_PATH)
 public class MediaController {
     private final IMediaService mediaService;
+    private final JwtService jwtService;
+    private final StudentRepository studentRepository;
+    private final TeacherRepository teacherRepository;
     @PostMapping(path = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<String>> uploadMedia(@ModelAttribute @Valid CreateMediaRequest body) {
@@ -83,17 +93,17 @@ public class MediaController {
     }
 
     @GetMapping(path = "/{mediaId}")
-    public ResponseEntity<ResponseAPI<MediaEntity>> getMedia(@PathVariable String mediaId) {
+    public ResponseEntity<ResponseAPI<GetMediaDetailResponse>> getMedia(@PathVariable String mediaId) {
         try{
-           MediaEntity data =  mediaService.getMedia(mediaId);
-            ResponseAPI<MediaEntity> res = ResponseAPI.<MediaEntity>builder()
+           GetMediaDetailResponse data =  mediaService.getMedia(mediaId);
+            ResponseAPI<GetMediaDetailResponse> res = ResponseAPI.<GetMediaDetailResponse>builder()
                     .message("Get media successfully")
                     .data(data)
                     .build();
             return ResponseEntity.ok(res);
         }
         catch (Exception e){
-            ResponseAPI<MediaEntity> res = ResponseAPI.<MediaEntity>builder()
+            ResponseAPI<GetMediaDetailResponse> res = ResponseAPI.<GetMediaDetailResponse>builder()
                     .message(e.getMessage())
                     .build();
             return ResponseEntity.badRequest().body(res);
@@ -297,8 +307,19 @@ public class MediaController {
     }
 
     @PostMapping(path = "/note")
-    public ResponseEntity<ResponseAPI<String>> createMediaNote(@RequestBody @Valid MediaNoteEntity body) {
+    public ResponseEntity<ResponseAPI<String>> createMediaNote(@RequestBody @Valid MediaNoteEntity body,@RequestHeader("Authorization") String authorizationHeader){
         try{
+            String userId = extractUserId(authorizationHeader);
+            String role = extractRole(authorizationHeader);
+            String id = "";
+            if(role.equals("USER")){
+                id = studentRepository.findByUserId(userId).getId();
+            }
+            else if(role.equals("TEACHER")){
+                id = teacherRepository.findByUserId(userId).getId();
+            }
+            body.setUserId(id);
+            body.setRole(RoleEnum.valueOf(role));
             mediaService.createMediaNote(body);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
                     .message("Create media note successfully")
@@ -388,26 +409,45 @@ public class MediaController {
         }
     }
 
-    @GetMapping(path = "/note/user/{userId}")
-    public ResponseEntity<ResponseAPI<GetMediaNotesResponse>> getMediaNoteByUserId(
+    @GetMapping(path = "/{mediaId}/note")
+    public ResponseEntity<ResponseAPI<List<GetMediaDetailResponse.TimeGroupedNotes>>> getMediaNoteByUserId(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
-            @PathVariable String userId
+            @PathVariable String mediaId,
+            @RequestHeader("Authorization") String authorizationHeader
     ) {
         try{
-            GetMediaNotesResponse data = mediaService.getMediaNoteByUserId(userId, page-1, size);
-            ResponseAPI<GetMediaNotesResponse> res = ResponseAPI.<GetMediaNotesResponse>builder()
+            String userId = extractUserId(authorizationHeader);
+            String role = extractRole(authorizationHeader);
+            String id;
+            if (role.equals("USER")){
+                id = studentRepository.findByUserId(userId).getId();
+            }
+            else {
+                id = teacherRepository.findByUserId(userId).getId();
+            }
+            List<GetMediaDetailResponse.TimeGroupedNotes> data = mediaService.getMediaNoteByUserIdAndMediaId(id,role,mediaId, page-1, size);
+            ResponseAPI<List<GetMediaDetailResponse.TimeGroupedNotes>> res = ResponseAPI.<List<GetMediaDetailResponse.TimeGroupedNotes>>builder()
                     .message("Get media note by userId successfully")
                     .data(data)
                     .build();
             return ResponseEntity.ok(res);
         }
         catch (Exception e){
-            ResponseAPI<GetMediaNotesResponse> res = ResponseAPI.<GetMediaNotesResponse>builder()
+            ResponseAPI<List<GetMediaDetailResponse.TimeGroupedNotes>> res = ResponseAPI.<List<GetMediaDetailResponse.TimeGroupedNotes>>builder()
                     .message(e.getMessage())
                     .build();
             return ResponseEntity.badRequest().body(res);
         }
+    }
+    private String extractUserId(String authorizationHeader) throws Exception {
+        String accessToken = authorizationHeader.replace("Bearer ", "");
+        return jwtService.extractUserId(accessToken);
+    }
+
+    private String extractRole(String authorizationHeader) throws Exception {
+        String accessToken = authorizationHeader.replace("Bearer ", "");
+        return jwtService.extractRole(accessToken);
     }
 
 

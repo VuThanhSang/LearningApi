@@ -3,6 +3,7 @@ package com.example.learning_api.service.core;
 import com.example.learning_api.dto.request.media.CreateMediaRequest;
 import com.example.learning_api.dto.request.media.UpdateMediaRequest;
 import com.example.learning_api.dto.response.media.GetMediaCommentsResponse;
+import com.example.learning_api.dto.response.media.GetMediaDetailResponse;
 import com.example.learning_api.dto.response.media.GetMediaNotesResponse;
 import com.example.learning_api.dto.response.media.GetMediaResponse;
 import com.example.learning_api.entity.sql.database.MediaCommentEntity;
@@ -10,11 +11,13 @@ import com.example.learning_api.entity.sql.database.MediaEntity;
 import com.example.learning_api.entity.sql.database.MediaNoteEntity;
 import com.example.learning_api.entity.sql.database.MediaProgressEntity;
 
+import java.util.List;
+
 public interface IMediaService {
     void createMedia(CreateMediaRequest body);
     void deleteMedia(String mediaId);
     void updateMedia(UpdateMediaRequest body);
-    MediaEntity getMedia(String mediaId);
+    GetMediaDetailResponse getMedia(String mediaId);
     GetMediaResponse getMediaByLessonId(String lessonId, Integer page, Integer size);
     GetMediaResponse getMediaByClassroomId(String classroomId, Integer page, Integer size);
     // student progress
@@ -34,5 +37,5 @@ public interface IMediaService {
     void deleteMediaNote(String noteId);
     MediaNoteEntity getMediaNote(String noteId);
     GetMediaNotesResponse getMediaNoteByMediaId(String mediaId, Integer page, Integer size);
-    GetMediaNotesResponse getMediaNoteByUserId(String userId, Integer page, Integer size);
+    List<GetMediaDetailResponse.TimeGroupedNotes> getMediaNoteByUserIdAndMediaId(String userId, String role, String mediaId, Integer page, Integer size);
 }

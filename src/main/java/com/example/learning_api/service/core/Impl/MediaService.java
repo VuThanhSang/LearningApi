@@ -5,9 +5,11 @@ import com.example.learning_api.dto.request.media.CreateMediaRequest;
 import com.example.learning_api.dto.request.media.UpdateMediaRequest;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.media.GetMediaCommentsResponse;
+import com.example.learning_api.dto.response.media.GetMediaDetailResponse;
 import com.example.learning_api.dto.response.media.GetMediaNotesResponse;
 import com.example.learning_api.dto.response.media.GetMediaResponse;
 import com.example.learning_api.entity.sql.database.*;
+import com.example.learning_api.enums.RoleEnum;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
 import com.example.learning_api.service.common.ModelMapperService;
@@ -27,9 +29,8 @@ import org.springframework.stereotype.Service;
 
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -44,8 +45,9 @@ public class MediaService implements IMediaService {
     private final MediaNoteRepository mediaNoteRepository;
     private final UserRepository userRepository;
     private final SectionRepository sectionRepository;
-
-
+    private final ClassRoomRepository classroomRepository;
+    private final TeacherRepository teacherRepository;
+    private final StudentRepository studentRepository;
     @Override
     public void createMedia(CreateMediaRequest body) {
         try {
@@ -167,16 +169,47 @@ public class MediaService implements IMediaService {
     }
 
     @Override
-    public MediaEntity getMedia(String mediaId) {
-        try{
-            return mediaRepository.findById(mediaId).orElseThrow(()->new IllegalArgumentException("Id is not found"));
-        }
-        catch (Exception e) {
+    public GetMediaDetailResponse getMedia(String mediaId) {
+        try {
+            MediaEntity mediaEntity = mediaRepository.findById(mediaId).orElseThrow(() -> new IllegalArgumentException("Id is not found"));
+            if (mediaEntity == null) {
+                throw new IllegalArgumentException("Media is not found");
+            }
+
+            String classRoomId = sectionRepository.findById(lessonRepository.findById(mediaEntity.getLessonId()).get().getSectionId()).get().getClassRoomId();
+            String userId = classroomRepository.findById(classRoomId).get().getTeacherId();
+            GetMediaDetailResponse getMediaDetailResponse = modelMapperService.mapClass(mediaEntity, GetMediaDetailResponse.class);
+
+            List<MediaNoteEntity> mediaNoteEntities = mediaNoteRepository.findByMediaIdAndUserId(mediaId, userId, RoleEnum.TEACHER.name());
+            Map<Integer, List<GetMediaDetailResponse.MediaNote>> groupedNotes = new HashMap<>();
+
+            for (MediaNoteEntity mediaNoteEntity : mediaNoteEntities) {
+                int time = mediaNoteEntity.getTime();
+                GetMediaDetailResponse.MediaNote mediaNote = modelMapperService.mapClass(mediaNoteEntity, GetMediaDetailResponse.MediaNote.class);
+                TeacherEntity userEntity = teacherRepository.findById(mediaNoteEntity.getUserId()).orElseThrow(() -> new IllegalArgumentException("UserId is not found"));
+                mediaNote.setAuthorName(userEntity.getUser().getFullname());
+                mediaNote.setAuthorId(userEntity.getId());
+                mediaNote.setAvatar(userEntity.getUser().getAvatar());
+
+                groupedNotes.computeIfAbsent(time, k -> new ArrayList<>()).add(mediaNote);
+            }
+
+            List<GetMediaDetailResponse.TimeGroupedNotes> timeGroupedNotes = groupedNotes.entrySet().stream()
+                    .map(entry -> {
+                        GetMediaDetailResponse.TimeGroupedNotes timeGroupedNote = new GetMediaDetailResponse.TimeGroupedNotes();
+                        timeGroupedNote.setTime(entry.getKey());
+                        timeGroupedNote.setMediaNotes(entry.getValue());
+                        return timeGroupedNote;
+                    })
+                    .collect(Collectors.toList());
+
+            getMediaDetailResponse.setNotes(timeGroupedNotes);
+            return getMediaDetailResponse;
+        } catch (Exception e) {
             log.error("Error in getMedia: ", e);
             throw new IllegalArgumentException(e.getMessage());
         }
     }
-
     @Override
     public GetMediaResponse getMediaByLessonId(String lessonId, Integer page, Integer size) {
        try {
@@ -508,9 +541,6 @@ public class MediaService implements IMediaService {
             if (body.getUserId()==null){
                 throw new IllegalArgumentException("UserId is required");
             }
-            if (userRepository.findById(body.getUserId()).isEmpty()){
-                throw new IllegalArgumentException("UserId is not found");
-            }
             MediaNoteEntity mediaNoteEntity = modelMapperService.mapClass(body, MediaNoteEntity.class);
             mediaNoteEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
             mediaNoteRepository.save(mediaNoteEntity);
@@ -613,28 +643,42 @@ public class MediaService implements IMediaService {
     }
 
     @Override
-    public GetMediaNotesResponse getMediaNoteByUserId(String userId, Integer page, Integer size) {
+    public List<GetMediaDetailResponse.TimeGroupedNotes> getMediaNoteByUserIdAndMediaId(String userId, String role, String mediaId, Integer page, Integer size) {
         try {
-            Pageable pageAble = PageRequest.of(page, size);
-            Page<MediaNoteEntity> mediaNoteEntities = mediaNoteRepository.findByUserId(userId, pageAble);
-            GetMediaNotesResponse getMediaResponse = new GetMediaNotesResponse();
-            List<GetMediaNotesResponse.MediaNoteResponse> mediaResponses = new ArrayList<>();
+            List<MediaNoteEntity> mediaNoteEntities = mediaNoteRepository.findByMediaIdAndUserId(mediaId, userId,role);
+            Map<Integer, List<GetMediaDetailResponse.MediaNote>> groupedNotes = new HashMap<>();
+
             for (MediaNoteEntity mediaNoteEntity : mediaNoteEntities) {
-                GetMediaNotesResponse.MediaNoteResponse mediaResponse = modelMapperService.mapClass(mediaNoteEntity, GetMediaNotesResponse.MediaNoteResponse.class);
-                UserEntity userEntity = userRepository.findById(mediaNoteEntity.getUserId()).orElseThrow(()->new IllegalArgumentException("UserId is not found"));
-                mediaResponse.setUserName(userEntity.getFullname());
-                mediaResponse.setUserAvatar(userEntity.getAvatar());
-                mediaResponses.add(mediaResponse);
+                int time = mediaNoteEntity.getTime();
+                GetMediaDetailResponse.MediaNote mediaNote = modelMapperService.mapClass(mediaNoteEntity, GetMediaDetailResponse.MediaNote.class);
+                if (role.equals("USER")){
+                    StudentEntity userEntity = studentRepository.findById(mediaNoteEntity.getUserId()).orElseThrow(() -> new IllegalArgumentException("UserId is not found"));
+                    mediaNote.setAuthorName(userEntity.getUser().getFullname());
+                    mediaNote.setAuthorId(userEntity.getId());
+                    mediaNote.setAvatar(userEntity.getUser().getAvatar());
+                }
+                else {
+                    TeacherEntity userEntity = teacherRepository.findById(mediaNoteEntity.getUserId()).orElseThrow(() -> new IllegalArgumentException("UserId is not found"));
+                    mediaNote.setAuthorName(userEntity.getUser().getFullname());
+                    mediaNote.setAuthorId(userEntity.getId());
+                    mediaNote.setAvatar(userEntity.getUser().getAvatar());
+                }
 
+
+                groupedNotes.computeIfAbsent(time, k -> new ArrayList<>()).add(mediaNote);
             }
-            getMediaResponse.setMediaNotes(mediaResponses);
-            getMediaResponse.setTotalPage(mediaNoteEntities.getTotalPages());
-            getMediaResponse.setTotalElements(mediaNoteEntities.getTotalElements());
 
-            return getMediaResponse;
+            List<GetMediaDetailResponse.TimeGroupedNotes> timeGroupedNotes = groupedNotes.entrySet().stream()
+                    .map(entry -> {
+                        GetMediaDetailResponse.TimeGroupedNotes timeGroupedNote = new GetMediaDetailResponse.TimeGroupedNotes();
+                        timeGroupedNote.setTime(entry.getKey());
+                        timeGroupedNote.setMediaNotes(entry.getValue());
+                        return timeGroupedNote;
+                    })
+                    .collect(Collectors.toList());
 
-        }
-        catch (Exception e) {
+            return timeGroupedNotes;
+        } catch (Exception e) {
             log.error("Error in getMediaNoteByUserId: ", e);
             throw new IllegalArgumentException(e.getMessage());
         }
