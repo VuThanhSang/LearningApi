@@ -262,7 +262,7 @@ public class MediaController {
         }
     }
 
-    @GetMapping(path = "/comment/media/{mediaId}")
+    @GetMapping(path = "/{mediaId}/comment")
     public ResponseEntity<ResponseAPI<GetMediaCommentsResponse>> getMediaCommentByMediaId(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -294,6 +294,28 @@ public class MediaController {
             GetMediaCommentsResponse data = mediaService.getMediaCommentByUserId(userId, page-1, size);
             ResponseAPI<GetMediaCommentsResponse> res = ResponseAPI.<GetMediaCommentsResponse>builder()
                     .message("Get media comment by userId successfully")
+                    .data(data)
+                    .build();
+            return ResponseEntity.ok(res);
+        }
+        catch (Exception e){
+            ResponseAPI<GetMediaCommentsResponse> res = ResponseAPI.<GetMediaCommentsResponse>builder()
+                    .message(e.getMessage())
+                    .build();
+            return ResponseEntity.badRequest().body(res);
+        }
+    }
+
+    @GetMapping(path = "/comment/{commentId}/reply")
+    public ResponseEntity<ResponseAPI<GetMediaCommentsResponse>> getCommentReply(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @PathVariable String commentId
+    ) {
+        try{
+            GetMediaCommentsResponse data = mediaService.getCommentReply(commentId, page-1, size);
+            ResponseAPI<GetMediaCommentsResponse> res = ResponseAPI.<GetMediaCommentsResponse>builder()
+                    .message("Get comment reply successfully")
                     .data(data)
                     .build();
             return ResponseEntity.ok(res);

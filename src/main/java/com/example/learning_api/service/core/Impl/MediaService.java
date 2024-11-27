@@ -456,8 +456,17 @@ public class MediaService implements IMediaService {
             for (MediaCommentEntity mediaCommentEntity : mediaCommentEntities) {
                 GetMediaCommentsResponse.MediaCommentResponse mediaResponse = modelMapperService.mapClass(mediaCommentEntity, GetMediaCommentsResponse.MediaCommentResponse.class);
                 UserEntity userEntity = userRepository.findById(mediaCommentEntity.getUserId()).orElseThrow(() -> new IllegalArgumentException("UserId is not found"));
-                mediaResponse.setUserName(userEntity.getFullname());
-                mediaResponse.setUserAvatar(userEntity.getAvatar());
+                if (userEntity.getRole().equals(RoleEnum.USER)){
+                    StudentEntity studentEntity = studentRepository.findByUserId(userEntity.getId());
+                    studentEntity.setUser(null);
+                    userEntity.setStudent(studentEntity);
+                }
+                else{
+                    TeacherEntity teacherEntity = teacherRepository.findByUserId(userEntity.getId());
+                    teacherEntity.setUser(null);
+                    userEntity.setTeacher(teacherEntity);
+                }
+                mediaResponse.setUser(userEntity);
                 mediaResponse.setTotalReply(mediaCommentRepository.countByReplyTo(mediaCommentEntity.getId()));
                 mediaResponses.add(mediaResponse);
             }
@@ -482,8 +491,17 @@ public class MediaService implements IMediaService {
             for (MediaCommentEntity mediaCommentEntity : mediaCommentEntities) {
                 GetMediaCommentsResponse.MediaCommentResponse mediaResponse = modelMapperService.mapClass(mediaCommentEntity, GetMediaCommentsResponse.MediaCommentResponse.class);
                 UserEntity userEntity = userRepository.findById(mediaCommentEntity.getUserId()).orElseThrow(()->new IllegalArgumentException("UserId is not found"));
-                mediaResponse.setUserName(userEntity.getFullname());
-                mediaResponse.setUserAvatar(userEntity.getAvatar());
+                if (userEntity.getRole().equals(RoleEnum.USER)){
+                    StudentEntity studentEntity = studentRepository.findByUserId(userEntity.getId());
+                    studentEntity.setUser(null);
+                    userEntity.setStudent(studentEntity);
+                }
+                else{
+                    TeacherEntity teacherEntity = teacherRepository.findByUserId(userEntity.getId());
+                    teacherEntity.setUser(null);
+                    userEntity.setTeacher(teacherEntity);
+                }
+                mediaResponse.setUser(userEntity);
                 mediaResponse.setTotalReply(mediaCommentRepository.countByReplyTo(mediaCommentEntity.getId()));
                 mediaResponses.add(mediaResponse);
 
@@ -511,8 +529,17 @@ public class MediaService implements IMediaService {
             for (MediaCommentEntity mediaCommentEntity : mediaCommentEntities) {
                 GetMediaCommentsResponse.MediaCommentResponse mediaResponse = modelMapperService.mapClass(mediaCommentEntity, GetMediaCommentsResponse.MediaCommentResponse.class);
                 UserEntity userEntity = userRepository.findById(mediaCommentEntity.getUserId()).orElseThrow(()->new IllegalArgumentException("UserId is not found"));
-                mediaResponse.setUserName(userEntity.getFullname());
-                mediaResponse.setUserAvatar(userEntity.getAvatar());
+                if (userEntity.getRole().equals(RoleEnum.USER)){
+                    StudentEntity studentEntity = studentRepository.findByUserId(userEntity.getId());
+                    studentEntity.setUser(null);
+                    userEntity.setStudent(studentEntity);
+                }
+                else{
+                    TeacherEntity teacherEntity = teacherRepository.findByUserId(userEntity.getId());
+                    teacherEntity.setUser(null);
+                    userEntity.setTeacher(teacherEntity);
+                }
+                mediaResponse.setUser(userEntity);
                 mediaResponses.add(mediaResponse);
 
             }
