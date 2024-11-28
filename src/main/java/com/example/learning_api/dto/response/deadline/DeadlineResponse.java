@@ -22,8 +22,10 @@ public class DeadlineResponse {
     private List<FileEntity> files;
     private Boolean useScoringCriteria;
     private List<ScoringCriteriaEntity> scoringCriteria;
+    private Boolean allowLateSubmission;
     private String startDate;
     private String endDate;
+
     private String createdAt;
     private String updatedAt;
 }

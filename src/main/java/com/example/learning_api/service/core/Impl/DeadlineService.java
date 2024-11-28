@@ -305,6 +305,7 @@ public class DeadlineService implements IDeadlineService {
             for (DeadlineEntity deadlineEntity : deadlineEntities){
                 GetDeadlinesResponse.DeadlineResponse deadlineResponse = GetDeadlinesResponse.DeadlineResponse.fromDeadlineEntity(deadlineEntity);
                 deadlineResponse.setUseScoringCriteria(deadlineEntity.getUseScoringCriteria());
+                deadlineResponse.setAllowLateSubmission(deadlineEntity.getAllowLateSubmission());
                 deadlineResponse.setFiles(fileRepository.findByOwnerIdAndOwnerType(deadlineEntity.getId(), FileOwnerType.DEADLINE.name()));
                 if ( deadlineEntity.getUseScoringCriteria()!=null && deadlineEntity.getUseScoringCriteria()==true ){
                     List<ScoringCriteriaEntity> scoringCriteriaEntities = scoringCriteriaRepository.findByDeadlineId(deadlineEntity.getId());
@@ -399,10 +400,13 @@ public class DeadlineService implements IDeadlineService {
                 content = classroomRepository.getDeadlinesForClassroom(classroomId, skip, size);
             }
             for (ClassroomDeadlineResponse.DeadlineResponse deadlineResponse : content) {
+                DeadlineEntity deadlineEntity = deadlineRepository.findById(deadlineResponse.getId()).orElse(null);
                 List<FileEntity> files = fileRepository.findByOwnerIdAndOwnerType(deadlineResponse.getId(), FileOwnerType.DEADLINE.name());
                 List<ScoringCriteriaEntity> scoringCriteriaEntities = scoringCriteriaRepository.findByDeadlineId(deadlineResponse.getId());
                 deadlineResponse.setFiles(files);
                 deadlineResponse.setScoringCriteria(scoringCriteriaEntities);
+                assert deadlineEntity != null;
+                deadlineResponse.setAllowLateSubmission(deadlineEntity.getAllowLateSubmission());
             }
             long totalElements ;
             if (role.equals("TEACHER")){
@@ -572,6 +576,7 @@ public class DeadlineService implements IDeadlineService {
                 .scoringCriteria(scoringCriteriaEntities)
                 .status(deadlineResponse.getStatus())
                 .startDate(deadlineResponse.getStartDate())
+                .allowLateSubmission(deadlineResponse.getAllowLateSubmission())
                 .endDate(deadlineResponse.getEndDate())
                 .classroomId(deadlineResponse.getClassroomId())
                 .build();

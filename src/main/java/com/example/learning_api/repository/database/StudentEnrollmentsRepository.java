@@ -67,6 +67,7 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
                     "status: '$deadlines.status', " +
                     "startDate: '$deadlines.startDate', " +
                     "endDate: '$deadlines.endDate', " +
+                    "allowLateSubmission: '$deadlines.allowLateSubmission', " +
                     "} }"
     })
     List<UpcomingDeadlinesResponse> getUpcomingDeadlines(String studentId, String startDate, String endDate, Pageable pageable);
@@ -138,6 +139,7 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
                     "startDate: '$deadlines.startDate', " +
                     "endDate: '$deadlines.endDate', " +
                     "classroomId: '$deadlines.classroomId' " +
+                    "allowLateSubmission: '$deadlines.allowLateSubmission' " +
                     "} }",
             "{ $sort: ?6 }"  // Dynamic sort stage
     })

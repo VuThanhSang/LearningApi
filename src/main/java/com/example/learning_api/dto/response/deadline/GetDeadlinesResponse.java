@@ -34,6 +34,7 @@ public class GetDeadlinesResponse {
         private String startDate;
         private String endDate;
         private String createdAt;
+        private Boolean allowLateSubmission;
         private String updatedAt;
         private String classroomId;
         public static DeadlineResponse fromDeadlineEntity(DeadlineEntity deadlineEntity){
