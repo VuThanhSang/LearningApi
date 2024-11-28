@@ -6,6 +6,8 @@ import com.example.learning_api.enums.NotificationPriority;
 import com.example.learning_api.enums.RoleEnum;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class SendNotificationRequest {
     private String title;
@@ -14,6 +16,8 @@ public class SendNotificationRequest {
     private RoleEnum authorRole;
     private NotificationFormType type;
     private NotificationPriority priority;
+    private String notificationSettingId;
+    private List<String> receiverIds;
     private String targetUrl;
     private String expiresAt;
 }

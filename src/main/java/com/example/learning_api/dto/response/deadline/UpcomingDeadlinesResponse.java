@@ -16,6 +16,7 @@ public class UpcomingDeadlinesResponse {
     private String status;
     private List<FileEntity> files;
     private String classroomId;
+    private Boolean allowLateSubmission;
     private String startDate;
     private String endDate;
     private String lessonName;
