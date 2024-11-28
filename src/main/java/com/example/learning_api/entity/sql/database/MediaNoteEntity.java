@@ -12,6 +12,7 @@ public class MediaNoteEntity {
     private String userId;
     private String content;
     private RoleEnum role;
+    private String importanceLevel;
     private Integer time; // Thời điểm trong video (giây)
     private String createdAt;
 }

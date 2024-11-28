@@ -34,6 +34,7 @@ public class GetMediaDetailResponse {
         private String authorName;
         private String authorId;
         private String avatar;
+        private String importanceLevel;
         private String createdAt;
         private String updatedAt;
     }
