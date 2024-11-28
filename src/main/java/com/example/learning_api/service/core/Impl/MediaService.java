@@ -190,6 +190,7 @@ public class MediaService implements IMediaService {
                 mediaNote.setAuthorName(userEntity.getUser().getFullname());
                 mediaNote.setAuthorId(userEntity.getId());
                 mediaNote.setAvatar(userEntity.getUser().getAvatar());
+                mediaNote.setImportanceLevel(mediaNoteEntity.getImportanceLevel() != null ? mediaNoteEntity.getImportanceLevel() : "LOW");
 
                 groupedNotes.computeIfAbsent(time, k -> new ArrayList<>()).add(mediaNote);
             }
@@ -595,11 +596,8 @@ public class MediaService implements IMediaService {
             if (mediaRepository.findById(body.getMediaId()).isEmpty()){
                 throw new IllegalArgumentException("MediaId is not found");
             }
-            if (body.getUserId()==null){
-                throw new IllegalArgumentException("UserId is required");
-            }
-            if (userRepository.findById(body.getUserId()).isEmpty()){
-                throw new IllegalArgumentException("UserId is not found");
+            if (body.getImportanceLevel()!=null){
+                mediaNoteEntity.setImportanceLevel(body.getImportanceLevel());
             }
             if (body.getContent()!=null){
                 mediaNoteEntity.setContent(body.getContent());
@@ -690,6 +688,7 @@ public class MediaService implements IMediaService {
                     mediaNote.setAuthorId(userEntity.getId());
                     mediaNote.setAvatar(userEntity.getUser().getAvatar());
                 }
+                mediaNote.setImportanceLevel(mediaNoteEntity.getImportanceLevel() != null ? mediaNoteEntity.getImportanceLevel() : "LOW");
 
 
                 groupedNotes.computeIfAbsent(time, k -> new ArrayList<>()).add(mediaNote);
