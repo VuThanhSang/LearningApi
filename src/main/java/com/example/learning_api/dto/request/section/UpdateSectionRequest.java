@@ -19,4 +19,5 @@ public class UpdateSectionRequest {
     @Schema(example = ID_EX)
     private String classRoomId;
     private String status;
+    private Integer index;
 }

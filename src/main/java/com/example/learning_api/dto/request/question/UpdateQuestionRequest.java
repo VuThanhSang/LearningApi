@@ -15,4 +15,5 @@ public class UpdateQuestionRequest {
     private String description;
     private List<MultipartFile> sources;
     private String type;
+    private Integer index;
 }
