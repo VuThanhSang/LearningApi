@@ -12,4 +12,5 @@ public class UpdateAnswerRequest {
     private Boolean isCorrect;
     private MultipartFile source;
     private Integer index;
+    private String answerText;
 }

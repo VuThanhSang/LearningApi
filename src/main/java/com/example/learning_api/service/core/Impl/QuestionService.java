@@ -7,10 +7,7 @@ import com.example.learning_api.dto.request.question.UpdateQuestionRequest;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.question.CreateQuestionResponse;
 import com.example.learning_api.dto.response.question.GetQuestionsResponse;
-import com.example.learning_api.entity.sql.database.FileEntity;
-import com.example.learning_api.entity.sql.database.QuestionEntity;
-import com.example.learning_api.entity.sql.database.TestEntity;
-import com.example.learning_api.entity.sql.database.FeedbackEntity;
+import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.FileOwnerType;
 import com.example.learning_api.enums.QuestionType;
 import com.example.learning_api.model.CustomException;
@@ -83,40 +80,120 @@ public class QuestionService implements IQuestionService {
     }
     @Override
     public CreateQuestionResponse createQuestion(CreateQuestionRequest body) {
-        try{
+        try {
+            // Validate test existence
             TestEntity testEntity = testRepository.findById(body.getTestId())
                     .orElseThrow(() -> new IllegalArgumentException("Test not found"));
-            if (body.getTestId()==null){
-                throw new IllegalArgumentException("TestId is required");
 
+            // Validate input
+            validateQuestionInput(body);
+
+            // Create question entity
+            QuestionEntity questionEntity = createQuestionEntity(body, testEntity);
+
+            // Handle special processing for fill-in-the-blank questions
+            if (body.getType().equals(QuestionType.FILL_IN_THE_BLANK.name())) {
+                processFillInTheBlankQuestion(body, questionEntity);
             }
-            if (testEntity==null){
-                throw new IllegalArgumentException("TestId is not found");
-            }
-            CreateQuestionResponse resData = new CreateQuestionResponse();
-            QuestionEntity questionEntity = modelMapperService.mapClass(body, QuestionEntity.class);
-            FileEntity fileEntity = new FileEntity();
 
-            questionEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
-            questionEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
-            questionEntity.setIndex(questionRepository.findMaxIndexByTestId(body.getTestId())==null?0:questionRepository.findMaxIndexByTestId(body.getTestId())+1);
-            questionRepository.save(questionEntity);
-            progressSources(body.getSources(), body.getContent(), fileEntity, questionEntity);
-            resData.setTestId(body.getTestId());
-            resData.setCreatedAt(questionEntity.getCreatedAt().toString());
-            resData.setContent(body.getContent());
-            resData.setDescription(body.getDescription());
-            resData.setId(questionEntity.getId());
-            resData.setType(body.getType());
-            resData.setUpdatedAt(questionEntity.getUpdatedAt().toString());
-            return resData;
+            // Save and prepare response
+            return prepareQuestionResponse(body, questionEntity);
 
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
 
+    private void validateQuestionInput(CreateQuestionRequest body) {
+        if (body.getTestId() == null) {
+            throw new IllegalArgumentException("TestId is required");
+        }
+    }
+
+    private QuestionEntity createQuestionEntity(CreateQuestionRequest body, TestEntity testEntity) {
+        QuestionEntity questionEntity = modelMapperService.mapClass(body, QuestionEntity.class);
+
+        // Set timestamps and index
+        long currentTime = System.currentTimeMillis();
+        questionEntity.setCreatedAt(String.valueOf(currentTime));
+        questionEntity.setUpdatedAt(String.valueOf(currentTime));
+        questionEntity.setContent(body.getContent());
+        Integer maxIndex = questionRepository.findMaxIndexByTestId(body.getTestId());
+        questionEntity.setIndex(maxIndex == null ? 0 : maxIndex + 1);
+        questionRepository.save(questionEntity);
+
+        return questionEntity;
+    }
+
+    private void processFillInTheBlankQuestion(CreateQuestionRequest body, QuestionEntity questionEntity) {
+        // Set a default content for fill-in-the-blank questions
+        questionEntity.setContent("Điền vô câu trả lời đúng cho đoạn văn dưới đây");
+        questionEntity.setFullQuestion(body.getContent());
+        // Find blank positions
+        List<Integer> blankPositions = findBlankPositions(body.getContent());
+
+        // Create answers for each blank
+        createAnswersForFillInTheBlank(body.getContent(), blankPositions, questionEntity);
+    }
+
+    private List<Integer> findBlankPositions(String content) {
+        List<Integer> positions = new ArrayList<>();
+        int index = content.indexOf("_____");
+        while (index != -1) {
+            positions.add(index);
+            index = content.indexOf("_____", index + 1);
+        }
+        return positions;
+    }
+
+    private void createAnswersForFillInTheBlank(String content, List<Integer> blankPositions, QuestionEntity questionEntity) {
+        List<AnswerEntity> answers = new ArrayList<>();
+        long currentTime = System.currentTimeMillis();
+
+        for (int blankPosition : blankPositions) {
+            AnswerEntity answer = new AnswerEntity();
+
+            // Extract context around the blank
+            String beforeBlank = content.substring(0, blankPosition);
+            String afterBlank = content.substring(blankPosition + 5); // Remove "_____"
+
+            // Determine the full context and potential answer
+            String context = beforeBlank + "[BLANK]" + afterBlank;
+
+            answer.setContent(context);
+            answer.setAnswerText(null);
+            answer.setCorrect(false);
+            answer.setCreatedAt(String.valueOf(currentTime));
+            answer.setUpdatedAt(String.valueOf(currentTime));
+            answer.setQuestionId(questionEntity.getId());
+
+            answers.add(answer);
+        }
+
+        // Save all answers
+        answerRepository.saveAll(answers);
+
+    }
+
+    private CreateQuestionResponse prepareQuestionResponse(CreateQuestionRequest body, QuestionEntity questionEntity) {
+        // Save question
+
+        // Handle sources if needed
+        FileEntity fileEntity = new FileEntity();
+        progressSources(body.getSources(), body.getContent(), fileEntity, questionEntity);
+
+        // Prepare response
+        CreateQuestionResponse resData = new CreateQuestionResponse();
+        resData.setTestId(body.getTestId());
+        resData.setCreatedAt(questionEntity.getCreatedAt());
+        resData.setContent(questionEntity.getContent());
+        resData.setDescription(body.getDescription());
+        resData.setId(questionEntity.getId());
+        resData.setType(body.getType());
+        resData.setUpdatedAt(questionEntity.getUpdatedAt());
+
+        return resData;
+    }
     @Override
     public void updateQuestion(UpdateQuestionRequest body) {
         try{

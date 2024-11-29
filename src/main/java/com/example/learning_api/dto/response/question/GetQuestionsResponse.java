@@ -21,6 +21,7 @@ public class GetQuestionsResponse {
         private String type;
         private String createdAt;
         private String updatedAt;
+
         private List<AnswerResponse> answers;
 
 
@@ -35,6 +36,7 @@ public class GetQuestionsResponse {
         private boolean isSelected;
         private String createdAt;
         private String updatedAt;
+        private String answerText;
 
         public AnswerResponse withoutIsCorrect(){
             AnswerResponse answerResponse = new AnswerResponse();

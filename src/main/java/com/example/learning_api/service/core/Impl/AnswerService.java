@@ -10,6 +10,7 @@ import com.example.learning_api.entity.sql.database.AnswerEntity;
 import com.example.learning_api.entity.sql.database.FileEntity;
 import com.example.learning_api.entity.sql.database.QuestionEntity;
 import com.example.learning_api.enums.FileOwnerType;
+import com.example.learning_api.enums.QuestionType;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.AnswerRepository;
 import com.example.learning_api.repository.database.FileRepository;
@@ -100,11 +101,13 @@ public class AnswerService implements IAnswerService {
               if (answerEntity==null){
                 throw new IllegalArgumentException("AnswerId is not found");
               }
+
               if(body.getContent()!=null)
                 answerEntity.setContent(body.getContent());
               if(body.getIsCorrect()!=null)
                 answerEntity.setCorrect(body.getIsCorrect());
-
+              if (body.getAnswerText()!=null)
+                answerEntity.setAnswerText(body.getAnswerText());
 
               if (body.getSource()!=null){
                   fileRepository.deleteByOwnerIdAndOwnerType(body.getId(), FileOwnerType.ANSWER.name());
@@ -128,6 +131,14 @@ public class AnswerService implements IAnswerService {
               }
               answerEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
               answerRepository.save(answerEntity);
+              QuestionEntity questionEntity = questionRepository.findById(answerEntity.getQuestionId())
+                      .orElseThrow(() -> new IllegalArgumentException("Question not found"));
+              if (questionEntity.getType().equals(QuestionType.FILL_IN_THE_BLANK)||questionEntity.getType().equals(QuestionType.TEXT_ANSWER)){
+                  if (answerEntity.getAnswerText()!=null){
+                      answerEntity.setCorrect(true);
+                      answerRepository.save(answerEntity);
+                  }
+              }
          }
          catch (Exception e){
               throw new IllegalArgumentException(e.getMessage());
