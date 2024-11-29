@@ -74,6 +74,9 @@ public class SectionService implements ISectionService {
 
                 sectionEntity.setDescription(body.getDescription());
             }
+            if (body.getIndex()!=null){
+                sectionEntity.setIndex(body.getIndex());
+            }
             sectionRepository.save(sectionEntity);
 
         }

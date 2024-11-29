@@ -104,6 +104,8 @@ public class AnswerService implements IAnswerService {
                 answerEntity.setContent(body.getContent());
               if(body.getIsCorrect()!=null)
                 answerEntity.setCorrect(body.getIsCorrect());
+
+
               if (body.getSource()!=null){
                   fileRepository.deleteByOwnerIdAndOwnerType(body.getId(), FileOwnerType.ANSWER.name());
                 byte[] originalImage = new byte[0];

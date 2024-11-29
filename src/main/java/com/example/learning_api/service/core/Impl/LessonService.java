@@ -58,6 +58,8 @@ public class LessonService implements ILessonService {
                 lessonEntity.setName(updateLessonRequest.getName());
             if (updateLessonRequest.getDescription()!=null)
                 lessonEntity.setDescription(updateLessonRequest.getDescription());
+            if (updateLessonRequest.getIndex()!=null)
+                lessonEntity.setIndex(updateLessonRequest.getIndex());
             lessonEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             lessonRepository.save(lessonEntity);
         }

@@ -135,6 +135,8 @@ public class QuestionService implements IQuestionService {
             progressSources(body.getSources(), body.getContent(), new FileEntity(), questionEntity);
             if(body.getType()!=null)
                 questionEntity.setType(QuestionType.valueOf(body.getType()));
+            if (body.getIndex()!=null)
+                questionEntity.setIndex(body.getIndex());
             questionEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             questionRepository.save(questionEntity);
         }
