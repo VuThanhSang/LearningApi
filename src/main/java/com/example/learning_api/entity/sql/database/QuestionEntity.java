@@ -24,8 +24,13 @@ public class QuestionEntity {
     private QuestionType type;
     private QuestionStatus status;
     private Integer index;
+    private String fullQuestion;
     private String createdAt;
     private String updatedAt;
+
+    // New field for text and fill-in-the-blank questions
+    private List<String> correctAnswers;
+
     @DBRef
     private List<AnswerEntity> answers;
 }
