@@ -13,4 +13,5 @@ public  interface MediaNoteRepository extends MongoRepository<MediaNoteEntity, S
     Page<MediaNoteEntity> findByMediaId(String mediaId, org.springframework.data.domain.Pageable pageable);
     @Query(value = "{ 'mediaId' : ?0, 'userId' : ?1, 'role': ?2 }")
     List<MediaNoteEntity> findByMediaIdAndUserId(String mediaId, String userId,String role);
+    List<MediaNoteEntity> findByMediaId(String mediaId);
 }

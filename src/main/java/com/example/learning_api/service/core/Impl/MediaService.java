@@ -181,6 +181,18 @@ public class MediaService implements IMediaService {
             GetMediaDetailResponse getMediaDetailResponse = modelMapperService.mapClass(mediaEntity, GetMediaDetailResponse.class);
 
             List<MediaNoteEntity> mediaNoteEntities = mediaNoteRepository.findByMediaIdAndUserId(mediaId, userId, RoleEnum.TEACHER.name());
+            mediaNoteEntities.sort(Comparator.comparing((MediaNoteEntity note) -> {
+                String importanceLevel = note.getImportanceLevel() != null ? note.getImportanceLevel() : "LOW";
+                switch (importanceLevel) {
+                    case "HIGH":
+                        return 1;
+                    case "MEDIUM":
+                        return 2;
+                    default:
+                        return 3;
+                }
+            }));
+
             Map<Integer, List<GetMediaDetailResponse.MediaNote>> groupedNotes = new HashMap<>();
 
             for (MediaNoteEntity mediaNoteEntity : mediaNoteEntities) {
@@ -590,12 +602,8 @@ public class MediaService implements IMediaService {
             if (mediaNoteEntity==null){
                 throw new IllegalArgumentException("MediaNote is not found");
             }
-            if (body.getMediaId()==null){
-                throw new IllegalArgumentException("MediaId is required");
-            }
-            if (mediaRepository.findById(body.getMediaId()).isEmpty()){
-                throw new IllegalArgumentException("MediaId is not found");
-            }
+
+
             if (body.getImportanceLevel()!=null){
                 mediaNoteEntity.setImportanceLevel(body.getImportanceLevel());
             }
@@ -638,51 +646,33 @@ public class MediaService implements IMediaService {
         }
 
     }
-
     @Override
-    public GetMediaNotesResponse getMediaNoteByMediaId(String mediaId, Integer page, Integer size) {
+    public List<GetMediaDetailResponse.TimeGroupedNotes> getMediaNoteByMediaId(String mediaId, Integer page, Integer size) {
         try {
-            Pageable pageAble = PageRequest.of(page, size);
-            Page<MediaNoteEntity> mediaNoteEntities = mediaNoteRepository.findByMediaId(mediaId, pageAble);
-            GetMediaNotesResponse getMediaResponse = new GetMediaNotesResponse();
-            List<GetMediaNotesResponse.MediaNoteResponse> mediaResponses = new ArrayList<>();
-            for (MediaNoteEntity mediaNoteEntity : mediaNoteEntities) {
-                GetMediaNotesResponse.MediaNoteResponse mediaResponse = modelMapperService.mapClass(mediaNoteEntity, GetMediaNotesResponse.MediaNoteResponse.class);
-                UserEntity userEntity = userRepository.findById(mediaNoteEntity.getUserId()).orElseThrow(()->new IllegalArgumentException("UserId is not found"));
-                mediaResponse.setUserName(userEntity.getFullname());
-                mediaResponse.setUserAvatar(userEntity.getAvatar());
-                mediaResponses.add(mediaResponse);
+            List<MediaNoteEntity> mediaNoteEntities = mediaNoteRepository.findByMediaId(mediaId);
+            mediaNoteEntities.sort(Comparator.comparing((MediaNoteEntity note) -> {
+                String importanceLevel = note.getImportanceLevel() != null ? note.getImportanceLevel() : "LOW";
+                switch (importanceLevel) {
+                    case "HIGH":
+                        return 1;
+                    case "MEDIUM":
+                        return 2;
+                    default:
+                        return 3;
+                }
+            }));
 
-            }
-            getMediaResponse.setMediaNotes(mediaResponses);
-            getMediaResponse.setTotalPage(mediaNoteEntities.getTotalPages());
-            getMediaResponse.setTotalElements(mediaNoteEntities.getTotalElements());
-
-            return getMediaResponse;
-
-        }
-        catch (Exception e) {
-            log.error("Error in getMediaNoteByMediaId: ", e);
-            throw new IllegalArgumentException(e.getMessage());
-        }
-    }
-
-    @Override
-    public List<GetMediaDetailResponse.TimeGroupedNotes> getMediaNoteByUserIdAndMediaId(String userId, String role, String mediaId, Integer page, Integer size) {
-        try {
-            List<MediaNoteEntity> mediaNoteEntities = mediaNoteRepository.findByMediaIdAndUserId(mediaId, userId,role);
             Map<Integer, List<GetMediaDetailResponse.MediaNote>> groupedNotes = new HashMap<>();
 
             for (MediaNoteEntity mediaNoteEntity : mediaNoteEntities) {
                 int time = mediaNoteEntity.getTime();
                 GetMediaDetailResponse.MediaNote mediaNote = modelMapperService.mapClass(mediaNoteEntity, GetMediaDetailResponse.MediaNote.class);
-                if (role.equals("USER")){
+                if (mediaNoteEntity.getRole().equals(RoleEnum.USER)) {
                     StudentEntity userEntity = studentRepository.findById(mediaNoteEntity.getUserId()).orElseThrow(() -> new IllegalArgumentException("UserId is not found"));
                     mediaNote.setAuthorName(userEntity.getUser().getFullname());
                     mediaNote.setAuthorId(userEntity.getId());
                     mediaNote.setAvatar(userEntity.getUser().getAvatar());
-                }
-                else {
+                } else {
                     TeacherEntity userEntity = teacherRepository.findById(mediaNoteEntity.getUserId()).orElseThrow(() -> new IllegalArgumentException("UserId is not found"));
                     mediaNote.setAuthorName(userEntity.getUser().getFullname());
                     mediaNote.setAuthorId(userEntity.getId());
@@ -690,6 +680,58 @@ public class MediaService implements IMediaService {
                 }
                 mediaNote.setImportanceLevel(mediaNoteEntity.getImportanceLevel() != null ? mediaNoteEntity.getImportanceLevel() : "LOW");
 
+                groupedNotes.computeIfAbsent(time, k -> new ArrayList<>()).add(mediaNote);
+            }
+
+            List<GetMediaDetailResponse.TimeGroupedNotes> timeGroupedNotes = groupedNotes.entrySet().stream()
+                    .map(entry -> {
+                        GetMediaDetailResponse.TimeGroupedNotes timeGroupedNote = new GetMediaDetailResponse.TimeGroupedNotes();
+                        timeGroupedNote.setTime(entry.getKey());
+                        timeGroupedNote.setMediaNotes(entry.getValue());
+                        return timeGroupedNote;
+                    })
+                    .collect(Collectors.toList());
+
+            return timeGroupedNotes;
+        } catch (Exception e) {
+            log.error("Error in getMediaNoteByUserId: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public List<GetMediaDetailResponse.TimeGroupedNotes> getMediaNoteByUserIdAndMediaId(String userId, String role, String mediaId, Integer page, Integer size) {
+        try {
+            List<MediaNoteEntity> mediaNoteEntities = mediaNoteRepository.findByMediaIdAndUserId(mediaId, userId, role);
+            mediaNoteEntities.sort(Comparator.comparing((MediaNoteEntity note) -> {
+                String importanceLevel = note.getImportanceLevel() != null ? note.getImportanceLevel() : "LOW";
+                switch (importanceLevel) {
+                    case "HIGH":
+                        return 1;
+                    case "MEDIUM":
+                        return 2;
+                    default:
+                        return 3;
+                }
+            }));
+
+            Map<Integer, List<GetMediaDetailResponse.MediaNote>> groupedNotes = new HashMap<>();
+
+            for (MediaNoteEntity mediaNoteEntity : mediaNoteEntities) {
+                int time = mediaNoteEntity.getTime();
+                GetMediaDetailResponse.MediaNote mediaNote = modelMapperService.mapClass(mediaNoteEntity, GetMediaDetailResponse.MediaNote.class);
+                if (role.equals("USER")) {
+                    StudentEntity userEntity = studentRepository.findById(mediaNoteEntity.getUserId()).orElseThrow(() -> new IllegalArgumentException("UserId is not found"));
+                    mediaNote.setAuthorName(userEntity.getUser().getFullname());
+                    mediaNote.setAuthorId(userEntity.getId());
+                    mediaNote.setAvatar(userEntity.getUser().getAvatar());
+                } else {
+                    TeacherEntity userEntity = teacherRepository.findById(mediaNoteEntity.getUserId()).orElseThrow(() -> new IllegalArgumentException("UserId is not found"));
+                    mediaNote.setAuthorName(userEntity.getUser().getFullname());
+                    mediaNote.setAuthorId(userEntity.getId());
+                    mediaNote.setAvatar(userEntity.getUser().getAvatar());
+                }
+                mediaNote.setImportanceLevel(mediaNoteEntity.getImportanceLevel() != null ? mediaNoteEntity.getImportanceLevel() : "LOW");
 
                 groupedNotes.computeIfAbsent(time, k -> new ArrayList<>()).add(mediaNote);
             }
