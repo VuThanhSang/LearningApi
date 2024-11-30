@@ -6,6 +6,7 @@ import com.example.learning_api.dto.request.auth.RegisterUserRequest;
 import com.example.learning_api.dto.response.auth.LoginResponse;
 import com.example.learning_api.dto.response.auth.RefreshTokenResponse;
 import com.example.learning_api.dto.response.auth.RegisterResponse;
+import com.example.learning_api.entity.sql.database.UserEntity;
 import jakarta.transaction.Transactional;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
@@ -14,6 +15,7 @@ public interface IUserAuthService {
     LoginResponse loginUser(LoginUserRequest body);
     LoginResponse loginGoogleUser(OAuth2User oAuth2User);
     RefreshTokenResponse refreshToken(String refreshToken);
+    UserEntity getUserById(String userId);
     void logout(String userId);
     void sendCodeToRegister(String email);
 
@@ -23,6 +25,7 @@ public interface IUserAuthService {
 
     @Transactional
     void changePasswordForgot(ChangePasswordRequest body);
+
 
 
 }
