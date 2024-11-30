@@ -179,6 +179,7 @@ public class UserAuthController {
     }
 
 
+
     @Operation(summary = USER_AUTH_SEND_CODE_TO_EMAIL_TO_REGISTER_SUM)
     @PostMapping(POST_USER_AUTH_SEND_CODE_TO_REGISTER_SUB_PATH)
     public ResponseEntity<ResponseAPI<?>> sendCodeToRegister(@RequestBody @Valid SendCodeRequest body) {

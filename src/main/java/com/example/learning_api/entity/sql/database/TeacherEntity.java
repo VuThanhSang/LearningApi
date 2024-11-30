@@ -26,8 +26,8 @@ public class TeacherEntity {
     private Date HireDate;
     private String experience;
     private TeacherStatus status;
-    private Date createdAt;
-    private Date updatedAt;
+    private String createdAt;
+    private String updatedAt;
     private UserEntity user;
     @DBRef
     private List<CourseEntity> courses;

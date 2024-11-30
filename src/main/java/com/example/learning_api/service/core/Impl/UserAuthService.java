@@ -204,6 +204,25 @@ public class UserAuthService  implements IUserAuthService {
     }
 
     @Override
+    public UserEntity getUserById(String userId) {
+        UserEntity user = userRepository.findById(userId).orElseThrow();
+        if (user.getRole() == RoleEnum.TEACHER) {
+            TeacherEntity teacher = teacherRepository.findByUserId(user.getId());
+            if (teacher != null) {
+                teacher.setUser(null);
+                user.setTeacher(teacher);
+            }
+        } else if (user.getRole() == RoleEnum.USER) {
+            StudentEntity student = studentRepository.findByUserId(user.getId());
+            if (student != null) {
+                user.setStudent(student);
+                student.setUser(null);
+            }
+        }
+        return user;
+    }
+
+    @Override
     public void logout(String userId) {
 //        userTokenRedisService.deleteAllTokenOfUser(userId);
         UserEntity user = userRepository.findById(userId).orElseThrow();
@@ -333,8 +352,23 @@ public class UserAuthService  implements IUserAuthService {
         confirmationCollection.setStatus(ConfirmationCodeStatus.USED);
         user.setStatus(UserStatus.ACTIVE);
         userRepository.save(user);
+        if (user.getRole() == RoleEnum.TEACHER) {
+            TeacherEntity teacher = new TeacherEntity();
+            teacher.setUserId(user.getId());
+            teacher.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+            teacher.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+            teacherRepository.save(teacher);
+        } else if (user.getRole() == RoleEnum.USER) {
+            StudentEntity student = new StudentEntity();
+            student.setUserId(user.getId());
+            student.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+            student.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+            studentRepository.save(student);
+        }
         confirmationRepository.save(confirmationCollection);
     }
+
+
 
     @Transactional
     @Override
