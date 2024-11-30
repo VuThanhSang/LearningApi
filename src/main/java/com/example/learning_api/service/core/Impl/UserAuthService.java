@@ -254,6 +254,7 @@ public class UserAuthService  implements IUserAuthService {
             confirmationRepository.save(confirmation);
         } else {
             oldConfirmation.setExpireAt(newDate);
+            oldConfirmation.setStatus(ConfirmationCodeStatus.UNUSED);
             oldConfirmation.setCode(code);
             confirmationRepository.save(oldConfirmation);
         }
@@ -276,6 +277,7 @@ public class UserAuthService  implements IUserAuthService {
     }
 
     @Override
+    @Async
     public void sendCodeForgotPassword(String email) {
         userRepository.findByEmailAndAuthType(email,"normal")
                 .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND + "User with email " + email));
@@ -341,11 +343,10 @@ public class UserAuthService  implements IUserAuthService {
                 .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND, "User with email " + body.getEmail()));
 
         ConfirmationEntity confirmation = confirmationRepository.findByEmailAndCode(body.getEmail(), body.getCode())
-                .orElseThrow(() -> new CustomException(UNAUTHORIZED, "Email has not been verified"));
-        if (confirmation.getStatus() != ConfirmationCodeStatus.USED) {
-            throw new CustomException(UNAUTHORIZED, "Email has not been verified");
+                .orElseThrow(() -> new CustomException("Code is incorrect ", "Code is incorrect"));
+        if (confirmation.getStatus() == ConfirmationCodeStatus.USED) {
+            throw new CustomException("Code has been used", "Code has been used");
         }
-        confirmationRepository.delete(confirmation);
 
         user.setPassword(passwordEncoder.encode(body.getPassword()));
         userRepository.save(user);
