@@ -35,6 +35,7 @@ public class GetQuestionsResponse {
         private FileEntity source;
         private boolean isSelected;
         private String createdAt;
+        private Integer index;
         private String updatedAt;
         private String answerText;
 

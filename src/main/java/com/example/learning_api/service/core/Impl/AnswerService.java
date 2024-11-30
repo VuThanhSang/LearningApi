@@ -72,6 +72,13 @@ public class AnswerService implements IAnswerService {
             }
             answerEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
             answerEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+            QuestionEntity questionEntity1 = questionRepository.findById(body.getQuestionId())
+                    .orElseThrow(() -> new IllegalArgumentException("Question not found"));
+            if (questionEntity1.getType().equals(QuestionType.FILL_IN_THE_BLANK)||questionEntity1.getType().equals(QuestionType.TEXT_ANSWER)){
+                if (body.getContent()!=null){
+                    answerEntity.setCorrect(true);
+                }
+            }
             answerRepository.save(answerEntity);
             fileEntity.setOwnerId(answerEntity.getId());
             fileRepository.save(fileEntity);
@@ -106,8 +113,7 @@ public class AnswerService implements IAnswerService {
                 answerEntity.setContent(body.getContent());
               if(body.getIsCorrect()!=null)
                 answerEntity.setCorrect(body.getIsCorrect());
-              if (body.getAnswerText()!=null)
-                answerEntity.setAnswerText(body.getAnswerText());
+
 
               if (body.getSource()!=null){
                   fileRepository.deleteByOwnerIdAndOwnerType(body.getId(), FileOwnerType.ANSWER.name());
@@ -134,7 +140,7 @@ public class AnswerService implements IAnswerService {
               QuestionEntity questionEntity = questionRepository.findById(answerEntity.getQuestionId())
                       .orElseThrow(() -> new IllegalArgumentException("Question not found"));
               if (questionEntity.getType().equals(QuestionType.FILL_IN_THE_BLANK)||questionEntity.getType().equals(QuestionType.TEXT_ANSWER)){
-                  if (answerEntity.getAnswerText()!=null){
+                  if (answerEntity.getContent()!=null){
                       answerEntity.setCorrect(true);
                       answerRepository.save(answerEntity);
                   }
