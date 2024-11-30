@@ -36,6 +36,6 @@ public interface IMediaService {
     void updateMediaNote(MediaNoteEntity body);
     void deleteMediaNote(String noteId);
     MediaNoteEntity getMediaNote(String noteId);
-    GetMediaNotesResponse getMediaNoteByMediaId(String mediaId, Integer page, Integer size);
+    List<GetMediaDetailResponse.TimeGroupedNotes> getMediaNoteByMediaId(String mediaId, Integer page, Integer size);
     List<GetMediaDetailResponse.TimeGroupedNotes> getMediaNoteByUserIdAndMediaId(String userId, String role, String mediaId, Integer page, Integer size);
 }

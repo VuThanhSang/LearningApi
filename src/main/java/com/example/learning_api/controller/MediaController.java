@@ -409,29 +409,29 @@ public class MediaController {
         }
     }
 
-    @GetMapping(path = "/note/media/{mediaId}")
-    public ResponseEntity<ResponseAPI<GetMediaNotesResponse>> getMediaNoteByMediaId(
+    @GetMapping(path = "/{mediaId}/note")
+    public ResponseEntity<ResponseAPI<List<GetMediaDetailResponse.TimeGroupedNotes>>> getMediaNoteByMediaId(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @PathVariable String mediaId
     ) {
         try{
-            GetMediaNotesResponse data = mediaService.getMediaNoteByMediaId(mediaId, page-1, size);
-            ResponseAPI<GetMediaNotesResponse> res = ResponseAPI.<GetMediaNotesResponse>builder()
+            List<GetMediaDetailResponse.TimeGroupedNotes> data = mediaService.getMediaNoteByMediaId(mediaId, page-1, size);
+            ResponseAPI<List<GetMediaDetailResponse.TimeGroupedNotes>> res = ResponseAPI.<List<GetMediaDetailResponse.TimeGroupedNotes>>builder()
                     .message("Get media note by mediaId successfully")
                     .data(data)
                     .build();
             return ResponseEntity.ok(res);
         }
         catch (Exception e){
-            ResponseAPI<GetMediaNotesResponse> res = ResponseAPI.<GetMediaNotesResponse>builder()
+            ResponseAPI<List<GetMediaDetailResponse.TimeGroupedNotes>> res = ResponseAPI.<List<GetMediaDetailResponse.TimeGroupedNotes>>builder()
                     .message(e.getMessage())
                     .build();
             return ResponseEntity.badRequest().body(res);
         }
     }
 
-    @GetMapping(path = "/{mediaId}/note")
+    @GetMapping(path = "/{mediaId}/note-by-user")
     public ResponseEntity<ResponseAPI<List<GetMediaDetailResponse.TimeGroupedNotes>>> getMediaNoteByUserId(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
