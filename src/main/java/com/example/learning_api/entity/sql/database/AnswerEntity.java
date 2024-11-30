@@ -24,7 +24,5 @@ public class AnswerEntity {
     private String questionId;
     private String createdAt;
     private String updatedAt;
-
-    // New field to support different answer types
-    private String answerText;
+    private Integer index;
 }

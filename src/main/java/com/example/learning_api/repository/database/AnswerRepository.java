@@ -10,4 +10,6 @@ public interface AnswerRepository extends MongoRepository<AnswerEntity, String>{
 
     void deleteByQuestionId(String questionId);
     List<AnswerEntity> findByQuestionId(String questionId);
+    @Query(value = "{questionId: ?0}", sort = "{index: -1}")
+    Integer getIndexMaxByQuestionId(String questionId);
 }

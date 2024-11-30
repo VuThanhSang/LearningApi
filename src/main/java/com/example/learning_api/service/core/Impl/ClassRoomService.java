@@ -71,18 +71,6 @@ public class ClassRoomService implements IClassRoomService {
             if (teacherRepository.findById(body.getTeacherId()).isEmpty()){
                 throw new IllegalArgumentException("TeacherId is not found");
             }
-            if (body.getTermId()==null){
-                throw new IllegalArgumentException("TermId is required");
-            }
-            if (termRepository.findById(body.getTermId()).isEmpty()){
-                throw new IllegalArgumentException("TermId is not found");
-            }
-            if (body.getFacultyId()==null){
-                throw new IllegalArgumentException("FacultyId is required");
-            }
-            if (facultyRepository.findById(body.getFacultyId()).isEmpty()){
-                throw new IllegalArgumentException("FacultyId is not found");
-            }
             if (body.getEnrollmentCapacity()==null){
                 throw new IllegalArgumentException("EnrollmentCapacity is required");
             }

@@ -516,7 +516,6 @@ public class TestService implements ITestService {
     private GetQuestionsResponse.AnswerResponse mapAnswerEntityToResponse(AnswerEntity answerEntity) {
         GetQuestionsResponse.AnswerResponse answerResponse = modelMapperService.mapClass(answerEntity, GetQuestionsResponse.AnswerResponse.class);
         answerResponse.setIsCorrect(answerEntity.isCorrect());
-        answerResponse.setAnswerText(answerEntity.getAnswerText());
         answerResponse.setSource(fileRepository.findByOwnerIdAndOwnerType(answerEntity.getId(), FileOwnerType.ANSWER.name()).stream().findFirst().orElse(null));
         return answerResponse;
     }

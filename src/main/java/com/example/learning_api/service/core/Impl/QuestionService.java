@@ -127,8 +127,6 @@ public class QuestionService implements IQuestionService {
 
     private void processFillInTheBlankQuestion(CreateQuestionRequest body, QuestionEntity questionEntity) {
         // Set a default content for fill-in-the-blank questions
-        questionEntity.setContent("Điền vô câu trả lời đúng cho đoạn văn dưới đây");
-        questionEntity.setFullQuestion(body.getContent());
         // Find blank positions
         List<Integer> blankPositions = findBlankPositions(body.getContent());
 
@@ -149,20 +147,17 @@ public class QuestionService implements IQuestionService {
     private void createAnswersForFillInTheBlank(String content, List<Integer> blankPositions, QuestionEntity questionEntity) {
         List<AnswerEntity> answers = new ArrayList<>();
         long currentTime = System.currentTimeMillis();
-
+        Integer index = answerRepository.getIndexMaxByQuestionId(questionEntity.getId());
+        if (index == null) {
+            index = 0;
+        }
         for (int blankPosition : blankPositions) {
             AnswerEntity answer = new AnswerEntity();
 
-            // Extract context around the blank
-            String beforeBlank = content.substring(0, blankPosition);
-            String afterBlank = content.substring(blankPosition + 5); // Remove "_____"
-
-            // Determine the full context and potential answer
-            String context = beforeBlank + "[BLANK]" + afterBlank;
-
-            answer.setContent(context);
-            answer.setAnswerText(null);
+            answer.setContent(null);
             answer.setCorrect(false);
+
+            answer.setIndex( index ++);
             answer.setCreatedAt(String.valueOf(currentTime));
             answer.setUpdatedAt(String.valueOf(currentTime));
             answer.setQuestionId(questionEntity.getId());
