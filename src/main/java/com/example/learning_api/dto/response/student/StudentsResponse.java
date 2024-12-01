@@ -45,9 +45,10 @@ public class StudentsResponse {
             studentResponse.setSchoolYear(userEntity.getSchoolYear());
             studentResponse.setAcademicYearId(userEntity.getAcademicYearId());
             studentResponse.setMajorId(userEntity.getMajorId());
-            studentResponse.setEmail(userEntity.getUser().getEmail());
-            studentResponse.setFullName(userEntity.getUser().getFullname());
-            studentResponse.setAvatar(userEntity.getUser().getAvatar());
+
+                studentResponse.setEmail(userEntity.getUser().getEmail());
+                studentResponse.setFullName(userEntity.getUser().getFullname());
+                studentResponse.setAvatar(userEntity.getUser().getAvatar());
             studentResponse.setStatus(userEntity.getStatus());
             studentResponse.setCreatedAt(userEntity.getCreatedAt());
             studentResponse.setUpdatedAt(userEntity.getUpdatedAt());

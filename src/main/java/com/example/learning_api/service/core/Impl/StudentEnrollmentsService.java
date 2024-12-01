@@ -6,6 +6,7 @@ import com.example.learning_api.dto.response.student.StudentsResponse;
 import com.example.learning_api.entity.sql.database.ClassRoomEntity;
 import com.example.learning_api.entity.sql.database.StudentEnrollmentsEntity;
 import com.example.learning_api.entity.sql.database.StudentEntity;
+import com.example.learning_api.entity.sql.database.UserEntity;
 import com.example.learning_api.enums.StudentEnrollmentStatus;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.core.IStudentEnrollmentsService;
@@ -32,6 +33,7 @@ public class StudentEnrollmentsService implements IStudentEnrollmentsService {
     private final StudentRepository studentRepository;
     private final CourseRepository courseRepository;
     private final ClassRoomRepository classroomRepository;
+    private final UserRepository userRepository;
     @Autowired
     private MongoTemplate mongoTemplate;
     @Override
@@ -266,10 +268,18 @@ public class StudentEnrollmentsService implements IStudentEnrollmentsService {
                     comparator = Comparator.comparing(StudentEntity::getGradeLevel);
                     break;
                 case "email":
-                    comparator = Comparator.comparing(student -> student.getUser().getEmail());
+                    comparator = Comparator.comparing(student -> {
+
+                        UserEntity user = userRepository.findById(student.getUserId()).orElse(null);
+                        return user != null ? user.getEmail() : "";
+                    });
                     break;
                 default: // fullname
-                    comparator = Comparator.comparing(student -> student.getUser().getFullname());
+                    comparator = Comparator.comparing(student -> {
+
+                        UserEntity user = userRepository.findById(student.getUserId()).orElse(null);
+                        return user != null ? user.getFullname() : "";
+                    });
             }
 
             // Apply sorting direction

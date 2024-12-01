@@ -10,6 +10,6 @@ public interface ISectionService {
     CreateSectionResponse createSection(CreateSectionRequest body);
     void updateSection(UpdateSectionRequest body);
     void deleteSection(DeleteSectionRequest id);
-    GetSectionsResponse getSections(int page, int size, String search);
-    GetSectionsResponse getSectionsByClassRoomId(String classRoomId, int page, int size);
+    GetSectionsResponse getSections(int page, int size, String search, String role);
+    GetSectionsResponse getSectionsByClassRoomId(String classRoomId, int page, int size,String role);
 }

@@ -8,11 +8,12 @@ import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
+import java.util.List;
 
 
 public interface SectionRepository extends MongoRepository<SectionEntity, String> {
-    @Query(value = "{'classRoomId': ?0}", sort = "{'index': 1}")
-    Page<SectionEntity> findByClassRoomId(String classRoomId, Pageable pageable);
+    @Query(value = "{'classRoomId': ?0, 'status': { $in: ?1 }}", sort = "{'index': 1}")
+    Page<SectionEntity> findByClassRoomId(String classRoomId, Pageable pageable, List<String> statuses);
     @Aggregation(pipeline = {
             "{ '$match': { 'classroomId': ?0 } }",
             "{ '$group': { '_id': null, 'maxIndex': { '$max': '$index' } } }"

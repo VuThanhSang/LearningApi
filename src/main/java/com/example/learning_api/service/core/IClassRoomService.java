@@ -15,11 +15,11 @@ public interface IClassRoomService {
     void deleteClassRoom(String classroomId);
     GetClassRoomsResponse getClassRooms(int page,int size, String search, String studentId,String role);
     GetClassRoomsResponse getClassRoomsByTeacherId(int page,int size, String teacherId);
-    GetSectionsResponse getSectionsByClassroomId(int page, int size, String search);
+    GetSectionsResponse getSectionsByClassroomId(int page, int size, String search,String role);
     GetClassRoomsResponse getScheduleByDay(String studentId, String day);
     List<GetScheduleResponse> getScheduleByStudentId(String studentId);
     GetClassRoomDetailResponse getClassRoomByInvitationCode(String invitationCode);
-    GetClassRoomDetailResponse getClassRoomDetail(String classroomId);
+    GetClassRoomDetailResponse getClassRoomDetail(String classroomId,String role);
     void importClassRoom(ImportClassRoomRequest body);
     GetClassRoomRecentResponse getRecentClasses(int page,int size, String studentId);
     GetClassRoomRecentResponse getRecentClassesByTeacherId(int page,int size, String teacherId);

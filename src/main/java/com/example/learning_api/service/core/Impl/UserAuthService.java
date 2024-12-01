@@ -357,12 +357,14 @@ public class UserAuthService  implements IUserAuthService {
             teacher.setUserId(user.getId());
             teacher.setCreatedAt(String.valueOf(System.currentTimeMillis()));
             teacher.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+            teacher.setUser(user);
             teacherRepository.save(teacher);
         } else if (user.getRole() == RoleEnum.USER) {
             StudentEntity student = new StudentEntity();
             student.setUserId(user.getId());
             student.setCreatedAt(String.valueOf(System.currentTimeMillis()));
             student.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+            student.setUser(user);
             studentRepository.save(student);
         }
         confirmationRepository.save(confirmationCollection);

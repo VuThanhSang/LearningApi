@@ -501,6 +501,7 @@ public class TestService implements ITestService {
         GetQuestionsResponse.QuestionResponse questionResponse = modelMapperService.mapClass(questionEntity, GetQuestionsResponse.QuestionResponse.class);
         questionResponse.setSources(fileRepository.findByOwnerIdAndOwnerType(questionEntity.getId(), FileOwnerType.QUESTION.name())
                 );
+
         List<GetQuestionsResponse.AnswerResponse> answerResponses = getAnswerResponses(questionEntity.getId());
         questionResponse.setAnswers(answerResponses);
         return questionResponse;
@@ -670,6 +671,7 @@ public class TestService implements ITestService {
     public GetTestProgressResponse  getProgress(String studentId,String testId) {
         try {
             TestResultEntity testResultEntity = testResultRepository.findFirstByStudentIdAndTestIdAndStateOrderByAttendedAtDesc(studentId, testId, TestState.ONGOING.name());
+            String currentTimestamp = String.valueOf(System.currentTimeMillis());
             if (testResultEntity == null) {
                 GetTestProgressResponse resData = new GetTestProgressResponse();
                 resData.setTestResult(null);
@@ -710,7 +712,10 @@ public class TestService implements ITestService {
                         questionAndAnswers.add(qa);
                         return qa;
                     });
-            questionAndAnswer.getAnswers().add(studentAnswer.getAnswerId());
+            if (studentAnswer.getAnswerId() != null)
+                questionAndAnswer.getAnswers().add(studentAnswer.getAnswerId());
+            else
+                questionAndAnswer.getTextAnswers().add(studentAnswer.getTextAnswer());
         }
         TestSubmitRequest request = new TestSubmitRequest();
         request.setTestResultId(testResult.getId());

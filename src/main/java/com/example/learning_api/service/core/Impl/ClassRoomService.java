@@ -268,10 +268,15 @@ public class ClassRoomService implements IClassRoomService {
 
 
     @Override
-    public GetSectionsResponse getSectionsByClassroomId(int page, int size, String classroomId) {
+    public GetSectionsResponse getSectionsByClassroomId(int page, int size, String classroomId, String role) {
         try{
             Pageable pageAble = PageRequest.of(page, size);
-            Page<SectionEntity> sectionEntities = sectionRepository.findByClassRoomId(classroomId, pageAble);
+            List<String> status = new ArrayList<>();
+            status.add("PUBLIC");
+            if (role.equals("TEACHER")){
+                status.add("PRIVATE");
+            }
+            Page<SectionEntity> sectionEntities = sectionRepository.findByClassRoomId(classroomId, pageAble,status);
             List<GetSectionsResponse.SectionResponse> sectionResponses = modelMapperService.mapList(sectionEntities.getContent(), GetSectionsResponse.SectionResponse.class);
             GetSectionsResponse resData = new GetSectionsResponse();
             resData.setTotalPage(sectionEntities.getTotalPages());
@@ -352,10 +357,12 @@ public class ClassRoomService implements IClassRoomService {
             if (classRoomEntity==null){
                 throw new IllegalArgumentException("ClassRoom is not found");
             }
+            List<String> status =new ArrayList<>();
+            status.add("PUBLIC");
             GetClassRoomDetailResponse resData = new GetClassRoomDetailResponse();
             Pageable pageAble = PageRequest.of(0, 15);
             resData.setClassRoom(classRoomEntity);
-            Page<SectionEntity> sectionEntities = sectionRepository.findByClassRoomId(classRoomEntity.getId(),pageAble);
+            Page<SectionEntity> sectionEntities = sectionRepository.findByClassRoomId(classRoomEntity.getId(),pageAble,status);
             List<GetClassRoomDetailResponse.Section> sections = new ArrayList<>();
             for (SectionEntity sectionEntity : sectionEntities){
                 GetClassRoomDetailResponse.Section section = new GetClassRoomDetailResponse.Section();
@@ -383,14 +390,20 @@ public class ClassRoomService implements IClassRoomService {
     }
 
     @Override
-    public GetClassRoomDetailResponse getClassRoomDetail(String classroomId) {
+    public GetClassRoomDetailResponse getClassRoomDetail(String classroomId,String role) {
        try{
               ClassRoomEntity classRoomEntity = classRoomRepository.findById(classroomId)
                       .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
+              List<String> status =new ArrayList<>();
+              status.add("PUBLIC");
+              if (role.equals("TEACHER")){
+                  status.add("PRIVATE");
+              }
+
                 GetClassRoomDetailResponse resData = new GetClassRoomDetailResponse();
                 Pageable pageAble = PageRequest.of(0, 15);
                 resData.setClassRoom(classRoomEntity);
-                Page<SectionEntity> sectionEntities = sectionRepository.findByClassRoomId(classroomId,pageAble);
+                Page<SectionEntity> sectionEntities = sectionRepository.findByClassRoomId(classroomId,pageAble,status);
                 List<GetClassRoomDetailResponse.Section> sections = new ArrayList<>();
                 for (SectionEntity sectionEntity : sectionEntities){
                     GetClassRoomDetailResponse.Section section = new GetClassRoomDetailResponse.Section();
