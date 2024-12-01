@@ -12,5 +12,5 @@ public interface ILessonService {
     void updateLesson(UpdateLessonRequest updateLessonRequest);
     void deleteLesson(String id);
     GetLessonDetailResponse getLessonWithResourcesAndMediaAndSubstances(String id);
-    List<GetLessonDetailResponse> getLessonBySectionId(String sectionId);
+    List<GetLessonDetailResponse> getLessonBySectionId(String sectionId,String role);
 }

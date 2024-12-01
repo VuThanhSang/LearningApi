@@ -19,8 +19,8 @@ public interface LessonRepository extends MongoRepository<LessonEntity, String>{
             "{ '$lookup': { 'from': 'deadlines', 'localField': '_idString', 'foreignField': 'lessonId', 'as': 'deadlines' } }",
     })
     GetLessonDetailResponse getLessonWithResourcesAndMediaAndSubstances(String id);
-    @Query( "{ 'sectionId': ?0 }")
-    List<LessonEntity> findBySectionId(String sectionId,org.springframework.data.domain.Sort sort);
+    @Query( "{ 'sectionId': ?0, 'status': { $in: ?1 } }")
+    List<LessonEntity> findBySectionId(String sectionId,org.springframework.data.domain.Sort sort,List<String> statuses);
     @Aggregation(pipeline = {
             "{ '$match': { 'sectionId': ?0 } }",
             "{ '$group': { '_id': null, 'maxIndex': { '$max': '$index' } } }"

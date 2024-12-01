@@ -8,6 +8,7 @@ import com.example.learning_api.dto.request.section.UpdateSectionRequest;
 import com.example.learning_api.dto.response.section.CreateSectionResponse;
 import com.example.learning_api.dto.response.section.GetSectionsResponse;
 import com.example.learning_api.model.ResponseAPI;
+import com.example.learning_api.service.common.JwtService;
 import com.example.learning_api.service.core.ISectionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ import static com.example.learning_api.constant.RouterConstant.SECTION_BASE_PATH
 @Slf4j
 public class SectionController {
     private final ISectionService sectionService;
+    private final JwtService jwtService;
 
     @PostMapping(path = "")
     @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
@@ -95,10 +97,13 @@ public class SectionController {
     public ResponseEntity<ResponseAPI<GetSectionsResponse>> getSections(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "") String classroomId
+            @RequestParam(defaultValue = "") String classroomId,
+            @RequestHeader(name = "Authorization") String authorizationHeader
     ) {
         try{
-            GetSectionsResponse resData = sectionService.getSections(page-1, size, classroomId);
+            String accessToken = authorizationHeader.replace("Bearer ", "");
+            String role = jwtService.extractRole(accessToken);
+            GetSectionsResponse resData = sectionService.getSections(page-1, size, classroomId,role);
             ResponseAPI<GetSectionsResponse> res = ResponseAPI.<GetSectionsResponse>builder()
                     .timestamp(new Date())
                     .message("Get sections successfully")
@@ -120,10 +125,13 @@ public class SectionController {
     public ResponseEntity<ResponseAPI<GetSectionsResponse>> getSectionsByClassRoomId(
             @PathVariable String classroomId,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestHeader(name = "Authorization") String authorizationHeader
     ) {
         try{
-            GetSectionsResponse resData = sectionService.getSectionsByClassRoomId(classroomId, page-1, size);
+            String accessToken = authorizationHeader.replace("Bearer ", "");
+            String role = jwtService.extractRole(accessToken);
+            GetSectionsResponse resData = sectionService.getSectionsByClassRoomId(classroomId, page-1, size,role);
             ResponseAPI<GetSectionsResponse> res = ResponseAPI.<GetSectionsResponse>builder()
                     .timestamp(new Date())
                     .message("Get sections successfully")

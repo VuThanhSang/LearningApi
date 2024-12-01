@@ -5,6 +5,7 @@ import com.example.learning_api.dto.request.lesson.CreateLessonRequest;
 import com.example.learning_api.dto.request.lesson.UpdateLessonRequest;
 import com.example.learning_api.dto.response.lesson.GetLessonDetailResponse;
 import com.example.learning_api.model.ResponseAPI;
+import com.example.learning_api.service.common.JwtService;
 import com.example.learning_api.service.core.ILessonService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +25,7 @@ import static com.example.learning_api.constant.RouterConstant.*;
 @RequestMapping(LESSON_BASE_PATH)
 public class LessonController {
     private final ILessonService lessonService;
-
+    private final JwtService jwtService;
     @PostMapping(path = "")
     @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<String>> createLesson(@RequestBody @Valid CreateLessonRequest body) {
@@ -107,9 +108,11 @@ public class LessonController {
     }
 
     @GetMapping(path = "/section/{sectionId}")
-    public ResponseEntity<ResponseAPI<List<GetLessonDetailResponse>>> getLessonBySectionId(@PathVariable String sectionId) {
+    public ResponseEntity<ResponseAPI<List<GetLessonDetailResponse>>> getLessonBySectionId(@PathVariable String sectionId,@RequestHeader(name = "Authorization") String authorizationHeader) {
         try{
-            List<GetLessonDetailResponse> data= lessonService.getLessonBySectionId(sectionId);
+            String accessToken = authorizationHeader.replace("Bearer ", "");
+            String role = jwtService.extractRole(accessToken);
+            List<GetLessonDetailResponse> data= lessonService.getLessonBySectionId(sectionId,role);
             ResponseAPI<List<GetLessonDetailResponse>> res = ResponseAPI.<List<GetLessonDetailResponse>>builder()
                     .timestamp(new Date())
                     .data(data)

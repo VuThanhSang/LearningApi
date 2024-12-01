@@ -4,6 +4,7 @@ import com.example.learning_api.dto.request.lesson.CreateLessonRequest;
 import com.example.learning_api.dto.request.lesson.UpdateLessonRequest;
 import com.example.learning_api.dto.response.lesson.GetLessonDetailResponse;
 import com.example.learning_api.entity.sql.database.LessonEntity;
+import com.example.learning_api.enums.SectionStatus;
 import com.example.learning_api.repository.database.LessonRepository;
 import com.example.learning_api.repository.database.SectionRepository;
 import com.example.learning_api.service.common.ModelMapperService;
@@ -58,8 +59,13 @@ public class LessonService implements ILessonService {
                 lessonEntity.setName(updateLessonRequest.getName());
             if (updateLessonRequest.getDescription()!=null)
                 lessonEntity.setDescription(updateLessonRequest.getDescription());
+            if (updateLessonRequest.getStatus()!=null)
+                lessonEntity.setStatus(SectionStatus.valueOf(updateLessonRequest.getStatus()));
             if (updateLessonRequest.getIndex()!=null)
                 lessonEntity.setIndex(updateLessonRequest.getIndex());
+            if (updateLessonRequest.getIndex() != null ) {
+                lessonEntity.setIndex(updateLessonRequest.getIndex());
+            }
             lessonEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             lessonRepository.save(lessonEntity);
         }
@@ -96,9 +102,17 @@ public class LessonService implements ILessonService {
     }
 
     @Override
-    public List<GetLessonDetailResponse> getLessonBySectionId(String sectionId) {
+    public List<GetLessonDetailResponse> getLessonBySectionId(String sectionId,String role) {
         try{
-            List<LessonEntity> lessonEntities = lessonRepository.findBySectionId(sectionId, Sort.by(Sort.Direction.ASC, "index"));
+            List<String> statuses = new ArrayList<>();
+            if (role.equals("teacher")){
+                statuses.add(SectionStatus.PUBLIC.toString());
+                statuses.add(SectionStatus.PRIVATE.toString());
+            }
+            else {
+                statuses.add(SectionStatus.PUBLIC.toString());
+            }
+            List<LessonEntity> lessonEntities = lessonRepository.findBySectionId(sectionId, Sort.by(Sort.Direction.ASC, "index"),statuses);
             List<GetLessonDetailResponse> getLessonDetailResponses = new ArrayList<>();
             for (LessonEntity lessonEntity: lessonEntities){
                 getLessonDetailResponses.add(lessonRepository.getLessonWithResourcesAndMediaAndSubstances(lessonEntity.getId()));

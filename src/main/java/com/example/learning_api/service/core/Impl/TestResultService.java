@@ -5,11 +5,9 @@ import com.example.learning_api.dto.request.test.SaveProgressRequest;
 import com.example.learning_api.dto.request.test.UpdateTestResultRequest;
 import com.example.learning_api.dto.response.question.GetQuestionsResponse;
 import com.example.learning_api.dto.response.test.*;
-import com.example.learning_api.entity.sql.database.StudentAnswersEntity;
-import com.example.learning_api.entity.sql.database.StudentEntity;
-import com.example.learning_api.entity.sql.database.TestEntity;
-import com.example.learning_api.entity.sql.database.TestResultEntity;
+import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.FileOwnerType;
+import com.example.learning_api.enums.QuestionType;
 import com.example.learning_api.enums.TestState;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.ModelMapperService;
@@ -138,16 +136,34 @@ public class TestResultService implements ITestResultService {
             }
             studentAnswerRepository.deleteByTestResultId(body.getTestResultId());
             for (SaveProgressRequest.QuestionAndAnswer questionAndAnswer : body.getQuestionAndAnswers()) {
-                for (String answerId : questionAndAnswer.getAnswers()) {
-                    StudentAnswersEntity studentAnswersEntity = new StudentAnswersEntity();
-                    studentAnswersEntity.setAnswerId(answerId);
-                    studentAnswersEntity.setQuestionId(questionAndAnswer.getQuestionId());
-                    studentAnswersEntity.setTestResultId(body.getTestResultId());
-                    studentAnswersEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
-                    studentAnswersEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
-                    studentAnswersEntity.setStudentId(testResultEntity.getStudentId());
-                    studentAnswerRepository.save(studentAnswersEntity);
+                QuestionEntity questionEntity = questionRepository.findById(questionAndAnswer.getQuestionId()).orElseThrow(() -> new IllegalArgumentException("Question does not exist"));
+
+                if (questionEntity.getType().equals(QuestionType.TEXT_ANSWER)||questionEntity.getType().equals(QuestionType.FILL_IN_THE_BLANK)){
+                    for (String text : questionAndAnswer.getTextAnswers()) {
+                        StudentAnswersEntity studentAnswersEntity = new StudentAnswersEntity();
+                        studentAnswersEntity.setQuestionId(questionAndAnswer.getQuestionId());
+                        studentAnswersEntity.setTestResultId(body.getTestResultId());
+                        studentAnswersEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+                        studentAnswersEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+                        studentAnswersEntity.setStudentId(testResultEntity.getStudentId());
+                        studentAnswersEntity.setTextAnswer(text);
+                        studentAnswerRepository.save(studentAnswersEntity);
+
+                    }
                 }
+                else{
+                    for (String answerId : questionAndAnswer.getAnswers()) {
+                        StudentAnswersEntity studentAnswersEntity = new StudentAnswersEntity();
+                        studentAnswersEntity.setAnswerId(answerId);
+                        studentAnswersEntity.setQuestionId(questionAndAnswer.getQuestionId());
+                        studentAnswersEntity.setTestResultId(body.getTestResultId());
+                        studentAnswersEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+                        studentAnswersEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+                        studentAnswersEntity.setStudentId(testResultEntity.getStudentId());
+                        studentAnswerRepository.save(studentAnswersEntity);
+                    }
+                }
+
             }
         }
         catch (Exception e) {

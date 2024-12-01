@@ -168,10 +168,12 @@ public class ClassRoomController {
     }
 
     @GetMapping(path = "/{classroomId}/sections")
-    public ResponseEntity<ResponseAPI<GetSectionsResponse>> getSectionsByClassroomId(@PathVariable String classroomId
+    public ResponseEntity<ResponseAPI<GetSectionsResponse>> getSectionsByClassroomId(@PathVariable String classroomId,@RequestHeader(name = "Authorization") String authorizationHeader
                                                                                      ) {
         try{
-            GetSectionsResponse data= classRoomService.getSectionsByClassroomId(0,10,classroomId);
+            String accessToken = authorizationHeader.replace("Bearer ", "");
+            String role = jwtService.extractRole(accessToken);
+            GetSectionsResponse data= classRoomService.getSectionsByClassroomId(0,10,classroomId,role);
             ResponseAPI<GetSectionsResponse> res = ResponseAPI.<GetSectionsResponse>builder()
                     .timestamp(new Date())
                     .message("Get sections by classroomId successfully")
@@ -236,9 +238,11 @@ public class ClassRoomController {
     }
 
     @GetMapping(path = "/detail/{classroomId}")
-    public ResponseEntity<ResponseAPI<GetClassRoomDetailResponse>> getClassRoomDetail(@PathVariable String classroomId) {
+    public ResponseEntity<ResponseAPI<GetClassRoomDetailResponse>> getClassRoomDetail(@PathVariable String classroomId,@RequestHeader(name = "Authorization") String authorizationHeader) {
         try{
-            GetClassRoomDetailResponse data= classRoomService.getClassRoomDetail(classroomId);
+            String accessToken = authorizationHeader.replace("Bearer ", "");
+            String role = jwtService.extractRole(accessToken);
+            GetClassRoomDetailResponse data= classRoomService.getClassRoomDetail(classroomId,role);
             ResponseAPI<GetClassRoomDetailResponse> res = ResponseAPI.<GetClassRoomDetailResponse>builder()
                     .timestamp(new Date())
                     .message("Get class room detail successfully")

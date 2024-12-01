@@ -7,6 +7,7 @@ import com.example.learning_api.dto.response.section.CreateSectionResponse;
 import com.example.learning_api.dto.response.section.GetSectionsResponse;
 import com.example.learning_api.entity.sql.database.LessonEntity;
 import com.example.learning_api.entity.sql.database.SectionEntity;
+import com.example.learning_api.enums.SectionStatus;
 import com.example.learning_api.repository.database.ClassRoomRepository;
 import com.example.learning_api.repository.database.LessonRepository;
 import com.example.learning_api.repository.database.SectionRepository;
@@ -20,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -77,6 +79,9 @@ public class SectionService implements ISectionService {
             if (body.getIndex()!=null){
                 sectionEntity.setIndex(body.getIndex());
             }
+            if (body.getStatus()!=null){
+                sectionEntity.setStatus(SectionStatus.valueOf(body.getStatus()));
+            }
             sectionRepository.save(sectionEntity);
 
         }
@@ -98,9 +103,17 @@ public class SectionService implements ISectionService {
     }
 
     @Override
-    public GetSectionsResponse getSections(int page, int size, String search) {
+    public GetSectionsResponse getSections(int page, int size, String search, String role) {
+        List<String> statuses = new ArrayList<>();
+        if (role.equals("teacher")){
+            statuses.add(SectionStatus.PUBLIC.toString());
+            statuses.add(SectionStatus.PRIVATE.toString());
+        }
+        else {
+            statuses.add(SectionStatus.PUBLIC.toString());
+        }
         Pageable pageAble = PageRequest.of(page, size);
-        Page<SectionEntity> sectionEntities = sectionRepository.findByClassRoomId(search, pageAble);
+        Page<SectionEntity> sectionEntities = sectionRepository.findByClassRoomId(search, pageAble,statuses);
         List<GetSectionsResponse.SectionResponse> sectionResponses = modelMapperService.mapList(sectionEntities.getContent(), GetSectionsResponse.SectionResponse.class);
         GetSectionsResponse resData = new GetSectionsResponse();
         resData.setTotalPage(sectionEntities.getTotalPages());
@@ -110,12 +123,20 @@ public class SectionService implements ISectionService {
     }
 
     @Override
-    public GetSectionsResponse getSectionsByClassRoomId(String classRoomId, int page, int size) {
+    public GetSectionsResponse getSectionsByClassRoomId(String classRoomId, int page, int size, String role) {
+        List<String> statuses = new ArrayList<>();
+        if (role.equals("teacher")){
+            statuses.add(SectionStatus.PUBLIC.toString());
+            statuses.add(SectionStatus.PRIVATE.toString());
+        }
+        else {
+            statuses.add(SectionStatus.PUBLIC.toString());
+        }
         Pageable pageAble = PageRequest.of(page, size);
-        Page<SectionEntity> sectionEntities = sectionRepository.findByClassRoomId(classRoomId, pageAble);
+        Page<SectionEntity> sectionEntities = sectionRepository.findByClassRoomId(classRoomId, pageAble,statuses);
         List<GetSectionsResponse.SectionResponse> sectionResponses = modelMapperService.mapList(sectionEntities.getContent(), GetSectionsResponse.SectionResponse.class);
         for (GetSectionsResponse.SectionResponse sectionResponse : sectionResponses){
-            List<LessonEntity> lessonEntities = lessonRepository.findBySectionId(sectionResponse.getId(), Sort.by(Sort.Direction.ASC, "index"));
+            List<LessonEntity> lessonEntities = lessonRepository.findBySectionId(sectionResponse.getId(), Sort.by(Sort.Direction.ASC, "index"),statuses);
             sectionResponse.setLessons(lessonEntities);
         }
         GetSectionsResponse resData = new GetSectionsResponse();
