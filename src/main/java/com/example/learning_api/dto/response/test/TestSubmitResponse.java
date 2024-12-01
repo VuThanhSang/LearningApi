@@ -43,6 +43,7 @@ public class TestSubmitResponse {
         private boolean isSelected;
         private String questionId;
         private String source;
+        private String answerText;
         public static AnswerResponse formAnswerEntity(CreateAnswerResponse answerEntity){
             AnswerResponse answerResponse = new AnswerResponse();
             answerResponse.setId(answerEntity.getId());

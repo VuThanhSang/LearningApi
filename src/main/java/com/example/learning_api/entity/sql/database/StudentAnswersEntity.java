@@ -14,6 +14,7 @@ public class StudentAnswersEntity {
     private String studentId;
     private String questionId;
     private String answerId;
+    private String textAnswer;
     private String testResultId;
     private String testType;
     private boolean isCorrect;

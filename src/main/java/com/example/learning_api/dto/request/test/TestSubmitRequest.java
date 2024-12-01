@@ -16,6 +16,7 @@ public class TestSubmitRequest {
     public static class QuestionAndAnswer {
         private String questionId;
         private List<String> answers;
+        private List<String> textAnswers;
     }
 
 }

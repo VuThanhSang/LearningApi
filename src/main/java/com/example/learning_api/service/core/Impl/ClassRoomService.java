@@ -96,20 +96,20 @@ public class ClassRoomService implements IClassRoomService {
             }
 
             classRoomRepository.save(classRoomEntity);
-            if (body.getSessions()!=null){
-                for (ClassSessionRequest session : body.getSessions()){
-                    ScheduleEntity schedule = new ScheduleEntity();
-                    schedule.setClassroomId(classRoomEntity.getId());
-                    schedule.setDayOfWeek(session.getDayOfWeek());
-                    schedule.setStartTime(session.getStartTime());
-                    schedule.setEndTime(session.getEndTime());
-                    scheduleRepository.save(schedule);
-                }
-
-            }
-            else{
-                throw new IllegalArgumentException("Sessions is required");
-            }
+//            if (body.getSessions()!=null){
+//                for (ClassSessionRequest session : body.getSessions()){
+//                    ScheduleEntity schedule = new ScheduleEntity();
+//                    schedule.setClassroomId(classRoomEntity.getId());
+//                    schedule.setDayOfWeek(session.getDayOfWeek());
+//                    schedule.setStartTime(session.getStartTime());
+//                    schedule.setEndTime(session.getEndTime());
+//                    scheduleRepository.save(schedule);
+//                }
+//
+//            }
+//            else{
+//                throw new IllegalArgumentException("Sessions is required");
+//            }
             classRoomEntity.setInviteCode(generateInviteCode(classRoomEntity.getId()));
             classRoomRepository.save(classRoomEntity);
             resData.setId(classRoomEntity.getId());
