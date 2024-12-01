@@ -105,7 +105,7 @@ public class LessonService implements ILessonService {
     public List<GetLessonDetailResponse> getLessonBySectionId(String sectionId,String role) {
         try{
             List<String> statuses = new ArrayList<>();
-            if (role.equals("teacher")){
+            if (role.equals("TEACHER")){
                 statuses.add(SectionStatus.PUBLIC.toString());
                 statuses.add(SectionStatus.PRIVATE.toString());
             }

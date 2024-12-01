@@ -105,7 +105,7 @@ public class SectionService implements ISectionService {
     @Override
     public GetSectionsResponse getSections(int page, int size, String search, String role) {
         List<String> statuses = new ArrayList<>();
-        if (role.equals("teacher")){
+        if (role.equals("TEACHER")){
             statuses.add(SectionStatus.PUBLIC.toString());
             statuses.add(SectionStatus.PRIVATE.toString());
         }
@@ -125,7 +125,7 @@ public class SectionService implements ISectionService {
     @Override
     public GetSectionsResponse getSectionsByClassRoomId(String classRoomId, int page, int size, String role) {
         List<String> statuses = new ArrayList<>();
-        if (role.equals("teacher")){
+        if (role.equals("TEACHER")){
             statuses.add(SectionStatus.PUBLIC.toString());
             statuses.add(SectionStatus.PRIVATE.toString());
         }
