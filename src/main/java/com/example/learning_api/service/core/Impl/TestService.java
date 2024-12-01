@@ -798,11 +798,130 @@ public class TestService implements ITestService {
             int questionIndex,
             TestResultEntity testResult) {
         TestSubmitResponse.QuestionResponse questionResponse = mapQuestionResponse(question);
-        List<TestSubmitResponse.AnswerResponse> answerResponses = processAnswers(question, body, questionIndex, testResult);
+        List<TestSubmitResponse.AnswerResponse> answerResponses = new ArrayList<>();
+        if (questionResponse.getType().equals(QuestionType.TEXT_ANSWER.name())||questionResponse.getType().equals(QuestionType.FILL_IN_THE_BLANK.name())){
+            answerResponses = processTextOrFillInBlankAnswers(question, body, questionIndex, testResult);
+        }else{
+            answerResponses = processAnswers(question, body, questionIndex, testResult);
+
+        }
         questionResponse.setAnswers(answerResponses);
         return questionResponse;
     }
 
+    private List<TestSubmitResponse.AnswerResponse> processTextOrFillInBlankAnswers(
+            GetQuestionsResponse.QuestionResponse question,
+            TestSubmitRequest body,
+            int questionIndex,
+            TestResultEntity testResult) {
+        List<TestSubmitResponse.AnswerResponse> answerResponses = new ArrayList<>();
+
+        List<String> submittedTextAnswers = body.getQuestionAndAnswers().size() > questionIndex
+                ? body.getQuestionAndAnswers().get(questionIndex).getTextAnswers()
+                : Collections.emptyList();
+
+        // For TEXT_ANSWER and FILL_IN_THE_BLANK, we'll check against the expected answers
+        boolean isQuestionCorrect = false;
+        for (String submittedAnswer : submittedTextAnswers) {
+            boolean matchFound = question.getAnswers().stream()
+                    .anyMatch(correctAnswer ->
+                            isTextAnswerCorrect(submittedAnswer, correctAnswer.getContent())
+                    );
+
+            if (matchFound) {
+                isQuestionCorrect = true;
+                break;
+            }
+        }
+
+        // Create answer responses based on submitted answers
+        for (String submittedAnswer : submittedTextAnswers) {
+            TestSubmitResponse.AnswerResponse answerResponse = new TestSubmitResponse.AnswerResponse();
+
+            // Find the matching correct answer, if any
+            GetQuestionsResponse.AnswerResponse matchingAnswer = question.getAnswers().stream()
+                    .filter(correctAnswer ->
+                            isTextAnswerCorrect(submittedAnswer, correctAnswer.getContent())
+                    )
+                    .findFirst()
+                    .orElse(null);
+
+            // Set answer response details
+            answerResponse.setContent(submittedAnswer);
+            answerResponse.setAnswerText(submittedAnswer);
+            answerResponse.setSelected(matchingAnswer != null);
+            answerResponse.setCorrect(matchingAnswer != null);
+            GetQuestionsResponse.AnswerResponse answer = new GetQuestionsResponse.AnswerResponse();
+            answer.setContent(submittedAnswer);
+            answer.setQuestionId(question.getId());
+            answer.setAnswerText(submittedAnswer);
+            // Save student answer with the submitted text
+            saveStudentAnswer(testResult, question.getId(), answer, matchingAnswer != null);
+
+            answerResponses.add(answerResponse);
+        }
+
+        return answerResponses;
+    }
+    private boolean isTextAnswerCorrect(String submittedAnswer, String correctAnswer) {
+        if (submittedAnswer == null || correctAnswer == null) {
+            return false;
+        }
+
+        // Normalize both answers
+        String normalizedSubmitted = normalizeAnswer(submittedAnswer);
+        String normalizedCorrect = normalizeAnswer(correctAnswer);
+
+        // Exact match after normalization
+        if (normalizedSubmitted.equals(normalizedCorrect)) {
+            return true;
+        }
+
+        // Allow for minor variations
+        return calculateSimilarity(normalizedSubmitted, normalizedCorrect) >= 0.8;
+    }
+
+    private String normalizeAnswer(String answer) {
+        return answer.trim()
+                .toLowerCase()
+                .replaceAll("[àáạảãâầấậẩẫăằắặẳẵ]", "a")
+                .replaceAll("[èéẹẻẽêềếệểễ]", "e")
+                .replaceAll("[ìíịỉĩ]", "i")
+                .replaceAll("[òóọỏõôồốộổỗơờớợởỡ]", "o")
+                .replaceAll("[ùúụủũưừứựửữ]", "u")
+                .replaceAll("[ỳýỵỷỹ]", "y")
+                .replaceAll("[đ]", "d")
+                .replaceAll("\\p{Punct}", "") // Remove punctuation
+                .replaceAll("\\s+", " "); // Replace multiple spaces with single space
+    }
+
+    private double calculateSimilarity(String s1, String s2) {
+        // Levenshtein distance similarity calculation
+        int maxLength = Math.max(s1.length(), s2.length());
+        int distance = levenshteinDistance(s1, s2);
+        return 1.0 - ((double) distance / maxLength);
+    }
+
+    private int levenshteinDistance(String s1, String s2) {
+        int[][] dp = new int[s1.length() + 1][s2.length() + 1];
+
+        for (int i = 0; i <= s1.length(); i++) {
+            for (int j = 0; j <= s2.length(); j++) {
+                if (i == 0) {
+                    dp[i][j] = j;
+                } else if (j == 0) {
+                    dp[i][j] = i;
+                } else {
+                    dp[i][j] = Math.min(
+                            Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1),
+                            dp[i - 1][j - 1] + (s1.charAt(i - 1) == s2.charAt(j - 1) ? 0 : 1)
+                    );
+                }
+            }
+        }
+
+        return dp[s1.length()][s2.length()];
+    }
     private TestSubmitResponse.QuestionResponse mapQuestionResponse(GetQuestionsResponse.QuestionResponse question) {
         TestSubmitResponse.QuestionResponse questionResponse = new TestSubmitResponse.QuestionResponse();
         questionResponse.setId(question.getId());
@@ -839,7 +958,7 @@ public class TestService implements ITestService {
         answerResponse.setSelected(selectedAnswers.contains(answer.getId()));
 
         if (answerResponse.isSelected()) {
-            saveStudentAnswer(testResult, questionId, answer);
+            saveStudentAnswer(testResult, questionId, answer, answer.getIsCorrect());
         }
 
         return answerResponse;
@@ -854,32 +973,52 @@ public class TestService implements ITestService {
         return answerResponse;
     }
 
-    private void saveStudentAnswer(TestResultEntity testResult, String questionId, GetQuestionsResponse.AnswerResponse answer) {
+    private void saveStudentAnswer(TestResultEntity testResult, String questionId, GetQuestionsResponse.AnswerResponse answer,Boolean isCorrect) {
+        // For text-based question types, we'll use a different approach to find/create the student answer
         StudentAnswersEntity studentAnswer = studentAnswersRepository
                 .findByStudentIdAndTestResultIdAndQuestionIdAndAnswerId(
-                        testResult.getStudentId(), testResult.getTestId(), questionId, answer.getId());
-        if (studentAnswer ==null){
+                        testResult.getStudentId(),
+                        testResult.getTestId(),
+                        questionId,
+                        answer.getId() // This might be null for text answers
+                );
+
+        if (studentAnswer == null) {
             studentAnswer = new StudentAnswersEntity();
         }
 
-        studentAnswer.setAnswerId(answer.getId());
+        // Set common fields
         studentAnswer.setQuestionId(questionId);
         studentAnswer.setStudentId(testResult.getStudentId());
         studentAnswer.setTestResultId(testResult.getId());
         studentAnswer.setCreatedAt(String.valueOf(System.currentTimeMillis()));
         studentAnswer.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
-        studentAnswer.setCorrect(answer.getIsCorrect());
+        studentAnswer.setCorrect(isCorrect);
+
+        // Only set answerId if it's not null
+        if (answer.getId() != null) {
+            studentAnswer.setAnswerId(answer.getId());
+        }
+        studentAnswer.setTextAnswer(answer.getAnswerText());
 
         studentAnswersRepository.save(studentAnswer);
     }
-
     private int calculateTotalCorrectAnswers(List<TestSubmitResponse.QuestionResponse> questionResponses) {
         return (int) questionResponses.stream()
                 .filter(this::isQuestionCorrect)
                 .count();
     }
 
+    // You might also want to update the isQuestionCorrect method in the main submit method
     private boolean isQuestionCorrect(TestSubmitResponse.QuestionResponse questionResponse) {
+        if (questionResponse.getType().equals(QuestionType.TEXT_ANSWER.name()) ||
+                questionResponse.getType().equals(QuestionType.FILL_IN_THE_BLANK.name())) {
+            // For text-based questions, check if at least one answer is correct
+            return questionResponse.getAnswers().stream()
+                    .anyMatch(TestSubmitResponse.AnswerResponse::isCorrect);
+        }
+
+        // Existing logic for other question types
         long correctAnswersCount = questionResponse.getAnswers().stream()
                 .filter(TestSubmitResponse.AnswerResponse::isCorrect)
                 .count();
