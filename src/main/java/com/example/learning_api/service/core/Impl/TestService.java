@@ -57,9 +57,9 @@ public class TestService implements ITestService {
     public CreateTestResponse createTest(CreateTestRequest request) {
         validateCreateTestRequest(request);
         TestEntity testEntity = createTestEntity(request);
-        FileEntity fileEntity = createFileEntity(request, testEntity);
 
         testRepository.save(testEntity);
+        FileEntity fileEntity = createFileEntity(request, testEntity);
         fileRepository.save(fileEntity);
 
         return createTestResponse(testEntity, fileEntity);
