@@ -782,6 +782,9 @@ public class TestService implements ITestService {
                         answerResponse.setContent(textAnswers.get(count++));
                         answerResponse.setId(null);
 
+                    }else if (count>=textAnswers.size()){
+                        answerResponse.setContent("");
+                        answerResponse.setId(null);
                     }
                     continue;
                 }
