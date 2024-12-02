@@ -789,7 +789,7 @@ public class TestService implements ITestService {
                             answerResponse.setAnswerText(answerResponse.getContent());
                         }else{
                             answerResponse.setIsCorrect(false);
-                            answerResponse.setAnswerText("");
+                            answerResponse.setAnswerText(null);
                         }
                         answerResponse.setContent(textAnswers.get(count++));
                         answerResponse.setId(null);
