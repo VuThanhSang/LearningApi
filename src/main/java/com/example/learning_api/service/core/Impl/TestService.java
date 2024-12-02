@@ -644,6 +644,7 @@ public class TestService implements ITestService {
                         if (studentAnswer != null) {
                             answerResponse.setSelected(true);
                         }
+
                     }
                 }
 
@@ -759,6 +760,10 @@ public class TestService implements ITestService {
     private void updateSelectedAnswers(List<GetQuestionsResponse.QuestionResponse> questionResponses,
                                        List<StudentAnswersEntity> studentAnswersEntities,
                                        String testResultId) {
+        TestResultEntity testResult = testResultRepository.findById(testResultId)
+                .orElseThrow(() -> new IllegalArgumentException("TestResult not found"));
+        TestEntity testEntity = testRepository.findById(testResult.getTestId())
+                .orElseThrow(() -> new IllegalArgumentException("Test not found"));
         for (GetQuestionsResponse.QuestionResponse questionResponse : questionResponses) {
             List<String> textAnswers = new ArrayList<>();
             if (questionResponse.getType().equals(QuestionType.TEXT_ANSWER.name()) ||
@@ -779,6 +784,13 @@ public class TestService implements ITestService {
                 if (questionResponse.getType().equals(QuestionType.TEXT_ANSWER.name()) ||
                         questionResponse.getType().equals(QuestionType.FILL_IN_THE_BLANK.name())){
                     if (count<textAnswers.size()){
+                        if (testEntity.getShowResultType().equals(TestShowResultType.SHOW_RESULT_IMMEDIATELY)||testEntity.getShowResultType().equals(TestShowResultType.SHOW_RESULT_AFTER_TEST_END)){
+                            answerResponse.setIsCorrect(isTextAnswerCorrect(textAnswers.get(count), answerResponse.getContent()));
+                            answerResponse.setAnswerText(answerResponse.getContent());
+                        }else{
+                            answerResponse.setIsCorrect(false);
+                            answerResponse.setAnswerText("");
+                        }
                         answerResponse.setContent(textAnswers.get(count++));
                         answerResponse.setId(null);
 
