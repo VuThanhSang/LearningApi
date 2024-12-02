@@ -51,17 +51,7 @@ public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, St
     })
     List<ClassroomDeadlineResponse.DeadlineResponse> getDeadlinesForClassroom(String classroomId, int skip, int limit);
 
-    @Aggregation(pipeline = {
-            "{ $match: { _id: ObjectId(?0) } }",
-            "{ $lookup: { from: 'sections', let: { classroomId: { $toString: '$_id' } }, pipeline: [{ $match: { $expr: { $eq: ['$classRoomId', '$$classroomId'] } } }], as: 'sections' } }",
-            "{ $unwind: '$sections' }",
-            "{ $lookup: { from: 'lessons', let: { sectionId: { $toString: '$sections._id' } }, pipeline: [{ $match: { $expr: { $eq: ['$sectionId', '$$sectionId'] } } }], as: 'lessons' } }",
-            "{ $unwind: '$lessons' }",
-            "{ $lookup: { from: 'deadlines', let: { lessonId: { $toString: '$lessons._id' } }, pipeline: [{ $match: { $expr: { $and: [ { $eq: ['$lessonId', '$$lessonId'] }, { $ne: ['$status', 'NOT_PUBLISHED'] } ] } } }], as: 'deadlines' } }",
-            "{ $unwind: '$deadlines' }",
-            "{ $count: 'total' }"
-    })
-    long countDeadlinesForClassroom(String classroomId);
+
 
     @Aggregation(pipeline = {
             "{ $match: { _id: ObjectId(?0) } }",
@@ -76,18 +66,6 @@ public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, St
             "{ $limit: ?2 }"
     })
     List<ClassroomDeadlineResponse.DeadlineResponse> getDeadlinesForClassroomForTeacher(String classroomId, int skip, int limit);
-
-    @Aggregation(pipeline = {
-            "{ $match: { _id: ObjectId(?0) } }",
-            "{ $lookup: { from: 'sections', let: { classroomId: { $toString: '$_id' } }, pipeline: [{ $match: { $expr: { $eq: ['$classRoomId', '$$classroomId'] } } }], as: 'sections' } }",
-            "{ $unwind: '$sections' }",
-            "{ $lookup: { from: 'lessons', let: { sectionId: { $toString: '$sections._id' } }, pipeline: [{ $match: { $expr: { $eq: ['$sectionId', '$$sectionId'] } } }], as: 'lessons' } }",
-            "{ $unwind: '$lessons' }",
-            "{ $lookup: { from: 'deadlines', let: { lessonId: { $toString: '$lessons._id' } }, pipeline: [{ $match: { $expr: { $eq: ['$lessonId', '$$lessonId'] } } }], as: 'deadlines' } }",
-            "{ $unwind: '$deadlines' }",
-            "{ $count: 'total' }"
-    })
-    long countDeadlinesForClassroomForTeacher(String classroomId);
 
     @Query("{ 'inviteCode' : ?0 }")
     ClassRoomEntity findClassRoomEntityByInviteCode(String inviteCode);

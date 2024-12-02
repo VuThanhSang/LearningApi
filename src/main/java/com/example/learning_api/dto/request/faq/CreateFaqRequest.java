@@ -12,10 +12,10 @@ public class CreateFaqRequest {
     @NotBlank
     private String question;
     @NotBlank
-    private String studentId;
+    private String userId;
     @NotBlank
     private String classId;
     @NotBlank
     private String status;
-    private List<SourceUploadDto> sources;
+    private List<MultipartFile> sources;
 }

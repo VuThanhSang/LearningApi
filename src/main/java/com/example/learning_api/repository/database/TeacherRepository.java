@@ -14,5 +14,8 @@ public interface TeacherRepository extends MongoRepository<TeacherEntity, String
 
   TeacherEntity findByUserId(String userId);
 
+  @Query("{'user.fullname': {$regex: ?0, $options: 'i'}, 'user.status': {$regex: ?1, $options: 'i'}}")
+  Page<TeacherEntity> findByNameContainingAndStatus(String name, String status, Pageable pageable);
+
 }
 

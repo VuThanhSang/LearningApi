@@ -37,4 +37,8 @@ public interface StudentRepository extends MongoRepository<StudentEntity, String
             "}")
     List<StudentEntity> findStudentsNotInClassroom(List<String> enrolledStudentIds);
 
+    @Query("{'user.fullname': {$regex: ?0, $options: 'i'}, 'user.status': {$regex: ?1, $options: 'i'}}")
+    Page<StudentEntity> findByNameContainingAndStatus(String name, String status, Pageable pageable);
+
+
 }

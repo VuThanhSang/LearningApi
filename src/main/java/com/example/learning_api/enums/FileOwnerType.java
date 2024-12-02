@@ -12,5 +12,7 @@ public enum FileOwnerType {
     ANSWER,
     TEST,
     FEEDBACK,
+    FAQ,
+    FAQ_COMMENT,
 
 }

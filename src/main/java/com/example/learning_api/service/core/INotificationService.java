@@ -1,6 +1,8 @@
 package com.example.learning_api.service.core;
 
 import com.example.learning_api.dto.request.notification.SendNotificationRequest;
+import com.example.learning_api.dto.request.notification.UpdateUserNotificationSettingRequest;
+import com.example.learning_api.dto.response.notification.NotificationResponse;
 import com.example.learning_api.entity.sql.database.NotificationEntity;
 import com.example.learning_api.entity.sql.database.NotificationReceiveEntity;
 import com.example.learning_api.entity.sql.database.NotificationSettingsEntity;
@@ -13,7 +15,7 @@ public interface INotificationService {
 
     // 1. Tạo notification mới
     @Transactional
-    NotificationEntity createNotification(NotificationEntity notification, List<String> receiverIds);
+    NotificationResponse createNotification(NotificationEntity notification, List<String> receiverIds);
 
     // 2. Filter receivers dựa trên preferences của họ
     List<String> filterReceiversByPreferences(List<String> receiverIds, String notificationSettingId);
@@ -39,7 +41,7 @@ public interface INotificationService {
 
     // 4. Cập nhật user notification settings
     @Transactional
-    void updateUserNotificationSettings(String userId, String notificationTypeId, boolean enabled, String deliveryMethod);
+    void updateUserNotificationSettings(UpdateUserNotificationSettingRequest request);
 
     // 5. Xóa notification (soft delete)
     @Transactional

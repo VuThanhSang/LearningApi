@@ -6,6 +6,7 @@ import com.example.learning_api.enums.FaqStatus;
 import com.example.learning_api.enums.RoleEnum;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Date;
@@ -19,12 +20,10 @@ public class FaqCommentEntity {
     private String faqId;
     private String userId;
     private String content;
-    private String parentId;
-    private FaqStatus status;
-    private RoleEnum role;
-    private List<SourceDto> sources;
     private String createdAt;
     private String updatedAt;
+    @DBRef
+    private List<FileEntity> sources;
     @Data
     public static class SourceDto {
         private FaqSourceType type;

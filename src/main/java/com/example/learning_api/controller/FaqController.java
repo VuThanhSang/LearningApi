@@ -6,7 +6,10 @@ import com.example.learning_api.dto.request.comment.UpdateCommentRequest;
 import com.example.learning_api.dto.request.faq.CreateFaqRequest;
 import com.example.learning_api.dto.request.faq.UpdateFaqRequest;
 import com.example.learning_api.dto.response.comment.GetCommentByFaqResponse;
+import com.example.learning_api.dto.response.faq.GetFaqDetailResponse;
+import com.example.learning_api.dto.response.faq.GetFaqsResponse;
 import com.example.learning_api.model.ResponseAPI;
+import com.example.learning_api.service.common.JwtService;
 import com.example.learning_api.service.core.IFaqCommentService;
 import com.example.learning_api.service.core.IFaqService;
 import jakarta.validation.Valid;
@@ -28,9 +31,13 @@ import static com.example.learning_api.constant.RouterConstant.*;
 public class FaqController {
     private final IFaqService faqService;
     private final IFaqCommentService commentService;
+    private final JwtService jwtService;
     @PostMapping(path = "",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ResponseAPI<String>> createFaq(@ModelAttribute @Valid CreateFaqRequest body) {
+    public ResponseEntity<ResponseAPI<String>> createFaq(@ModelAttribute @Valid CreateFaqRequest body, @RequestHeader("Authorization") String authorizationHeader) {
         try{
+            String accessToken = authorizationHeader.replace("Bearer ", "");
+            String userId= jwtService.extractUserId(accessToken);
+            body.setUserId(userId);
             faqService.createFaq(body);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
                     .timestamp(new Date())
@@ -83,6 +90,40 @@ public class FaqController {
                     .build();
             return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
         }
+
+    }
+    @GetMapping(path = "")
+    public ResponseEntity<ResponseAPI<GetFaqsResponse>> getFaqs(@RequestParam(name="page",required = false,defaultValue = "1") int page,
+                                                                @RequestParam(name="size",required = false,defaultValue = "10") int size,
+                                                                @RequestParam(name="search",required = false,defaultValue = "") String search,
+                                                                @RequestParam(name="sort",required = false,defaultValue = "createdAt") String sort,
+                                                                @RequestParam(name="order",required = false,defaultValue = "desc") String order) {
+        try {
+            if (search == null || search.isEmpty()) {
+                search = "";
+            }
+
+            if (sort == null || sort.isEmpty()) {
+                sort = "createdAt";
+            }
+            if (order == null || order.isEmpty()) {
+                order = "desc";
+            }
+
+            GetFaqsResponse data = faqService.getFaqs(page - 1, size, search, sort, order);
+            ResponseAPI<GetFaqsResponse> res = ResponseAPI.<GetFaqsResponse>builder()
+                    .timestamp(new Date())
+                    .data(data)
+                    .message("Get faqs successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        } catch (Exception e) {
+            ResponseAPI<GetFaqsResponse> res = ResponseAPI.<GetFaqsResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
     }
 
     @GetMapping(path = "/{faqId}/comments")
@@ -107,10 +148,32 @@ public class FaqController {
         }
     }
 
+    @GetMapping(path = "/{faqId}")
+    public ResponseEntity<ResponseAPI<GetFaqDetailResponse>> getFaqDetail(@PathVariable String faqId) {
+        try{
+            GetFaqDetailResponse data = faqService.getFaqDetail(faqId);
+            ResponseAPI<GetFaqDetailResponse> res = ResponseAPI.<GetFaqDetailResponse>builder()
+                    .timestamp(new Date())
+                    .data(data)
+                    .message("Get faq detail successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetFaqDetailResponse> res = ResponseAPI.<GetFaqDetailResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
 
     @PostMapping(path = "/{faqId}/comment",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ResponseAPI<String>> createComment(@PathVariable String faqId,@ModelAttribute @Valid CreateCommentRequest body) {
+    public ResponseEntity<ResponseAPI<String>> createComment(@PathVariable String faqId,@ModelAttribute @Valid CreateCommentRequest body, @RequestHeader("Authorization") String authorizationHeader){
         try{
+            String accessToken = authorizationHeader.replace("Bearer ", "");
+            String userId= jwtService.extractUserId(accessToken);
+            body.setUserId(userId);
             body.setFaqId(faqId);
             commentService.createComment(body);
             ResponseAPI<String> res = ResponseAPI.<String>builder()

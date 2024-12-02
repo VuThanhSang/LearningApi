@@ -1,5 +1,7 @@
 package com.example.learning_api.service.core.Impl;
 
+import com.example.learning_api.dto.request.notification.UpdateUserNotificationSettingRequest;
+import com.example.learning_api.dto.response.notification.NotificationResponse;
 import com.example.learning_api.entity.sql.database.NotificationEntity;
 import com.example.learning_api.entity.sql.database.NotificationReceiveEntity;
 import com.example.learning_api.entity.sql.database.NotificationSettingsEntity;
@@ -28,7 +30,7 @@ public class NotificationService implements INotificationService {
     // 1. Tạo notification mới
     @Transactional
     @Override
-    public NotificationEntity createNotification(NotificationEntity notification, List<String> receiverIds) {
+    public NotificationResponse createNotification(NotificationEntity notification, List<String> receiverIds) {
         // Validate notification settings
         NotificationSettingsEntity settings = notificationSettingsRepository
                 .findById(notification.getNotificationSettingId())
@@ -54,8 +56,24 @@ public class NotificationService implements INotificationService {
         // Tạo notification receive cho từng user với delivery method từ preferences
         List<NotificationReceiveEntity> receives = createNotificationReceives(filteredReceivers, savedNotification, settings);
         notificationReceiveRepository.saveAll(receives);
-
-        return savedNotification;
+        NotificationResponse notificationResponse = NotificationResponse.builder()
+                .id(savedNotification.getId())
+                .title(savedNotification.getTitle())
+                .message(savedNotification.getMessage())
+                .authorId(savedNotification.getAuthorId())
+                .notificationSettingId(savedNotification.getNotificationSettingId())
+                .status(savedNotification.getStatus().name())
+                .priority(savedNotification.getPriority().name())
+                .expiresAt(savedNotification.getExpiresAt())
+                .type(savedNotification.getType().name())
+                .targetUrl(savedNotification.getTargetUrl())
+                .createdAt(savedNotification.getCreatedAt())
+                .updatedAt(savedNotification.getUpdatedAt())
+                .isDeleted(savedNotification.getIsDeleted())
+                .totalReceivers(savedNotification.getTotalReceivers())
+                .receiversId(receives.stream().map(NotificationReceiveEntity::getUserId).collect(Collectors.toList()))
+                .build();
+        return notificationResponse;
     }
     // 2. Filter receivers dựa trên preferences của họ
     @Override
@@ -157,16 +175,16 @@ public class NotificationService implements INotificationService {
     // 4. Cập nhật user notification settings
     @Transactional
     @Override
-    public void updateUserNotificationSettings(String userId, String notificationTypeId, boolean enabled, String deliveryMethod) {
+    public void updateUserNotificationSettings(UpdateUserNotificationSettingRequest request) {
         UserNotificationSettingsEntity settings = userNotificationSettingsRepository
-                .findByUserIdAndNotificationSettingId(userId, notificationTypeId)
+                .findByUserIdAndNotificationSettingId(request.getUserId(), request.getNotificationSettingId())
                 .orElse(UserNotificationSettingsEntity.builder()
-                        .userId(userId)
-                        .notificationSettingId(notificationTypeId)
+                        .userId(request.getUserId())
+                        .notificationSettingId(request.getNotificationSettingId())
                         .build());
 
-        settings.setEnabled(enabled);
-        settings.setDeliveryMethod(deliveryMethod);
+        settings.setEnabled(request.getEnabled());
+        settings.setDeliveryMethod(request.getDeliveryMethod());
         settings.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
 
         userNotificationSettingsRepository.save(settings);

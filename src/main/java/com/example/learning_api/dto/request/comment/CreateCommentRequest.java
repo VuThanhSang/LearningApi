@@ -6,6 +6,7 @@ import com.example.learning_api.enums.FaqStatus;
 import com.example.learning_api.enums.RoleEnum;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -21,6 +22,6 @@ public class CreateCommentRequest {
     private RoleEnum role;
     private String content;
     private String parentId;
-    private List<SourceUploadDto> sources;
+    private List<MultipartFile> sources;
 
 }

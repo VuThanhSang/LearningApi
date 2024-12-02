@@ -1,8 +1,11 @@
 package com.example.learning_api.controller;
 
 import com.example.learning_api.dto.request.notification.SendNotificationRequest;
+import com.example.learning_api.dto.request.notification.UpdateUserNotificationSettingRequest;
+import com.example.learning_api.dto.response.notification.NotificationResponse;
 import com.example.learning_api.entity.sql.database.NotificationEntity;
 import com.example.learning_api.model.ResponseAPI;
+import com.example.learning_api.service.common.JwtService;
 import com.example.learning_api.service.core.INotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,12 +22,13 @@ import java.util.List;
 public class NotificationController {
     private final INotificationService notificationService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final JwtService jwtService;
 
     @PostMapping("/send")
-    public ResponseEntity<ResponseAPI<NotificationEntity>> sendNotification(
+    public ResponseEntity<ResponseAPI<NotificationResponse>> sendNotification(
             @RequestBody SendNotificationRequest request) {
         try {
-            NotificationEntity notification = notificationService.createNotification(
+            NotificationResponse notification = notificationService.createNotification(
                     NotificationEntity.builder()
                             .title(request.getTitle())
                             .message(request.getMessage())
@@ -37,7 +41,7 @@ public class NotificationController {
             );
 
             // Send real-time WebSocket notification to each receiver
-            request.getReceiverIds().forEach(userId -> {
+            notification.getReceiversId().forEach(userId -> {
                 messagingTemplate.convertAndSend(
                         "/topic/notifications/" + userId,
                         notification
@@ -45,7 +49,7 @@ public class NotificationController {
             });
 
             return ResponseEntity.ok(
-                    ResponseAPI.<NotificationEntity>builder()
+                    ResponseAPI.<NotificationResponse>builder()
                             .data(notification)
                             .message("Notification sent successfully")
                             .build()
@@ -53,17 +57,17 @@ public class NotificationController {
         } catch (Exception e) {
             log.error("Error sending notification", e);
             return ResponseEntity.badRequest().body(
-                    ResponseAPI.<NotificationEntity>builder()
-                            .message("Failed to send notification")
+                    ResponseAPI.<NotificationResponse>builder()
+                            .message(e.getMessage())
                             .build()
             );
         }
     }
 
     // Lấy danh sách thông báo của người dùng
-    @GetMapping("/user")
+    @GetMapping("/user/{userId}")
     public ResponseEntity<ResponseAPI<List<NotificationEntity>>> getUserNotifications(
-            @RequestParam String userId,
+            @PathVariable String userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         try {
@@ -105,4 +109,31 @@ public class NotificationController {
             );
         }
     }
+
+    @PostMapping("/update-user-settings")
+    public ResponseEntity<ResponseAPI<Void>> updateUserNotificationSettings(
+            @RequestBody UpdateUserNotificationSettingRequest request,
+
+            @RequestHeader("Authorization") String authorizationHeader){
+        try {
+            String token = authorizationHeader.substring(7);
+            String currentUserId = jwtService.extractUserId(token);
+            request.setUserId(currentUserId);
+            notificationService.updateUserNotificationSettings(request);
+            return ResponseEntity.ok(
+                    ResponseAPI.<Void>builder()
+                            .message("User notification settings updated")
+                            .build()
+            );
+        } catch (Exception e) {
+            log.error("Error updating user notification settings", e);
+            return ResponseEntity.badRequest().body(
+                    ResponseAPI.<Void>builder()
+                            .message("Failed to update user notification settings")
+                            .build()
+            );
+        }
+    }
+
+
 }
