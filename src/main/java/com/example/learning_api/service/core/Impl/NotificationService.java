@@ -200,7 +200,7 @@ public class NotificationService implements INotificationService {
     }
 
     // Helper method để validate frequency
-    private void validateNotificationFrequency(String authorId, NotificationSettingsEntity settings) {
+    private void    validateNotificationFrequency(String authorId, NotificationSettingsEntity settings) {
         if (settings.getMaxFrequencyPerDay() != null) {
             long dailyCount = notificationRepository.countByAuthorIdAndCreatedAtAfter(
                     authorId,
