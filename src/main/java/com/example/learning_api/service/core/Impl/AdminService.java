@@ -3,10 +3,13 @@ package com.example.learning_api.service.core.Impl;
 import com.example.learning_api.dto.common.TotalTestOfDayDto;
 import com.example.learning_api.dto.request.admin.ChangeRoleRequest;
 import com.example.learning_api.dto.response.admin.GetAdminDashboardResponse;
+import com.example.learning_api.dto.response.admin.GetClassRoomsAdminResponse;
 import com.example.learning_api.dto.response.admin.GetUsersResponse;
+import com.example.learning_api.dto.response.classroom.GetClassRoomsResponse;
 import com.example.learning_api.dto.response.classroom.TotalClassroomOfDayDto;
 import com.example.learning_api.dto.response.student.GetStudentsResponse;
 import com.example.learning_api.dto.response.teacher.GetTeachersResponse;
+import com.example.learning_api.entity.sql.database.ClassRoomEntity;
 import com.example.learning_api.entity.sql.database.StudentEntity;
 import com.example.learning_api.entity.sql.database.TeacherEntity;
 import com.example.learning_api.entity.sql.database.UserEntity;
@@ -101,6 +104,19 @@ public class AdminService implements IAdminService {
     }
 
     @Override
+    public void updateStatus(String userId, String status) {
+        try {
+            userRepository.findById(userId).ifPresent(userEntity -> {
+                userEntity.setStatus(UserStatus.valueOf(status));
+                userRepository.save(userEntity);
+            });
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+
+        }
+    }
+
+    @Override
     public GetAdminDashboardResponse getAdminDashboard() {
         try {
 
@@ -170,12 +186,13 @@ public class AdminService implements IAdminService {
         }
     }
     @Override
-    public GetUsersResponse getTeachers(String search, int page, int size, String sort, String order, String status) {
+    public GetUsersResponse getTeachers(String search, int page, int size,  String sort,String order,String status) {
         try {
-            if (!order.equalsIgnoreCase("asc") && !order.equalsIgnoreCase("desc")) {
+            String upperOrder = order.toUpperCase();
+            if (!upperOrder.equals("ASC") && !upperOrder.equals("DESC")) {
                 throw new IllegalArgumentException("Invalid value '" + order + "' for orders given; Has to be either 'desc' or 'asc' (case insensitive)");
             }
-            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(order), sort));
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(upperOrder), sort));
             Page<TeacherEntity> teacherEntities;
             if (status.isEmpty()) {
                 teacherEntities = teacherRepository.findByNameContaining(search, pageable);
@@ -200,12 +217,13 @@ public class AdminService implements IAdminService {
     }
 
     @Override
-    public GetUsersResponse getStudents(String search, int page, int size, String sort, String order, String status) {
+    public GetUsersResponse getStudents(String search, int page, int size,  String sort,String order, String status) {
         try {
-            if (!order.equalsIgnoreCase("asc") && !order.equalsIgnoreCase("desc")) {
+            String upperOrder = order.toUpperCase();
+            if (!upperOrder.equals("ASC") && !upperOrder.equals("DESC")) {
                 throw new IllegalArgumentException("Invalid value '" + order + "' for orders given; Has to be either 'desc' or 'asc' (case insensitive)");
             }
-            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(order), sort));
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(upperOrder), sort));
             Page<StudentEntity> studentEntities;
             if (status.isEmpty()) {
                 studentEntities = studentRepository.findByNameContaining(search, pageable);
@@ -223,6 +241,30 @@ public class AdminService implements IAdminService {
             resData.setData(userEntities);
             resData.setTotalElements(studentEntities.getTotalElements());
             resData.setTotalPage(studentEntities.getTotalPages());
+            return resData;
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public GetClassRoomsAdminResponse getClassRooms(String search, int page, int size, String sort, String order, String status) {
+        try {
+            String upperOrder = order.toUpperCase();
+            if (!upperOrder.equals("ASC") && !upperOrder.equals("DESC")) {
+                throw new IllegalArgumentException("Invalid value '" + order + "' for orders given; Has to be either 'desc' or 'asc' (case insensitive)");
+            }
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(upperOrder), sort));
+            Page<ClassRoomEntity> classRoomEntities;
+            if (status.isEmpty()) {
+                classRoomEntities = classRoomRepository.findByNameContaining(search, pageable);
+            } else {
+                classRoomEntities = classRoomRepository.findByNameContainingAndStatus(search, status, pageable);
+            }
+            GetClassRoomsAdminResponse resData = new GetClassRoomsAdminResponse();
+            resData.setData(classRoomEntities.getContent());
+            resData.setTotalElements(classRoomEntities.getTotalElements());
+            resData.setTotalPage(classRoomEntities.getTotalPages());
             return resData;
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
