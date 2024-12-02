@@ -20,7 +20,6 @@ public class NotificationController {
     private final INotificationService notificationService;
     private final SimpMessagingTemplate messagingTemplate;
 
-    // API gửi thông báo
     @PostMapping("/send")
     public ResponseEntity<ResponseAPI<NotificationEntity>> sendNotification(
             @RequestBody SendNotificationRequest request) {
@@ -37,11 +36,10 @@ public class NotificationController {
                     request.getReceiverIds()
             );
 
-            // Gửi realtime
+            // Send real-time WebSocket notification to each receiver
             request.getReceiverIds().forEach(userId -> {
-                messagingTemplate.convertAndSendToUser(
-                        userId,
-                        "/topic/notifications",
+                messagingTemplate.convertAndSend(
+                        "/topic/notifications/" + userId,
                         notification
                 );
             });

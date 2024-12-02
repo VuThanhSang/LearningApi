@@ -3,6 +3,9 @@ spring:
     multipart:
       max-file-size: 500MB
       max-request-size: 500MB
+  websocket:
+    stomp:
+      enabled: true
   application:
     name: learning_api
   config:

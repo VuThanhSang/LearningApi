@@ -770,8 +770,11 @@ public class TestService implements ITestService {
                 // Handle TEXT_ANSWER and FILL_IN_THE_BLANK types
                 if (questionResponse.getType().equals(QuestionType.TEXT_ANSWER.name()) ||
                         questionResponse.getType().equals(QuestionType.FILL_IN_THE_BLANK.name())){
-                    answerResponse.setContent(textAnswers.get(count++));
-                    answerResponse.setId(null);
+                    if (count<textAnswers.size()){
+                        answerResponse.setContent(textAnswers.get(count++));
+                        answerResponse.setId(null);
+
+                    }
                     continue;
                 }
 
