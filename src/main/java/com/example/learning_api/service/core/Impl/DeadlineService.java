@@ -410,10 +410,22 @@ public class DeadlineService implements IDeadlineService {
             }
             long totalElements ;
             if (role.equals("TEACHER")){
-                totalElements = classroomRepository.countDeadlinesForClassroomForTeacher(classroomId);
+                Long count  = deadlineRepository.countDeadlinesForClassroomForTeacher(classroomId);
+                if (count == null){
+                    totalElements = 0;
+                }
+                else{
+                    totalElements = count;
+                }
             }
             else{
-                totalElements = classroomRepository.countDeadlinesForClassroom(classroomId);
+                Long count  = deadlineRepository.countDeadlinesForClassroom(classroomId);
+                if (count == null){
+                    totalElements = 0;
+                }
+                else{
+                    totalElements = count;
+                }
             }
             int totalPages = (int) Math.ceil((double) totalElements / size);
 

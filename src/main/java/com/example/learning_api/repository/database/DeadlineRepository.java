@@ -116,4 +116,16 @@ public interface DeadlineRepository extends MongoRepository<DeadlineEntity, Stri
 
     @Query("{'teacherId': ?0}")
     List<DeadlineEntity> findAllByTeacherId(String teacherId);
+
+    @Aggregation(pipeline = {
+            "{ $match: { classroomId: ?0 } }",
+            "{ $count: 'total' }"
+    })
+    Long countDeadlinesForClassroomForTeacher(String classroomId);
+
+    @Aggregation(pipeline = {
+            "{ $match: { classroomId: ?0, status: { $ne: 'NOT_PUBLISHED' } } }",
+            "{ $count: 'total' }"
+    })
+    Long countDeadlinesForClassroom(String classroomId);
 }

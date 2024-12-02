@@ -145,6 +145,12 @@ public class UserAuthService  implements IUserAuthService {
     public LoginResponse loginUser(LoginUserRequest body) {
         try {
             UserEntity user = authenticateUser(body.getEmail(), body.getPassword());
+            if (user.getStatus() == UserStatus.INACTIVE) {
+                throw new CustomException("Account is not active");
+            }
+            if (user.getStatus() == UserStatus.BLOCKED) {
+                throw new CustomException("Account is blocked");
+            }
             String jwt = jwtService.issueAccessToken(user.getId(), user.getEmail(), user.getRole());
             String refreshToken = jwtService.issueRefreshToken(user.getId(), user.getEmail(), user.getRole());
 
@@ -160,6 +166,7 @@ public class UserAuthService  implements IUserAuthService {
         try {
             String email = oAuth2User.getAttribute("email");
             UserEntity user = userRepository.findByEmailAndAuthType(email,"google").orElse(null);
+
             if(user == null) {
                 user = new UserEntity();
                 user.setEmail(email);
@@ -170,6 +177,12 @@ public class UserAuthService  implements IUserAuthService {
                 user.setCreatedAt(String.valueOf(System.currentTimeMillis()));
                 user.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
                 user = userRepository.save(user);
+            }
+            if (user.getStatus() == UserStatus.INACTIVE) {
+                throw new CustomException("Account is not active");
+            }
+            if (user.getStatus() == UserStatus.BLOCKED) {
+                throw new CustomException("Account is blocked");
             }
             String jwt = jwtService.issueAccessToken(user.getId(), user.getEmail(), user.getRole());
             String refreshToken = jwtService.issueRefreshToken(user.getId(), user.getEmail(), user.getRole());

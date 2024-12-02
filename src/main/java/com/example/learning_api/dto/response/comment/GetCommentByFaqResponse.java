@@ -20,7 +20,6 @@ public class GetCommentByFaqResponse {
         private String faqId;
         private String userId;
         private String content;
-        private String parentId;
         private String createdAt;
         private String updatedAt;
 //        private List<CommentResponse> replies; // Thêm thuộc tính để lưu trữ các comment con
@@ -31,7 +30,6 @@ public class GetCommentByFaqResponse {
             commentResponse.setFaqId(commentEntity.getFaqId());
             commentResponse.setUserId(commentEntity.getUserId());
             commentResponse.setContent(commentEntity.getContent());
-            commentResponse.setParentId(commentEntity.getParentId());
             commentResponse.setCreatedAt(commentEntity.getCreatedAt().toString());
             commentResponse.setUpdatedAt(commentEntity.getUpdatedAt().toString());
             return commentResponse;

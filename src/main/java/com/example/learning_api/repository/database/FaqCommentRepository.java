@@ -8,6 +8,8 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
+import java.util.List;
+
 public interface FaqCommentRepository extends MongoRepository<FaqCommentEntity, String> {
 
 
@@ -36,4 +38,5 @@ public interface FaqCommentRepository extends MongoRepository<FaqCommentEntity, 
             "{ $sort: { createdAt: -1 } }"
     })
     Slice<GetCommentByFaqResponse.CommentResponse> findRepliesByParentId(String parentId, Pageable pageable);
+    List<FaqCommentEntity> findByFaqId(String faqId);
 }

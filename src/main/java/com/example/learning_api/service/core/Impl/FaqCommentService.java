@@ -8,11 +8,11 @@ import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.comment.GetCommentByFaqResponse;
 import com.example.learning_api.entity.sql.database.FAQEntity;
 import com.example.learning_api.entity.sql.database.FaqCommentEntity;
+import com.example.learning_api.entity.sql.database.FileEntity;
+import com.example.learning_api.enums.FaqSourceType;
+import com.example.learning_api.enums.FileOwnerType;
 import com.example.learning_api.enums.RoleEnum;
-import com.example.learning_api.repository.database.FAQRepository;
-import com.example.learning_api.repository.database.FaqCommentRepository;
-import com.example.learning_api.repository.database.StudentRepository;
-import com.example.learning_api.repository.database.TeacherRepository;
+import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
 import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.IFaqCommentService;
@@ -25,6 +25,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -41,19 +42,69 @@ public class FaqCommentService implements IFaqCommentService {
     private final StudentRepository studentRepository;
     private final TeacherRepository teacherRepository;
     private final CloudinaryService cloudinaryService;
+    private final FileRepository fileRepository;
+    public void processFiles (List<MultipartFile> files, String title, FaqCommentEntity deadlineEntity){
+        if (files == null) {
+            return;
+        }
+        for (MultipartFile file : files) {
+            try {
+                FAQEntity.SourceDto fileDto = processFile(file, title);
+                FileEntity fileEntity = new FileEntity();
+                fileEntity.setUrl(fileDto.getPath());
+                fileEntity.setType(fileDto.getType().name());
+                fileEntity.setOwnerType(FileOwnerType.FAQ_COMMENT);
+                fileEntity.setOwnerId(deadlineEntity.getId());
+                fileEntity.setExtension(fileDto.getPath().substring(fileDto.getPath().lastIndexOf(".") + 1));
+                fileEntity.setName(file.getOriginalFilename());
+                fileEntity.setSize(String.valueOf(file.getSize()));
+                fileEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+                fileEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+                fileRepository.save(fileEntity);
+            } catch (IOException e) {
+                log.error("Error processing file: ", e);
+                throw new IllegalArgumentException("Error processing file: " + e.getMessage());
+            }
+        }
+    }
+
+    public FAQEntity.SourceDto processFile(MultipartFile file, String title) throws IOException {
+        byte[] fileBytes = file.getBytes();
+        String fileName = StringUtils.generateFileName(file.getOriginalFilename(), "deadline");
+        CloudinaryUploadResponse response;
+
+        String contentType = file.getContentType();
+        if (contentType.startsWith("image/")) {
+            byte[] resizedImage = ImageUtils.resizeImage(fileBytes, 400, 400);
+            response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName, resizedImage, "image");
+        } else if (contentType.startsWith("video/")) {
+            String videoFileType = getFileExtension(file.getOriginalFilename());
+            response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + videoFileType, fileBytes, "video");
+        } else if (contentType.startsWith("application/")) {
+            String docFileType = getFileExtension(file.getOriginalFilename());
+            response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + docFileType, fileBytes, "raw");
+        }  else if (contentType.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document")) {
+            response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + ".docx", fileBytes, "raw");
+        }
+        else {
+            throw new IllegalArgumentException("Unsupported source type");
+        }
+
+        return FAQEntity.SourceDto.builder()
+                .path(response.getSecureUrl())
+                .type(contentType.startsWith("image/") ? FaqSourceType.IMAGE : contentType.startsWith("video/") ? FaqSourceType.VIDEO : FaqSourceType.DOCUMENT)
+                .build();
+    }
     @Override
     public void createComment(CreateCommentRequest body) {
         try {
             validateRequest(body);
             FaqCommentEntity commentEntity = modelMapperService.mapClass(body, FaqCommentEntity.class);
-            if (body.getSources()!=null && body.getSources().size()>0){
-                commentEntity.setSources(new ArrayList<>());
-                processSources(body.getSources(),body.getContent(), commentEntity);
-            }
 
             commentEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
             commentEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             commentRepository.save(commentEntity);
+                processFiles(body.getSources(),body.getContent(), commentEntity);
         } catch (Exception e) {
             log.error(e.getMessage());
             throw new IllegalArgumentException(e.getMessage());
@@ -62,81 +113,15 @@ public class FaqCommentService implements IFaqCommentService {
     }
 
     public void validateRequest(CreateCommentRequest body) {
-        if (body.getContent() == null) {
-            throw new IllegalArgumentException("Content is required");
-        }
         if (body.getFaqId() == null) {
             throw new IllegalArgumentException("FaqId is required");
         }
         if (faqRepository.findById(body.getFaqId()).isEmpty()) {
             throw new IllegalArgumentException("FaqId is not found");
         }
-        if (body.getRole()== RoleEnum.USER){
-            if (body.getUserId() == null) {
-                throw new IllegalArgumentException("UserId is required");
-            }
-            if (studentRepository.findById(body.getUserId()).isEmpty()) {
-                throw new IllegalArgumentException("UserId is not found");
-            }
-        }
-        else {
-            if (body.getUserId() == null) {
-                throw new IllegalArgumentException("UserId is required");
-            }
-            if (teacherRepository.findById(body.getUserId()).isEmpty()) {
-                throw new IllegalArgumentException("UserId is not found");
-            }
-        }
-        if (body.getParentId() != null && body.getParentId() != "" && commentRepository.findById(body.getParentId()).isEmpty()) {
-            throw new IllegalArgumentException("ParentId is not found");
-        }
+
     }
 
-
-    public void processSources(List<SourceUploadDto> sources, String question, FaqCommentEntity faqCommentEntity) {
-        if (sources.isEmpty()) {
-            return;
-        }
-
-        for (SourceUploadDto source : sources) {
-            try {
-                FaqCommentEntity.SourceDto sourceDto = processSource(source, question);
-                faqCommentEntity.getSources().add(sourceDto);
-            } catch (IOException e) {
-                log.error("Error processing source: " + e.getMessage());
-                throw new IllegalArgumentException("Error processing source");
-            }
-        }
-    }
-
-    private FaqCommentEntity.SourceDto processSource(SourceUploadDto source, String question) throws IOException {
-        FaqCommentEntity.SourceDto sourceDto = new FaqCommentEntity.SourceDto();
-        sourceDto.setType(source.getType());
-
-        byte[] fileBytes = source.getPath().getBytes();
-        String fileName = StringUtils.generateFileName(question, "FaqComment");
-
-        CloudinaryUploadResponse response;
-        switch (source.getType()) {
-            case IMAGE:
-                byte[] resizedImage = ImageUtils.resizeImage(fileBytes, 400, 400);
-                response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName, resizedImage, "image");
-                break;
-            case VIDEO:
-                String videoFileType = getFileExtension(source.getPath().getOriginalFilename());
-                response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + videoFileType, fileBytes, "video");
-                break;
-            case DOCUMENT:
-                String docFileType = getFileExtension(source.getPath().getOriginalFilename());
-                response = cloudinaryService.uploadFileToFolder(CloudinaryConstant.CLASSROOM_PATH, fileName + docFileType, fileBytes, "raw");
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported source type");
-        }
-
-        sourceDto.setPath(response.getUrl() );
-        return sourceDto;
-    }
 
     private String getFileExtension(String filename) {
         return filename.substring(filename.lastIndexOf("."));
@@ -149,18 +134,10 @@ public class FaqCommentService implements IFaqCommentService {
             FaqCommentEntity commentEntity = commentRepository.findById(body.getId()).orElseThrow(()->new IllegalArgumentException("Comment not found"));
             if (body.getContent()!=null)
                 commentEntity.setContent(body.getContent());
-            if (commentEntity.getSources()!=null){
-                if (body.getSources()!=null && body.getSources().size()>0){
-                    commentEntity.getSources().clear();
-                    processSources(body.getSources(),body.getContent(), commentEntity);
-                }
-            }
-            else{
-                if (body.getSources()!=null ){
-                    if ( body.getSources().size()>0){
-                        commentEntity.setSources(new ArrayList<>());
-                        processSources(body.getSources(),body.getContent(), commentEntity);
-                    }
+            if (body.getSources()!=null ){
+                if ( body.getSources().size()>0){
+//                        commentEntity.setSources(new ArrayList<>());
+                    processFiles(body.getSources(),body.getContent(), commentEntity);
                 }
             }
             commentEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
@@ -199,7 +176,6 @@ public class FaqCommentService implements IFaqCommentService {
                 commentResponse.setFaqId(commentEntity.getFaqId());
                 commentResponse.setUserId(commentEntity.getUserId());
                 commentResponse.setContent(commentEntity.getContent());
-                commentResponse.setParentId(commentEntity.getParentId());
                 commentResponse.setCreatedAt(commentEntity.getCreatedAt().toString());
                 commentResponse.setUpdatedAt(commentEntity.getUpdatedAt().toString());
                 commentResponse.setReplies(commentEntity.getReplies());
@@ -231,7 +207,6 @@ public class FaqCommentService implements IFaqCommentService {
                 commentResponse.setFaqId(commentEntity.getFaqId());
                 commentResponse.setUserId(commentEntity.getUserId());
                 commentResponse.setContent(commentEntity.getContent());
-                commentResponse.setParentId(commentEntity.getParentId());
                 commentResponse.setCreatedAt(commentEntity.getCreatedAt().toString());
                 commentResponse.setUpdatedAt(commentEntity.getUpdatedAt().toString());
                 commentResponse.setReplies(commentEntity.getReplies());
