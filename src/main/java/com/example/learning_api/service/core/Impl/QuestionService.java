@@ -91,10 +91,6 @@ public class QuestionService implements IQuestionService {
             // Create question entity
             QuestionEntity questionEntity = createQuestionEntity(body, testEntity);
 
-            // Handle special processing for fill-in-the-blank questions
-            if (body.getType().equals(QuestionType.FILL_IN_THE_BLANK.name())) {
-                processFillInTheBlankQuestion(body, questionEntity);
-            }
 
             // Save and prepare response
             return prepareQuestionResponse(body, questionEntity);
@@ -125,50 +121,7 @@ public class QuestionService implements IQuestionService {
         return questionEntity;
     }
 
-    private void processFillInTheBlankQuestion(CreateQuestionRequest body, QuestionEntity questionEntity) {
-        // Set a default content for fill-in-the-blank questions
-        // Find blank positions
-        List<Integer> blankPositions = findBlankPositions(body.getContent());
 
-        // Create answers for each blank
-        createAnswersForFillInTheBlank(body.getContent(), blankPositions, questionEntity);
-    }
-
-    private List<Integer> findBlankPositions(String content) {
-        List<Integer> positions = new ArrayList<>();
-        int index = content.indexOf("_____");
-        while (index != -1) {
-            positions.add(index);
-            index = content.indexOf("_____", index + 1);
-        }
-        return positions;
-    }
-
-    private void createAnswersForFillInTheBlank(String content, List<Integer> blankPositions, QuestionEntity questionEntity) {
-        List<AnswerEntity> answers = new ArrayList<>();
-        long currentTime = System.currentTimeMillis();
-        Integer index = answerRepository.getIndexMaxByQuestionId(questionEntity.getId());
-        if (index == null) {
-            index = 0;
-        }
-        for (int blankPosition : blankPositions) {
-            AnswerEntity answer = new AnswerEntity();
-
-            answer.setContent(null);
-            answer.setCorrect(false);
-
-            answer.setIndex( index ++);
-            answer.setCreatedAt(String.valueOf(currentTime));
-            answer.setUpdatedAt(String.valueOf(currentTime));
-            answer.setQuestionId(questionEntity.getId());
-
-            answers.add(answer);
-        }
-
-        // Save all answers
-        answerRepository.saveAll(answers);
-
-    }
 
     private CreateQuestionResponse prepareQuestionResponse(CreateQuestionRequest body, QuestionEntity questionEntity) {
         // Save question

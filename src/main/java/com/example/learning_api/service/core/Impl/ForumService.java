@@ -496,6 +496,13 @@ public class ForumService implements IForumService {
             Pageable pageable = PageRequest.of(page, size, sort);
             TagEntity tagEntities = tagRepository.findByClassId(classId);
             List<String> tagIds = new ArrayList<>();
+            if (tagEntities == null){
+                GetForumsResponse getForumsResponse = new GetForumsResponse();
+                getForumsResponse.setForums(new ArrayList<>());
+                getForumsResponse.setTotalElements(0L);
+                getForumsResponse.setTotalPage(0);
+                return  getForumsResponse;
+            }
             tagIds.add(tagEntities.getId());
             Page<ForumEntity> forumEntities = forumRepository.findByAnyTagIdsAndTitleOrContentRegex(tagIds, search, pageable);
             GetForumsResponse getForumsResponse = new GetForumsResponse();

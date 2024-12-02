@@ -502,13 +502,14 @@ public class TestService implements ITestService {
         questionResponse.setSources(fileRepository.findByOwnerIdAndOwnerType(questionEntity.getId(), FileOwnerType.QUESTION.name())
                 );
 
-        List<GetQuestionsResponse.AnswerResponse> answerResponses = getAnswerResponses(questionEntity.getId());
+        List<GetQuestionsResponse.AnswerResponse> answerResponses = getAnswerResponses(questionEntity);
         questionResponse.setAnswers(answerResponses);
         return questionResponse;
     }
 
-    private List<GetQuestionsResponse.AnswerResponse> getAnswerResponses(String questionId) {
-        List<AnswerEntity> answerEntities = answerRepository.findByQuestionId(questionId);
+    private List<GetQuestionsResponse.AnswerResponse> getAnswerResponses(QuestionEntity question) {
+
+        List<AnswerEntity> answerEntities = answerRepository.findByQuestionId(question.getId());
         return answerEntities.stream()
                 .map(this::mapAnswerEntityToResponse)
                 .collect(Collectors.toList());
@@ -517,7 +518,8 @@ public class TestService implements ITestService {
     private GetQuestionsResponse.AnswerResponse mapAnswerEntityToResponse(AnswerEntity answerEntity) {
         GetQuestionsResponse.AnswerResponse answerResponse = modelMapperService.mapClass(answerEntity, GetQuestionsResponse.AnswerResponse.class);
         answerResponse.setIsCorrect(answerEntity.isCorrect());
-        answerResponse.setSource(fileRepository.findByOwnerIdAndOwnerType(answerEntity.getId(), FileOwnerType.ANSWER.name()).stream().findFirst().orElse(null));
+        if (answerEntity.getId()!=null)
+            answerResponse.setSource(fileRepository.findByOwnerIdAndOwnerType(answerEntity.getId(), FileOwnerType.ANSWER.name()).stream().findFirst().orElse(null));
         return answerResponse;
     }
 
@@ -636,7 +638,7 @@ public class TestService implements ITestService {
                     for (GetQuestionsResponse.AnswerResponse answerResponse : answerResponses) {
                         StudentAnswersEntity studentAnswer = studentAnswersEntities.stream()
                                 .filter(studentAnswersEntity -> studentAnswersEntity.getQuestionId().equals(questionResponse.getId()))
-                                .filter(studentAnswersEntity -> studentAnswersEntity.getAnswerId().equals(answerResponse.getId()))
+                                .filter(studentAnswersEntity -> studentAnswersEntity.getAnswerId() != null && studentAnswersEntity.getAnswerId().equals(answerResponse.getId()))
                                 .findFirst()
                                 .orElse(null);
                         if (studentAnswer != null) {
@@ -750,7 +752,31 @@ public class TestService implements ITestService {
                                        List<StudentAnswersEntity> studentAnswersEntities,
                                        String testResultId) {
         for (GetQuestionsResponse.QuestionResponse questionResponse : questionResponses) {
+            List<String> textAnswers = new ArrayList<>();
+            if (questionResponse.getType().equals(QuestionType.TEXT_ANSWER.name()) ||
+                    questionResponse.getType().equals(QuestionType.FILL_IN_THE_BLANK.name())){
+                textAnswers = studentAnswersEntities.stream()
+                        .filter(studentAnswer ->
+                                studentAnswer.getQuestionId().equals(questionResponse.getId()) &&
+                                        studentAnswer.getTestResultId().equals(testResultId)
+                        )
+                        .map(StudentAnswersEntity::getTextAnswer)
+                        .collect(Collectors.toList());
+
+
+            }
+            int count = 0;
             for (GetQuestionsResponse.AnswerResponse answerResponse : questionResponse.getAnswers()) {
+                // Handle TEXT_ANSWER and FILL_IN_THE_BLANK types
+                if (questionResponse.getType().equals(QuestionType.TEXT_ANSWER.name()) ||
+                        questionResponse.getType().equals(QuestionType.FILL_IN_THE_BLANK.name())){
+                    answerResponse.setContent(textAnswers.get(count++));
+                    answerResponse.setId(null);
+                    continue;
+                }
+
+
+                // Handle other question types
                 boolean isSelected = studentAnswersEntities.stream()
                         .anyMatch(studentAnswer ->
                                 studentAnswer.getQuestionId().equals(questionResponse.getId()) &&
@@ -762,7 +788,6 @@ public class TestService implements ITestService {
             }
         }
     }
-
 
 
     @Override

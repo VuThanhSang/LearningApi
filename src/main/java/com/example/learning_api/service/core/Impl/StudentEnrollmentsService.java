@@ -165,7 +165,7 @@ public class StudentEnrollmentsService implements IStudentEnrollmentsService {
 
             // Fetch students enrolled in the classroom
             List<StudentEnrollmentsEntity> enrollments = studentEnrollmentsRepository
-                    .findByClassroomIdAndStatus(classroomId, StudentEnrollmentStatus.IN_PROGRESS);
+                    .findByClassroomId(classroomId);
 
             // Collect student IDs from enrollments
             List<String> studentIds = enrollments.stream()
