@@ -19,7 +19,7 @@ public interface TestRepository extends MongoRepository<TestEntity, String> {
 
     @Aggregation({
             "{ $lookup: { from: 'student_enrollments', let: { classroomId: '$classroomId' }, pipeline: [ { $match: { $expr: { $and: [ { $eq: ['$classroomId', '$$classroomId'] }, { $eq: ['$studentId', ?0] } ] } } } ], as: 'enrollments' } }",
-            "{ $match: { $and: [ { 'enrollments': { $not: { $size: 0 } } }, { 'startTime': { $lte: ?1 } }, { 'endTime': { $gt: ?1 } }, { 'status': {$in: ['UPCOMING', 'ONGOING', 'FINISHED']} } ] } }",
+            "{ $match: { $and: [ { 'enrollments': { $not: { $size: 0 } } },  { 'endTime': { $gt: ?1 } }, { 'status': {$in: ['UPCOMING', 'ONGOING', 'FINISHED']} } ] } }",
             "{ $project: { _id: 1, name: 1, description: 1, duration: 1, classroomId: 1, teacherId: 1, source: 1, startTime: 1, endTime: 1, status: 1, createdAt: 1, updatedAt: 1 } }"
     })
     Slice<TestEntity> findTestInProgressByStudentId(String studentId, String currentTimestamp, Pageable pageable);
@@ -46,12 +46,22 @@ public interface TestRepository extends MongoRepository<TestEntity, String> {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) String startOfWeek,
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) String endOfWeek
     );
+
     @Query("{'classroomId': ?0, 'status': {$in: ['UPCOMING', 'ONGOING', 'FINISHED']}}")
     Page<TestEntity> findByClassroomId(String classroomId, Pageable pageable);
+
     List<TestEntity> findByClassroomId(String classroomId);
+
     @Query("{'classroomId': ?0}")
     Page<TestEntity> findByClassroomIdAndStatus(String classroomId, Pageable pageable);
 
     @Query("{'classroomId': ?0}")
     List<TestEntity> findAllByClassroomId(String classroomId);
+
+    @Aggregation({
+            "{ $lookup: { from: 'student_enrollments', let: { classroomId: '$classroomId' }, pipeline: [ { $match: { $expr: { $and: [ { $eq: ['$classroomId', '$$classroomId'] }, { $eq: ['$studentId', ?0] } ] } } } ], as: 'enrollments' } }",
+            "{ $match: { $and: [ { 'enrollments': { $not: { $size: 0 } } },  { 'endTime': { $gt: ?1 } }, { 'status': {$in: ['UPCOMING', 'ONGOING', 'FINISHED']} } ] } }",
+            "{ $count: 'total' }"
+    })
+    long countTestInProgressByStudentId(String studentId, String currentTimestamp);
 }

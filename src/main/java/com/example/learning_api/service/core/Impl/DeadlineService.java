@@ -352,9 +352,9 @@ public class DeadlineService implements IDeadlineService {
 //            String date = "1724238234617";
             String startDate = "";
             String endDate = "";
-            if(filterType==null){
+            if (filterType == null) {
                 startDate = String.valueOf(System.currentTimeMillis());
-                endDate = "9999999999999";
+                endDate = String.valueOf(System.currentTimeMillis() + 315360000000L); // 10 năm (10 * 365 * 24 * 60 * 60 * 1000)
             }
             else if (filterType.equals("day")){
                 startDate = String.valueOf(getStartOfDayTimestamp());
@@ -373,7 +373,7 @@ public class DeadlineService implements IDeadlineService {
 
             GetUpcomingDeadlineResponse getUpcomingDeadlineResponse = new GetUpcomingDeadlineResponse();
             getUpcomingDeadlineResponse.setUpcomingDeadlines(deadlineEntities);
-            long totalElements = studentEnrollmentsRepository.countUpcomingDeadlines(studentId, startDate, endDate);
+            long totalElements = studentEnrollmentsRepository.countUpcomingDeadlines(studentId, startDate, endDate)!=null?studentEnrollmentsRepository.countUpcomingDeadlines(studentId, startDate, endDate):0;
             getUpcomingDeadlineResponse.setTotalElements(totalElements);
             getUpcomingDeadlineResponse.setTotalPages((int) Math.ceil((double) totalElements / size));
             return getUpcomingDeadlineResponse;

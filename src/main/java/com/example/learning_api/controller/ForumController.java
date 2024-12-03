@@ -43,15 +43,8 @@ public class ForumController {
         try {
             String userId = extractUserId(authorizationHeader);
             String role = extractRole(authorizationHeader);
-            String authorId = "";
-            if (role.equals("USER")) {
-                authorId = studentRepository.findByUserId(userId).getId();
-            } else if (role.equals("TEACHER")) {
-                authorId = teacherRepository.findByUserId(userId).getId();
-            } else {
-                throw new Exception("Role not found");
-            }
-            body.setAuthorId(authorId);
+
+            body.setAuthorId(userId);
             body.setRole(role);
             forumService.createForum(body);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
@@ -108,13 +101,8 @@ public class ForumController {
         try {
             String userId = extractUserId(authorizationHeader);
             String role =extractRole(authorizationHeader);
-            String authorId = "";
-            if (role.equals("USER")) {
-                authorId = studentRepository.findByUserId(userId).getId();
-            } else if (role.equals("TEACHER")) {
-                authorId = teacherRepository.findByUserId(userId).getId();
-            }
-            body.setAuthorId(authorId);
+
+            body.setAuthorId(userId);
             body.setRole(RoleEnum.valueOf(role));
             forumService.voteForum(body);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
@@ -141,16 +129,9 @@ public class ForumController {
         try {
             String userId = extractUserId(authorizationHeader);
             String role = extractRole(authorizationHeader);
-            String authorId = "";
-            if (role.equals("USER")) {
-                authorId = studentRepository.findByUserId(userId).getId();
-            } else if (role.equals("TEACHER")) {
-                authorId = teacherRepository.findByUserId(userId).getId();
-            } else {
-                throw new Exception("Role not found");
-            }
 
-            GetForumsResponse data = forumService.getForums(page - 1, size, search, sortOrder, authorId,tag,sortBy);
+
+            GetForumsResponse data = forumService.getForums(page - 1, size, search, sortOrder, userId,tag,sortBy);
             ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
                     .message("Get forum successfully")
                     .data(data)
@@ -175,15 +156,8 @@ public class ForumController {
         try {
             String callId = extractUserId(authorizationHeader);
             String role = extractRole(authorizationHeader);
-            String userId = "";
-            if (role.equals("USER")) {
-                userId = studentRepository.findByUserId(callId).getId();
-            } else if (role.equals("TEACHER")) {
-                userId = teacherRepository.findByUserId(callId).getId();
-            } else {
-                throw new Exception("Role not found");
-            }
-            GetForumsResponse data = forumService.getForumByAuthor(authorId, page - 1, size, search, sortOrder,userId,sortBy);
+
+            GetForumsResponse data = forumService.getForumByAuthor(authorId, page - 1, size, search, sortOrder,callId,sortBy);
             ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
                     .message("Get forum by author successfully")
                     .data(data)
@@ -208,15 +182,8 @@ public class ForumController {
         try {
             String callId = extractUserId(authorizationHeader);
             String role = extractRole(authorizationHeader);
-            String userId = "";
-            if (role.equals("USER")) {
-                userId = studentRepository.findByUserId(callId).getId();
-            } else if (role.equals("TEACHER")) {
-                userId = teacherRepository.findByUserId(callId).getId();
-            } else {
-                throw new Exception("Role not found");
-            }
-            GetForumsResponse data = forumService.getForumByTag(tags, page - 1, size, search, sortOrder,userId,sortBy);
+
+            GetForumsResponse data = forumService.getForumByTag(tags, page - 1, size, search, sortOrder,callId,sortBy);
             ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
                     .message("Get forum by tag successfully")
                     .data(data)
@@ -241,15 +208,8 @@ public class ForumController {
         try {
             String callId = extractUserId(authorizationHeader);
             String role = extractRole(authorizationHeader);
-            String userId = "";
-            if (role.equals("USER")) {
-                userId = studentRepository.findByUserId(callId).getId();
-            } else if (role.equals("TEACHER")) {
-                userId = teacherRepository.findByUserId(callId).getId();
-            } else {
-                throw new Exception("Role not found");
-            }
-            GetForumsResponse data = forumService.getForumByClass(classId, page - 1, size, search, sortOrder,userId,sortBy);
+
+            GetForumsResponse data = forumService.getForumByClass(classId, page - 1, size, search, sortOrder,callId,sortBy);
             ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
                     .message("Get forum by class successfully")
                     .data(data)
@@ -271,8 +231,7 @@ public class ForumController {
             @RequestHeader("Authorization") String authorizationHeader) {
         try {
             String userId = extractUserId(authorizationHeader);
-            String studentId = studentRepository.findByUserId(userId).getId();
-            GetForumsResponse data = forumService.getBalancedPersonalizedNewsfeed(studentId, page - 1, size, sortOrder, sortBy);
+            GetForumsResponse data = forumService.getBalancedPersonalizedNewsfeed(userId, page - 1, size, sortOrder, sortBy);
             ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
                     .message("Get balanced personalized newsfeed successfully")
                     .data(data)
@@ -291,15 +250,8 @@ public class ForumController {
         try {
             String callId = extractUserId(authorizationHeader);
             String role = extractRole(authorizationHeader);
-            String userId = "";
-            if (role.equals("USER")) {
-                userId = studentRepository.findByUserId(callId).getId();
-            } else if (role.equals("TEACHER")) {
-                userId = teacherRepository.findByUserId(callId).getId();
-            } else {
-                throw new Exception("Role not found");
-            }
-            GetForumDetailResponse data = forumService.getForumDetail(forumId,userId);
+
+            GetForumDetailResponse data = forumService.getForumDetail(forumId,callId);
             ResponseAPI<GetForumDetailResponse> res = ResponseAPI.<GetForumDetailResponse>builder()
                     .message("Get forum detail successfully")
                     .data(data)
@@ -319,15 +271,9 @@ public class ForumController {
         try {
             String userId = extractUserId(authorizationHeader);
             String role = extractRole(authorizationHeader);
-            String authorId = "";
-            if (role.equals("USER")) {
-                authorId = studentRepository.findByUserId(userId).getId();
-            } else if (role.equals("TEACHER")) {
-                authorId = teacherRepository.findByUserId(userId).getId();
-            } else {
-                throw new Exception("Role not found");
-            }
-            body.setAuthorId(authorId);
+
+
+            body.setAuthorId(userId);
             body.setRole(role);
             forumService.createForumComment(body);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
@@ -388,15 +334,8 @@ public class ForumController {
         try {
             String callId = extractUserId(authorizationHeader);
             String role = extractRole(authorizationHeader);
-            String userId = "";
-            if (role.equals("USER")) {
-                userId = studentRepository.findByUserId(callId).getId();
-            } else if (role.equals("TEACHER")) {
-                userId = teacherRepository.findByUserId(callId).getId();
-            } else {
-                throw new Exception("Role not found");
-            }
-            GetForumCommentResponse data = forumService.getForumComments(forumId, page - 1, size, sortOrder,userId);
+
+            GetForumCommentResponse data = forumService.getForumComments(forumId, page - 1, size, sortOrder,callId);
             ResponseAPI<GetForumCommentResponse> res = ResponseAPI.<GetForumCommentResponse>builder()
                     .message("Get forum comments successfully")
                     .data(data)
@@ -418,15 +357,8 @@ public class ForumController {
         try {
             String callId = extractUserId(authorizationHeader);
             String role = extractRole(authorizationHeader);
-            String userId = "";
-            if (role.equals("USER")) {
-                userId = studentRepository.findByUserId(callId).getId();
-            } else if (role.equals("TEACHER")) {
-                userId = teacherRepository.findByUserId(callId).getId();
-            } else {
-                throw new Exception("Role not found");
-            }
-            GetForumCommentResponse data = forumService.getReplyComments(parentId, page - 1, size,userId);
+
+            GetForumCommentResponse data = forumService.getReplyComments(parentId, page - 1, size,callId);
             ResponseAPI<GetForumCommentResponse> res = ResponseAPI.<GetForumCommentResponse>builder()
                     .message("Get reply comments successfully")
                     .data(data)

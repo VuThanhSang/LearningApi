@@ -4,6 +4,7 @@ import com.example.learning_api.constant.StatusCode;
 import com.example.learning_api.dto.request.admin.ChangeRoleRequest;
 import com.example.learning_api.dto.response.admin.GetAdminDashboardResponse;
 import com.example.learning_api.dto.response.admin.GetClassRoomsAdminResponse;
+import com.example.learning_api.dto.response.admin.GetUserDetailResponse;
 import com.example.learning_api.dto.response.admin.GetUsersResponse;
 import com.example.learning_api.dto.response.classroom.GetClassRoomForAdminResponse;
 import com.example.learning_api.dto.response.forum.GetForumsResponse;
@@ -89,9 +90,9 @@ public class AdminController {
             return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
         }
     }
-    @PatchMapping(path = "/update-status/{userId}")
+    @PatchMapping(path = "/update-status/{userId}/{status}")
     @PreAuthorize("hasAnyAuthority('ADMIN')")
-    public ResponseEntity<ResponseAPI<String>> updateStatus(@PathVariable  String userId, @RequestParam(value = "status") String status) {
+    public ResponseEntity<ResponseAPI<String>> updateStatus(@PathVariable  String userId, @PathVariable String status) {
         try{
             adminService.updateStatus(userId, status);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
@@ -109,14 +110,34 @@ public class AdminController {
         }
     }
 
-    @PatchMapping(path = "/update-status-classroom/{classroomId}")
+    @PatchMapping(path = "/update-status-classroom/{classroomId}/{status}")
     @PreAuthorize("hasAnyAuthority('ADMIN')")
-    public ResponseEntity<ResponseAPI<String>> updateStatusClassRoom(@PathVariable  String classroomId, @RequestParam(value = "status") String status) {
+    public ResponseEntity<ResponseAPI<String>> updateStatusClassRoom(@PathVariable  String classroomId, @PathVariable String status) {
         try{
             classRoomService.changeStatusClassRoom(classroomId, status);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
                     .timestamp(new Date())
                     .message("Update status classroom successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
+    @PatchMapping(path = "/update-status-forum/{forumId}/{status}")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    public ResponseEntity<ResponseAPI<String>> updateStatusForum(@PathVariable  String forumId, @PathVariable String status) {
+        try{
+            adminService.updateForumStatus(forumId, status);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message("Update status forum successfully")
                     .build();
             return new ResponseEntity<>(res, StatusCode.OK);
         }
@@ -233,7 +254,7 @@ public class AdminController {
                                                                                 @RequestParam(value = "sortDirection", defaultValue = "desc") String sortDirection,
                                                                                 @RequestParam(value = "sortBy", defaultValue = "createdAt") String sortBy) {
         try{
-            GetForumsResponse data = forumService.getForums(page - 1, size, search, sortDirection, null,tag,sortBy);
+            GetForumsResponse data = forumService.getForumsForAdmin(page - 1, size, search, sortDirection, null,tag,sortBy);
             ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
                     .timestamp(new Date())
                     .message("Get forum successfully")
@@ -264,6 +285,26 @@ public class AdminController {
         }
         catch (Exception e){
             ResponseAPI<GetClassRoomForAdminResponse> res = ResponseAPI.<GetClassRoomForAdminResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping(path = "user/{userId}")
+    public ResponseEntity<ResponseAPI<GetUserDetailResponse>> getUserDetail(@PathVariable String userId) {
+        try{
+            GetUserDetailResponse data = adminService.getUserDetail(userId);
+            ResponseAPI<GetUserDetailResponse> res = ResponseAPI.<GetUserDetailResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get user detail successfully")
+                    .data(data)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetUserDetailResponse> res = ResponseAPI.<GetUserDetailResponse>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();
