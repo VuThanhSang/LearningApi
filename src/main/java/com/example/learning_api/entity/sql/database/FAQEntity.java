@@ -21,6 +21,7 @@ public class FAQEntity {
     private String question;
     private String userId;
     private FaqStatus status;
+    private String subject;
     private String createdAt;
     private String updatedAt;
     @DBRef

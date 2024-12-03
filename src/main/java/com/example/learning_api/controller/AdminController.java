@@ -5,8 +5,10 @@ import com.example.learning_api.dto.request.admin.ChangeRoleRequest;
 import com.example.learning_api.dto.response.admin.GetAdminDashboardResponse;
 import com.example.learning_api.dto.response.admin.GetClassRoomsAdminResponse;
 import com.example.learning_api.dto.response.admin.GetUsersResponse;
+import com.example.learning_api.dto.response.classroom.GetClassRoomForAdminResponse;
 import com.example.learning_api.model.ResponseAPI;
 import com.example.learning_api.service.core.IAdminService;
+import com.example.learning_api.service.core.IClassRoomService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +26,7 @@ import static com.example.learning_api.constant.RouterConstant.*;
 @RequestMapping(ADMIN_BASE_PATH)
 public class AdminController {
     private final IAdminService adminService;
-
+    private final IClassRoomService classRoomService;
     @PostMapping(path = "/change-role")
     @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<ResponseAPI<String>> changeRole(@RequestBody @Valid ChangeRoleRequest body) {
@@ -125,14 +127,14 @@ public class AdminController {
         }
     }
     @GetMapping(path = "/teacher")
-    public ResponseEntity<ResponseAPI<GetUsersResponse>> getTeacher(@RequestParam(value = "page", defaultValue = "0") int page,
+    public ResponseEntity<ResponseAPI<GetUsersResponse>> getTeacher(@RequestParam(value = "page", defaultValue = "1") int page,
                                                                    @RequestParam(value = "size", defaultValue = "10") int size,
                                                                    @RequestParam(value = "search", defaultValue = "") String search,
                                                                     @RequestParam(value = "status", defaultValue = "") String status,
                                                                     @RequestParam(value = "sortDirection", defaultValue = "desc") String sortDirection,
                                                                     @RequestParam(value = "sortBy", defaultValue = "createdAt") String sortBy) {
         try{
-            GetUsersResponse data = adminService.getTeachers(search, page, size, sortBy, sortDirection, status);
+            GetUsersResponse data = adminService.getTeachers(search, page-1, size, sortBy, sortDirection, status);
             ResponseAPI<GetUsersResponse> res = ResponseAPI.<GetUsersResponse>builder()
                     .timestamp(new Date())
                     .message("Get teacher successfully")
@@ -150,14 +152,14 @@ public class AdminController {
     }
 
     @GetMapping(path = "/student")
-    public ResponseEntity<ResponseAPI<GetUsersResponse>> getStudent(@RequestParam(value = "page", defaultValue = "0") int page,
+    public ResponseEntity<ResponseAPI<GetUsersResponse>> getStudent(@RequestParam(value = "page", defaultValue = "1") int page,
                                                                    @RequestParam(value = "size", defaultValue = "10") int size,
                                                                    @RequestParam(value = "search", defaultValue = "") String search,
                                                                     @RequestParam(value = "status", defaultValue = "") String status,
                                                                     @RequestParam(value = "sortDirection", defaultValue = "desc") String sortDirection,
                                                                     @RequestParam(value = "sortBy", defaultValue = "createdAt") String sortBy) {
         try{
-            GetUsersResponse data = adminService.getStudents(search, page, size, sortBy, sortDirection, status);
+            GetUsersResponse data = adminService.getStudents(search, page-1, size, sortBy, sortDirection, status);
             ResponseAPI<GetUsersResponse> res = ResponseAPI.<GetUsersResponse>builder()
                     .timestamp(new Date())
                     .message("Get student successfully")
@@ -176,14 +178,14 @@ public class AdminController {
 
 
     @GetMapping(path = "/classroom")
-    public ResponseEntity<ResponseAPI<GetClassRoomsAdminResponse>> getClassRoom(@RequestParam(value = "page", defaultValue = "0") int page,
+    public ResponseEntity<ResponseAPI<GetClassRoomsAdminResponse>> getClassRoom(@RequestParam(value = "page", defaultValue = "1") int page,
                                                                                 @RequestParam(value = "size", defaultValue = "10") int size,
                                                                                 @RequestParam(value = "search", defaultValue = "") String search,
                                                                                 @RequestParam(value = "status", defaultValue = "") String status,
                                                                                 @RequestParam(value = "sortDirection", defaultValue = "desc") String sortDirection,
                                                                                 @RequestParam(value = "sortBy", defaultValue = "createdAt") String sortBy) {
         try{
-            GetClassRoomsAdminResponse data = adminService.getClassRooms(search, page, size, sortBy, sortDirection, status);
+            GetClassRoomsAdminResponse data = adminService.getClassRooms(search, page-1, size, sortBy, sortDirection, status);
             ResponseAPI<GetClassRoomsAdminResponse> res = ResponseAPI.<GetClassRoomsAdminResponse>builder()
                     .timestamp(new Date())
                     .message("Get classroom successfully")
@@ -193,6 +195,27 @@ public class AdminController {
         }
         catch (Exception e){
             ResponseAPI<GetClassRoomsAdminResponse> res = ResponseAPI.<GetClassRoomsAdminResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
+
+    @GetMapping(path = "/classroom/{classroomId}")
+    public ResponseEntity<ResponseAPI<GetClassRoomForAdminResponse>> getClassRoomDetail(@PathVariable String classroomId) {
+        try{
+            GetClassRoomForAdminResponse data = classRoomService.getClassRoomsForAdmin(classroomId);
+            ResponseAPI<GetClassRoomForAdminResponse> res = ResponseAPI.<GetClassRoomForAdminResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get classroom detail successfully")
+                    .data(data)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetClassRoomForAdminResponse> res = ResponseAPI.<GetClassRoomForAdminResponse>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();

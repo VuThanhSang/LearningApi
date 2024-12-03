@@ -25,10 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.*;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.stereotype.Service;
 
@@ -56,6 +53,7 @@ public class ClassRoomService implements IClassRoomService {
     private final TestRepository testRepository;
     private final DeadlineRepository deadlineRepository;
     private final DeadlineSubmissionsRepository deadlineSubmissionsRepository;
+    private final LessonRepository lessonRepository;
     @Override
     public CreateClassRoomResponse createClassRoom(CreateClassRoomRequest body) {
         try{
@@ -761,6 +759,59 @@ public class ClassRoomService implements IClassRoomService {
             res.setDeadlineSubmissions(allDeadlineSubmissions);
             return res;
         } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public GetClassRoomForAdminResponse getClassRoomsForAdmin(String classroomId) {
+        try{
+            ClassRoomEntity classRoomEntity = classRoomRepository.findById(classroomId)
+                    .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
+            List<String> status =new ArrayList<>();
+            status.add("PUBLIC");
+            status.add("PRIVATE");
+
+            GetClassRoomForAdminResponse resData = new GetClassRoomForAdminResponse();
+            Pageable pageAble = PageRequest.of(0, 15);
+            resData.setClassRoom(classRoomEntity);
+            Page<SectionEntity> sectionEntities = sectionRepository.findByClassRoomId(classroomId,pageAble,status);
+            List<GetClassRoomForAdminResponse.Section> sections = new ArrayList<>();
+            for (SectionEntity sectionEntity : sectionEntities){
+                GetClassRoomForAdminResponse.Section section =new  GetClassRoomForAdminResponse.Section();
+                section.setId(sectionEntity.getId());
+                section.setName(sectionEntity.getName());
+                section.setStatus(sectionEntity.getStatus() != null ? sectionEntity.getStatus().toString() : null);
+                section.setDescription(sectionEntity.getDescription());
+                section.setIndex(sectionEntity.getIndex()!=null?sectionEntity.getIndex():0);
+                    List<LessonEntity> lessons = lessonRepository.findBySectionId(sectionEntity.getId(),Sort.by(Sort.Direction.ASC,"index"),status);
+                    List<GetLessonDetailResponse> lessonDetails = new ArrayList<>();
+                    for (LessonEntity lesson : lessons){
+                        GetLessonDetailResponse lessonDetail = lessonRepository.getLessonWithResourcesAndMediaAndSubstances(lesson.getId());
+                        lessonDetails.add(lessonDetail);
+                    }
+                    section.setLessons(lessonDetails);
+                sections.add(section);
+
+            }
+            List<TestEntity> tests = testRepository.findByClassroomId(classroomId);
+            List<StudentEntity> students = studentEnrollmentsRepository.findByClassroomId(classroomId).stream()
+                    .map(studentEnrollmentsEntity -> studentRepository.findById(studentEnrollmentsEntity.getStudentId()).get())
+                    .collect(Collectors.toList());
+            List<UserEntity> users = new ArrayList<>();
+            for (StudentEntity student : students){
+                UserEntity user = student.getUser();
+                student.setUser(null);
+                user.setPassword(null);
+                users.add(user);
+            }
+            resData.setSections(sections);
+            resData.setTests(tests);
+            resData.setStudents(users);
+            return resData;
+
+        }
+        catch (Exception e){
             throw new IllegalArgumentException(e.getMessage());
         }
     }

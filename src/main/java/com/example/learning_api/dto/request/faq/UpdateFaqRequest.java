@@ -14,5 +14,6 @@ public class UpdateFaqRequest {
     private String question;
     private List<MultipartFile> sources;
     private String status;
+    private String subject;
 
 }

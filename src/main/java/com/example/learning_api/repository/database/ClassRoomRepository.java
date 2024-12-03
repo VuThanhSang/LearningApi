@@ -35,10 +35,10 @@ public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, St
 
     @Aggregation(pipeline = {
             "{ $unwind: '$sessions' }",
-            "{ $group: { _id: '$sessions.dayOfWeek', count: { $sum: 1 } } }"
+            "{ $addFields: { 'dayOfWeek': { $let: { vars: { 'days': [ 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' ] }, in: { $arrayElemAt: [ '$$days', { $subtract: [ { $dayOfWeek: { $toDate: '$sessions.startTime' } }, 1 ] } ] } } } } }",
+            "{ $group: { _id: '$dayOfWeek', count: { $sum: 1 } } }"
     })
     List<TotalClassroomOfDayDto> countSessionsByDayOfWeek();
-
     @Aggregation(pipeline = {
             "{ $match: { _id: ObjectId(?0) } }",
             "{ $lookup: { from: 'sections', let: { classroomId: { $toString: '$_id' } }, pipeline: [{ $match: { $expr: { $eq: ['$classRoomId', '$$classroomId'] } } }], as: 'sections' } }",

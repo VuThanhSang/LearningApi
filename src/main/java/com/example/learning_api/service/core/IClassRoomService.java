@@ -30,4 +30,5 @@ public interface IClassRoomService {
     void removeStudentFromClass(String classroomId, String studentId, String teacherId);
     InviteClassByEmailResponse inviteStudentByEmail(InviteStudentByEmailRequest body);
     GetDetailStudentInClassResponse getDetailStudentInClass(String classroomId, String studentId);
+    GetClassRoomForAdminResponse getClassRoomsForAdmin( String search);
 }

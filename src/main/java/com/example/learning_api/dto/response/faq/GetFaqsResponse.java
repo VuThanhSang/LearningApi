@@ -1,6 +1,7 @@
 package com.example.learning_api.dto.response.faq;
 
 import com.example.learning_api.entity.sql.database.FileEntity;
+import com.example.learning_api.entity.sql.database.UserEntity;
 import lombok.Data;
 
 import java.util.List;
@@ -17,6 +18,8 @@ public class GetFaqsResponse {
         private String userId;
         private String status;
         private String createdAt;
+        private UserEntity user;
+        private String subject;
         private String updatedAt;
         private List<FileEntity> sources;
 

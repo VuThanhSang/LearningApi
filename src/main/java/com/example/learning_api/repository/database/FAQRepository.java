@@ -12,6 +12,6 @@ public interface FAQRepository extends MongoRepository<FAQEntity, String>{
 
     Page<FAQEntity> findByStatus(String status, Pageable pageable);
 
-    @Query("{ 'question': { $regex: ?0, $options: 'i' }, 'status': ?1 }")
-    Page<FAQEntity> findByQuestionContainingIgnoreCaseAndStatus(String question, String status, Pageable pageable);
+    @Query("{ $or: [ { 'question': { $regex: ?0, $options: 'i' } }, { 'subject': { $regex: ?0, $options: 'i' } } ] }")
+    Page<FAQEntity> findByQuestionOrSubjectContainingIgnoreCaseAndStatus(String query, Pageable pageable);
 }
