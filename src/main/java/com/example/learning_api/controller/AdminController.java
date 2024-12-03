@@ -6,9 +6,11 @@ import com.example.learning_api.dto.response.admin.GetAdminDashboardResponse;
 import com.example.learning_api.dto.response.admin.GetClassRoomsAdminResponse;
 import com.example.learning_api.dto.response.admin.GetUsersResponse;
 import com.example.learning_api.dto.response.classroom.GetClassRoomForAdminResponse;
+import com.example.learning_api.dto.response.forum.GetForumsResponse;
 import com.example.learning_api.model.ResponseAPI;
 import com.example.learning_api.service.core.IAdminService;
 import com.example.learning_api.service.core.IClassRoomService;
+import com.example.learning_api.service.core.IForumService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +29,7 @@ import static com.example.learning_api.constant.RouterConstant.*;
 public class AdminController {
     private final IAdminService adminService;
     private final IClassRoomService classRoomService;
+    private final IForumService forumService;
     @PostMapping(path = "/change-role")
     @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<ResponseAPI<String>> changeRole(@RequestBody @Valid ChangeRoleRequest body) {
@@ -94,6 +97,26 @@ public class AdminController {
             ResponseAPI<String> res = ResponseAPI.<String>builder()
                     .timestamp(new Date())
                     .message("Update status successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
+    @PatchMapping(path = "/update-status-classroom/{classroomId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    public ResponseEntity<ResponseAPI<String>> updateStatusClassRoom(@PathVariable  String classroomId, @RequestParam(value = "status") String status) {
+        try{
+            classRoomService.changeStatusClassRoom(classroomId, status);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message("Update status classroom successfully")
                     .build();
             return new ResponseEntity<>(res, StatusCode.OK);
         }
@@ -195,6 +218,31 @@ public class AdminController {
         }
         catch (Exception e){
             ResponseAPI<GetClassRoomsAdminResponse> res = ResponseAPI.<GetClassRoomsAdminResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+    @GetMapping(path = "/forum")
+    public ResponseEntity<ResponseAPI<GetForumsResponse>> getForum(@RequestParam(value = "page", defaultValue = "1") int page,
+                                                                                @RequestParam(value = "size", defaultValue = "10") int size,
+                                                                                @RequestParam(value = "search", defaultValue = "") String search,
+                                                                                @RequestParam(value = "status", defaultValue = "") String status,
+                                                                                @RequestParam(value = "tag", defaultValue = "") String tag,
+                                                                                @RequestParam(value = "sortDirection", defaultValue = "desc") String sortDirection,
+                                                                                @RequestParam(value = "sortBy", defaultValue = "createdAt") String sortBy) {
+        try{
+            GetForumsResponse data = forumService.getForums(page - 1, size, search, sortDirection, null,tag,sortBy);
+            ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get forum successfully")
+                    .data(data)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();

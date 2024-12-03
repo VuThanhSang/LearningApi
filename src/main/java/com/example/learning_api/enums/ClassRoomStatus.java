@@ -6,5 +6,6 @@ public enum ClassRoomStatus {
     CANCELLED,
     PENDING,
     IN_PROGRESS,
-    COMPLETED
+    COMPLETED,
+    BLOCKED
 }

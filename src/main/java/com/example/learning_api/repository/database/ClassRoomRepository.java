@@ -14,19 +14,27 @@ import org.springframework.data.mongodb.repository.Query;
 import java.util.List;
 
 public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, String> {
-    @Query("{ 'name' : { $regex: ?0, $options: 'i' } }")
+    @Query("{ 'name' : { $regex: ?0, $options: 'i' }, 'status': { $ne: 'BLOCKED' } }")
     Page<ClassRoomEntity> findByNameContaining(String search, Pageable pageable);
-    @Query("{ 'name' : { $regex: ?0, $options: 'i' }, 'status' : ?1 }")
+    @Query("{ 'name' : { $regex: ?0, $options: 'i' } }")
+    Page<ClassRoomEntity> findByNameContainingForAdmin(String search, Pageable pageable);
+
+    @Query("{ 'name' : { $regex: ?0, $options: 'i' }, 'status' : ?1, 'status': { $ne: 'BLOCKED' } }")
     Page<ClassRoomEntity> findByNameContainingAndStatus(String search, String status, Pageable pageable);
-    @Query("{ '_id' : { $in: ?0 }, 'name' : { $regex: ?1, $options: 'i' } }")
+    @Query("{ 'name' : { $regex: ?0, $options: 'i' }, 'status' : ?1 }")
+    Page<ClassRoomEntity> findByNameContainingAndStatusForAdmin(String search, String status, Pageable pageable);
+
+    @Query("{ '_id' : { $in: ?0 }, 'name' : { $regex: ?1, $options: 'i' }, 'status': { $ne: 'BLOCKED' } }")
     Page<ClassRoomEntity> findByIdInAndNameContaining(List<String> classroomIds, String search, Pageable pageable);
-    @Query("{ 'teacherId' : ?0, 'name' : { $regex: ?1, $options: 'i' } }")
+
+    @Query("{ 'teacherId' : ?0, 'name' : { $regex: ?1, $options: 'i' }, 'status': { $ne: 'BLOCKED' } }")
     Page<ClassRoomEntity> findByTeacherIdAndNameContaining(String teacherId, String search, Pageable pageable);
-    @Query("{ 'courseId' : ?0 }")
+
+    @Query("{ 'courseId' : ?0, 'status': { $ne: 'BLOCKED' } }")
     Page<ClassRoomEntity> findByCourseId(String courseId, Pageable pageable);
 
     @Aggregation(pipeline = {
-            "{ $match: { 'sessions.dayOfWeek': ?0 } }",
+            "{ $match: { 'sessions.dayOfWeek': ?0, 'status': { $ne: 'BLOCKED' } } }",
             "{ $addFields: { daySpecificSessions: { $filter: { input: '$sessions', as: 'session', cond: { $eq: ['$$session.dayOfWeek', ?0] } } } } }",
             "{ $lookup: { from: 'student_enrollments', let: { classroomId: { $toString: '$_id' } }, pipeline: [{ $match: { $expr: { $and: [{ $eq: ['$studentId', ?1] }, { $eq: ['$classroomId', '$$classroomId'] }] } } }], as: 'enrollment' } }",
             "{ $project: { '_id': 1, 'name': 1, 'description': 1, 'image': 1, 'teacherId': 1, 'courseId': 1, 'sessions': '$daySpecificSessions', 'enrollment': { $arrayElemAt: ['$enrollment', 0] } } }"
@@ -36,11 +44,13 @@ public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, St
     @Aggregation(pipeline = {
             "{ $unwind: '$sessions' }",
             "{ $addFields: { 'dayOfWeek': { $let: { vars: { 'days': [ 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' ] }, in: { $arrayElemAt: [ '$$days', { $subtract: [ { $dayOfWeek: { $toDate: '$sessions.startTime' } }, 1 ] } ] } } } } }",
+            "{ $match: { 'status': { $ne: 'BLOCKED' } } }",
             "{ $group: { _id: '$dayOfWeek', count: { $sum: 1 } } }"
     })
     List<TotalClassroomOfDayDto> countSessionsByDayOfWeek();
+
     @Aggregation(pipeline = {
-            "{ $match: { _id: ObjectId(?0) } }",
+            "{ $match: { _id: ObjectId(?0), 'status': { $ne: 'BLOCKED' } } }",
             "{ $lookup: { from: 'sections', let: { classroomId: { $toString: '$_id' } }, pipeline: [{ $match: { $expr: { $eq: ['$classRoomId', '$$classroomId'] } } }], as: 'sections' } }",
             "{ $unwind: '$sections' }",
             "{ $lookup: { from: 'lessons', let: { sectionId: { $toString: '$sections._id' } }, pipeline: [{ $match: { $expr: { $eq: ['$sectionId', '$$sectionId'] } } }], as: 'lessons' } }",
@@ -53,10 +63,8 @@ public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, St
     })
     List<ClassroomDeadlineResponse.DeadlineResponse> getDeadlinesForClassroom(String classroomId, int skip, int limit);
 
-
-
     @Aggregation(pipeline = {
-            "{ $match: { _id: ObjectId(?0) } }",
+            "{ $match: { _id: ObjectId(?0), 'status': { $ne: 'BLOCKED' } } }",
             "{ $lookup: { from: 'sections', let: { classroomId: { $toString: '$_id' } }, pipeline: [{ $match: { $expr: { $eq: ['$classRoomId', '$$classroomId'] } } }], as: 'sections' } }",
             "{ $unwind: '$sections' }",
             "{ $lookup: { from: 'lessons', let: { sectionId: { $toString: '$sections._id' } }, pipeline: [{ $match: { $expr: { $eq: ['$sectionId', '$$sectionId'] } } }], as: 'lessons' } }",
@@ -69,9 +77,9 @@ public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, St
     })
     List<ClassroomDeadlineResponse.DeadlineResponse> getDeadlinesForClassroomForTeacher(String classroomId, int skip, int limit);
 
-    @Query("{ 'inviteCode' : ?0 }")
+    @Query("{ 'inviteCode' : ?0, 'status': { $ne: 'BLOCKED' } }")
     ClassRoomEntity findClassRoomEntityByInviteCode(String inviteCode);
 
-    @Query("{ 'teacherId' : ?0 }")
+    @Query("{ 'teacherId' : ?0, 'status': { $ne: 'BLOCKED' } }")
     Page<ClassRoomEntity> findByTeacherId(String teacherId, Pageable pageable);
 }

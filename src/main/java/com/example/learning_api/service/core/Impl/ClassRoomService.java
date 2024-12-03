@@ -9,10 +9,7 @@ import com.example.learning_api.dto.response.lesson.GetLessonDetailResponse;
 import com.example.learning_api.dto.response.section.GetSectionsResponse;
 import com.example.learning_api.dto.response.test.TestResultOfTestResponse;
 import com.example.learning_api.entity.sql.database.*;
-import com.example.learning_api.enums.DeadlineSubmissionStatus;
-import com.example.learning_api.enums.JoinRequestStatus;
-import com.example.learning_api.enums.StudentEnrollmentStatus;
-import com.example.learning_api.enums.TestState;
+import com.example.learning_api.enums.*;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
@@ -810,6 +807,19 @@ public class ClassRoomService implements IClassRoomService {
             resData.setStudents(users);
             return resData;
 
+        }
+        catch (Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void changeStatusClassRoom(String classroomId, String status) {
+        try{
+            ClassRoomEntity classRoomEntity = classRoomRepository.findById(classroomId)
+                    .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
+            classRoomEntity.setStatus(ClassRoomStatus.valueOf(status));
+            classRoomRepository.save(classRoomEntity);
         }
         catch (Exception e){
             throw new IllegalArgumentException(e.getMessage());

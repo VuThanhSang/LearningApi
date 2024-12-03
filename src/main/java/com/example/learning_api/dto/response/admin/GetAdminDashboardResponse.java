@@ -10,12 +10,28 @@ import java.util.List;
 public class GetAdminDashboardResponse {
     private int totalTeacher;
     private int totalStudent;
-    private int totalCourse;
-    private ClassroomAndTest scheduleAndTest;
+    private int totalClassroom;
+    private int totalEnrollmentInMonth;
+    private List<EnrollmentTrend> enrollmentTrend;
+    private List<ClassroomPerformance> classroomPerfomance;
+    private UserEngagement userEngagement;
+    private List<String> recentActivity;
     @Data
-    public static class ClassroomAndTest{
-        private  List<TotalClassroomOfDayDto> totalClassroom;
-        private List<TotalTestOfDayDto> totalTest;
+    public static class EnrollmentTrend{
+        private String date;
+        private int total;
     }
+    @Data
+    public static class ClassroomPerformance{
+        private String id;
+        private String name;
+        private int totalStudent;
 
+    }
+    @Data
+    public static class UserEngagement{
+        private int totalBlockUser;
+        private int totalActiveUser;
+        private int totalInactiveUser;
+    }
 }
