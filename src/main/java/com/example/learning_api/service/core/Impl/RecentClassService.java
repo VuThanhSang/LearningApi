@@ -23,25 +23,49 @@ public class RecentClassService implements IRecentClassService {
     private final TeacherRepository teacherRepository;
 
     @Override
-    public void createRecentClass(RecentClassEntity body) {
+    public void createRecentClass(String userId , String role,String classroomId) {
         try{
 
-           if (body.getClassroomId() == null) {
+           if (classroomId== null) {
                 throw new IllegalArgumentException("ClassroomId is required");
             }
-            if (classRoomRepository.findById(body.getClassroomId()).isEmpty()) {
+            if (classRoomRepository.findById(classroomId).isEmpty()) {
                 throw new IllegalArgumentException("Classroom not found");
             }
-            RecentClassEntity recentClassEntity = recentClassRepository.findByStudentIdAndClassroomId(body.getStudentId(), body.getClassroomId());
-            if (recentClassEntity == null)
-            {
-                body.setLastAccessedAt(String.valueOf(System.currentTimeMillis()));
-                recentClassRepository.save(body);
+            if(role.equals("USER")){
+                RecentClassEntity recentClassEntity = recentClassRepository.findByStudentIdAndClassroomId(userId, classroomId);
+                if (recentClassEntity == null)
+                {
+                    RecentClassEntity newData = new RecentClassEntity();
+                    newData.setStudentId(userId);
+                    newData.setClassroomId(classroomId);
+                    newData.setLastAccessedAt(String.valueOf(System.currentTimeMillis()));
+                    recentClassRepository.save(newData);
+                }
+                else{
+                    recentClassEntity.setLastAccessedAt(String.valueOf(System.currentTimeMillis()));
+                    recentClassRepository.save(recentClassEntity);
+                }
+            }
+            else if(role.equals("TEACHER")){
+                RecentClassEntity recentClassEntity = recentClassRepository.findByTeacherIdAndClassroomId(userId,classroomId);
+                if (recentClassEntity == null)
+                {
+                    RecentClassEntity newData = new RecentClassEntity();
+                    newData.setLastAccessedAt(String.valueOf(System.currentTimeMillis()));
+                    newData.setTeacherId(userId);
+                    newData.setClassroomId(classroomId);
+                    recentClassRepository.save(newData);
+                }
+                else{
+                    recentClassEntity.setLastAccessedAt(String.valueOf(System.currentTimeMillis()));
+                    recentClassRepository.save(recentClassEntity);
+                }
             }
             else{
-                recentClassEntity.setLastAccessedAt(String.valueOf(System.currentTimeMillis()));
-                recentClassRepository.save(recentClassEntity);
+                throw new IllegalArgumentException("StudentId or TeacherId is required");
             }
+
         }
         catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());

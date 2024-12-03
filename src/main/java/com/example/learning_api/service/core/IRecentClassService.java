@@ -6,7 +6,7 @@ import java.sql.Timestamp;
 import java.util.Date;
 
 public interface IRecentClassService {
-    void createRecentClass(RecentClassEntity body);
+    void createRecentClass(String userId, String role, String classroomId);
     void updateRecentClass(String studentId, String classroomId, String lastAccessedAt);
     void deleteRecentClass(String id);
 

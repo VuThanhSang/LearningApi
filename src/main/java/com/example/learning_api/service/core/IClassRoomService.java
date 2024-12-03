@@ -21,8 +21,7 @@ public interface IClassRoomService {
     GetClassRoomDetailResponse getClassRoomByInvitationCode(String invitationCode);
     GetClassRoomDetailResponse getClassRoomDetail(String classroomId,String role);
     void importClassRoom(ImportClassRoomRequest body);
-    GetClassRoomRecentResponse getRecentClasses(int page,int size, String studentId);
-    GetClassRoomRecentResponse getRecentClassesByTeacherId(int page,int size, String teacherId);
+    GetClassRoomRecentResponse getRecentClassesByTeacherId(int page,int size, String userId,String role);
     void joinClassRoom(String classroomId, String studentId);
     GetJoinClassResponse getJoinClassRequests(int page, int size, String classroomId,String teacherId,String email,String name);
     void acceptJoinClass(String classroomId, String studentId);
