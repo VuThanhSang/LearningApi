@@ -455,29 +455,23 @@ public class ClassRoomService implements IClassRoomService {
         }
     }
 
-    @Override
-    public GetClassRoomRecentResponse getRecentClasses(int page, int size, String studentId) {
-        try{
-            Pageable pageAble = PageRequest.of(page, size);
-            Slice<GetClassRoomRecentResponse.ClassRoomResponse> classRooms = studentEnrollmentsRepository.getRecentClasses(studentId, pageAble);
-            GetClassRoomRecentResponse resData = new GetClassRoomRecentResponse();
-            resData.setTotalPage(classRooms.getSize()/size);
-            resData.setTotalElements(classRooms.getNumberOfElements());
-            resData.setClassRooms(classRooms.getContent());
-            return resData;
-        }
-        catch (Exception e){
-            throw new IllegalArgumentException(e.getMessage());
-        }
-    }
 
     @Override
-    public GetClassRoomRecentResponse getRecentClassesByTeacherId(int page, int size, String teacherId) {
+    public GetClassRoomRecentResponse getRecentClassesByTeacherId(int page, int size, String userId,String role) {
         try {
             int skip = page * size;
-            List<RecentClassDTO> classRooms = recentClassRepository.findRecentClassesByTeacherId(teacherId, skip, size);
+            List<RecentClassDTO> classRooms = new ArrayList<>();
+            long totalElements = 0;
+            if (role.equals("USER")){
+                classRooms = recentClassRepository.findRecentClassesByStudentId(userId, skip, size);
+                totalElements = recentClassRepository.countRecentClassesByStudentId(userId);
+            }
+            else if (role.equals("TEACHER")){
+                classRooms = recentClassRepository.findRecentClassesByTeacherId(userId, skip, size);
+                totalElements = recentClassRepository.countRecentClassesByTeacherId(userId);
 
-            long totalElements = recentClassRepository.countRecentClassesByTeacherId(teacherId);
+            }
+
             int totalPages = (int) Math.ceil((double) totalElements / size);
 
             GetClassRoomRecentResponse resData = new GetClassRoomRecentResponse();
@@ -485,10 +479,13 @@ public class ClassRoomService implements IClassRoomService {
             resData.setTotalPage(totalPages);
             List<GetClassRoomRecentResponse.ClassRoomResponse> data = new ArrayList<>();
             for (RecentClassDTO classRoom : classRooms) {
-                GetClassRoomRecentResponse.ClassRoomResponse classRoomResponse = modelMapperService.mapClass(classRoom, GetClassRoomRecentResponse.ClassRoomResponse.class);
-                data.add(classRoomResponse);
+                GetClassRoomRecentResponse.ClassRoomResponse resClassRoom = new GetClassRoomRecentResponse.ClassRoomResponse();
+                resClassRoom.setClassRoom(classRoomRepository.findById(classRoom.getClassId())
+                        .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND)));
+                resClassRoom.setLastAccessedAt(classRoom.getLastAccessedAt());
+                data.add(resClassRoom);
             }
-            resData.setClassRooms(data);
+            resData.setData(data);
             return resData;
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());

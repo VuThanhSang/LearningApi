@@ -463,37 +463,25 @@ public class ClassRoomController {
         }
     }
 
-    @GetMapping(path = "/recent/student/{studentId}")
-    @PreAuthorize("hasAnyAuthority('USER')")
-    public ResponseEntity<ResponseAPI<GetClassRoomRecentResponse>> getRecentClassRooms(@RequestParam(name="page",required = false,defaultValue = "1") int page,
-                                                                                       @RequestParam(name="size",required = false,defaultValue = "10") int size,
-                                                                                       @PathVariable(name="studentId",required = true) String studentId) {
-        try{
-            GetClassRoomRecentResponse resData = classRoomService.getRecentClasses( page-1, size,studentId);
-            ResponseAPI<GetClassRoomRecentResponse> res = ResponseAPI.<GetClassRoomRecentResponse>builder()
-                    .timestamp(new Date())
-                    .message("Get recent class room successfully")
-                    .data(resData)
-                    .build();
-            return new ResponseEntity<>(res, StatusCode.OK);
-        }
-        catch (Exception e){
-            ResponseAPI<GetClassRoomRecentResponse> res = ResponseAPI.<GetClassRoomRecentResponse>builder()
-                    .timestamp(new Date())
-                    .message(e.getMessage())
-                    .build();
-            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
-        }
-
-    }
-
-    @GetMapping(path = "/recent/teacher/{teacherId}")
-    @PreAuthorize("hasAnyAuthority('TEACHER')")
+    @GetMapping(path = "/recent")
     public ResponseEntity<ResponseAPI<GetClassRoomRecentResponse>> getRecentClassRoomsByTeacherId(@RequestParam(name="page",required = false,defaultValue = "1") int page,
                                                                                        @RequestParam(name="size",required = false,defaultValue = "10") int size,
-                                                                                       @PathVariable(name="teacherId",required = true) String teacherId) {
+                                                                                       @RequestHeader(name = "Authorization") String authorizationHeader) {
         try{
-            GetClassRoomRecentResponse resData = classRoomService.getRecentClassesByTeacherId( page-1, size,teacherId);
+            String accessToken = authorizationHeader.replace("Bearer ", "");
+            String userId = jwtService.extractUserId(accessToken);
+            String role = jwtService.extractRole(accessToken);
+            String callId = "";
+            if (role.equals("USER")){
+                callId = studentService.getStudentByUserId(userId).getId();
+            }
+            else if (role.equals("TEACHER")){
+                callId = teacherService.getTeacherByUserId(userId).getId();
+            }
+            else{
+                throw new IllegalArgumentException("Admin can not get recent class room");
+            }
+            GetClassRoomRecentResponse resData = classRoomService.getRecentClassesByTeacherId( page-1, size,callId,role);
             ResponseAPI<GetClassRoomRecentResponse> res = ResponseAPI.<GetClassRoomRecentResponse>builder()
                     .timestamp(new Date())
                     .message("Get recent class room by teacherId successfully")
