@@ -1,9 +1,6 @@
 package com.example.learning_api.dto.response.lesson;
 
-import com.example.learning_api.entity.sql.database.DeadlineEntity;
-import com.example.learning_api.entity.sql.database.MediaEntity;
-import com.example.learning_api.entity.sql.database.ResourceEntity;
-import com.example.learning_api.entity.sql.database.SubstanceEntity;
+import com.example.learning_api.entity.sql.database.*;
 import lombok.Data;
 
 import java.util.List;

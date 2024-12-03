@@ -37,18 +37,18 @@ public interface TestRepository extends MongoRepository<TestEntity, String> {
     );
 
     @Aggregation(pipeline = {
-            "{ $addFields: { 'dayOfWeek': { $let: { vars: { 'days': [ 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' ] }, in: { $arrayElemAt: [ '$$days', { $subtract: [ { $dayOfWeek: '$startTime' }, 1 ] } ] } } } } }",
+            "{ $addFields: { 'dayOfWeek': { $let: { vars: { 'days': [ 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' ] }, in: { $arrayElemAt: [ '$$days', { $subtract: [ { $dayOfWeek: { $toDate: '$startTime' } }, 1 ] } ] } } } } }",
+            "{ $match: { 'startTime': { $gte: { $toDate: ?0 }, $lte: { $toDate: ?1 } } } }",
             "{ $group: { _id: '$dayOfWeek', count: { $sum: 1 } } }",
             "{ $sort: { '_id': 1 } }"
     })
     List<TotalTestOfDayDto> findTestsInWeek(
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) String startOfWeek,
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) String endOfWeek
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) String startOfWeek,
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) String endOfWeek
     );
-
     @Query("{'classroomId': ?0, 'status': {$in: ['UPCOMING', 'ONGOING', 'FINISHED']}}")
     Page<TestEntity> findByClassroomId(String classroomId, Pageable pageable);
-
+    List<TestEntity> findByClassroomId(String classroomId);
     @Query("{'classroomId': ?0}")
     Page<TestEntity> findByClassroomIdAndStatus(String classroomId, Pageable pageable);
 

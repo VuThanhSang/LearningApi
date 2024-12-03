@@ -17,5 +17,7 @@ public class CreateFaqRequest {
     private String classId;
     @NotBlank
     private String status;
+    @NotBlank
+    private String subject;
     private List<MultipartFile> sources;
 }

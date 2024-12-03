@@ -26,4 +26,5 @@ public interface LessonRepository extends MongoRepository<LessonEntity, String>{
             "{ '$group': { '_id': null, 'maxIndex': { '$max': '$index' } } }"
     })
     Integer findMaxIndexBySectionId(String sectionId);
+
 }

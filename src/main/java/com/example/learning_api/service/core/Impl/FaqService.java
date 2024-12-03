@@ -7,13 +7,11 @@ import com.example.learning_api.dto.request.faq.UpdateFaqRequest;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.faq.GetFaqDetailResponse;
 import com.example.learning_api.dto.response.faq.GetFaqsResponse;
-import com.example.learning_api.entity.sql.database.DeadlineEntity;
-import com.example.learning_api.entity.sql.database.FAQEntity;
-import com.example.learning_api.entity.sql.database.FaqCommentEntity;
-import com.example.learning_api.entity.sql.database.FileEntity;
+import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.FaqSourceType;
 import com.example.learning_api.enums.FaqStatus;
 import com.example.learning_api.enums.FileOwnerType;
+import com.example.learning_api.enums.RoleEnum;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
 import com.example.learning_api.service.common.ModelMapperService;
@@ -51,6 +49,7 @@ public class FaqService implements IFaqService {
     private final CloudinaryService cloudinaryService;
     private final FileRepository fileRepository;
     private final FaqCommentRepository faqCommentRepository;
+    private final TeacherRepository teacherRepository;
     @Autowired
     private MongoTemplate mongoTemplate;
     public void processFiles (List<MultipartFile> files,String title, FAQEntity deadlineEntity){
@@ -112,6 +111,7 @@ public class FaqService implements IFaqService {
         faqEntity.setQuestion(request.getQuestion());
         faqEntity.setUserId(request.getUserId());
         faqEntity.setStatus(FaqStatus.PENDING);
+        faqEntity.setSubject(request.getSubject());
         faqEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
         faqEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
 //        faqEntity.setSources(new ArrayList<>());
@@ -165,6 +165,8 @@ public class FaqService implements IFaqService {
 //                faqEntity.getSources().clear();
                 processFiles(updateFaqRequest.getSources(),updateFaqRequest.getQuestion(), faqEntity);
             }
+            if (updateFaqRequest.getSubject() != null)
+                faqEntity.setSubject(updateFaqRequest.getSubject());
             faqEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             faqRepository.save(faqEntity);
         } catch (Exception e) {
@@ -214,7 +216,7 @@ public class FaqService implements IFaqService {
             if (search == null || search.isEmpty()) {
                 faqPage = faqRepository.findAll(pageable);
             } else {
-                faqPage = faqRepository.findByQuestionContainingIgnoreCase(search, pageable);
+                faqPage = faqRepository.findByQuestionOrSubjectContainingIgnoreCaseAndStatus(search, pageable);
             }
 
             List<GetFaqsResponse.Faq> faqs = faqPage.getContent().stream().map(faqEntity -> {
@@ -222,7 +224,22 @@ public class FaqService implements IFaqService {
                 faq.setId(faqEntity.getId());
                 faq.setQuestion(faqEntity.getQuestion());
                 faq.setUserId(faqEntity.getUserId());
+                UserEntity user = userRepository.findById(faqEntity.getUserId()).orElse(null);
+                assert user != null;
+                if (user.getRole().equals(RoleEnum.USER)) {
+                    StudentEntity student = studentRepository.findByUserId(faqEntity.getUserId());
+                    if(student!=null)
+                        student.setUser(null);
+                    user.setStudent(student);
+                } else if (user.getRole().equals(RoleEnum.TEACHER)) {
+                    TeacherEntity teacher = teacherRepository.findByUserId(faqEntity.getUserId());
+                    if(teacher!=null)
+                        teacher.setUser(null);
+                    user.setTeacher(teacher);
+                }
+                faq.setUser(user);
                 faq.setStatus(faqEntity.getStatus().name());
+                faq.setSubject(faqEntity.getSubject());
                 faq.setCreatedAt(faqEntity.getCreatedAt().toString());
                 faq.setUpdatedAt(faqEntity.getUpdatedAt().toString());
                 faq.setSources(fileRepository.findByOwnerIdAndOwnerType(faqEntity.getId(), FileOwnerType.FAQ.name()));
