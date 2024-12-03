@@ -147,7 +147,7 @@ public class ClassRoomController {
     }
 
     @DeleteMapping(path = "/{classroomId}")
-    @PreAuthorize("hasAnyAuthority('TEACHER')")
+    @PreAuthorize("hasAnyAuthority('TEACHER,ADMIN')")
     public ResponseEntity<ResponseAPI<String>> deleteClassRoom(@PathVariable String classroomId) {
         try{
             classRoomService.deleteClassRoom(classroomId);
@@ -357,7 +357,7 @@ public class ClassRoomController {
     }
 
     @PostMapping(path = "/invitation/{classroomId}/accept-request/{studentId}")
-    @PreAuthorize("hasAnyAuthority('TEACHER')")
+    @PreAuthorize("hasAnyAuthority('TEACHER,ADMIN')")
     public ResponseEntity<ResponseAPI<String>> acceptJoinClass(@PathVariable String classroomId,
                                                                @PathVariable String studentId) {
         try {
@@ -377,7 +377,7 @@ public class ClassRoomController {
     }
 
     @PostMapping(path = "/invitation/{classroomId}/reject-request/{studentId}")
-    @PreAuthorize("hasAnyAuthority('TEACHER')")
+    @PreAuthorize("hasAnyAuthority('TEACHER,ADMIN')")
     public ResponseEntity<ResponseAPI<String>> rejectJoinClass(@PathVariable String classroomId,
                                                                @PathVariable String studentId) {
         try {
@@ -397,7 +397,7 @@ public class ClassRoomController {
     }
 
     @PostMapping(path = "/{classroomId}/remove-student/{studentId}")
-    @PreAuthorize("hasAnyAuthority('TEACHER')")
+    @PreAuthorize("hasAnyAuthority('TEACHER,ADMIN')")
     public ResponseEntity<ResponseAPI<String>> removeStudentFromClass(@PathVariable String classroomId,
                                                                      @PathVariable String studentId,
                                                                      @RequestHeader(name = "Authorization") String authorizationHeader) {
@@ -421,7 +421,7 @@ public class ClassRoomController {
     }
 
     @PostMapping(path = "/invite",  consumes = "multipart/form-data")
-    @PreAuthorize("hasAnyAuthority('TEACHER')")
+    @PreAuthorize("hasAnyAuthority('TEACHER,ADMIN')")
     public ResponseEntity<ResponseAPI<InviteClassByEmailResponse>> inviteStudentByEmail(@ModelAttribute @Valid InviteStudentByEmailRequest body, @RequestHeader(name = "Authorization") String authorizationHeader){
         try{
             String accessToken = authorizationHeader.replace("Bearer ", "");

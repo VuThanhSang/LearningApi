@@ -16,6 +16,7 @@ public interface IForumService {
     GetVotesResponse getVotedByForum(String forumId);
     GetVotesResponse getVoteByComment(String commentId);
     GetForumsResponse getForums(int page, int size , String search, String sortOrder, String userId,String tag,String sortBy);
+    GetForumsResponse getForumsForAdmin(int page, int size , String search, String sortOrder, String userId,String tag,String sortBy);
     GetForumDetailResponse getForumDetail(String id, String userId);
     GetForumsResponse getForumByAuthor(String authorId, int page, int size,String search,String sortOrder,String userId,String sortBy);
     GetForumsResponse getForumByTag(List<String> tags, int page, int size,String search,String sortOrder,String userId,String sortBy);

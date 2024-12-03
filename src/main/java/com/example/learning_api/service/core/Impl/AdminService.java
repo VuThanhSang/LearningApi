@@ -5,15 +5,14 @@ import com.example.learning_api.dto.common.TotalTestOfDayDto;
 import com.example.learning_api.dto.request.admin.ChangeRoleRequest;
 import com.example.learning_api.dto.response.admin.GetAdminDashboardResponse;
 import com.example.learning_api.dto.response.admin.GetClassRoomsAdminResponse;
+import com.example.learning_api.dto.response.admin.GetUserDetailResponse;
 import com.example.learning_api.dto.response.admin.GetUsersResponse;
 import com.example.learning_api.dto.response.classroom.GetClassRoomsResponse;
 import com.example.learning_api.dto.response.classroom.TotalClassroomOfDayDto;
 import com.example.learning_api.dto.response.student.GetStudentsResponse;
 import com.example.learning_api.dto.response.teacher.GetTeachersResponse;
-import com.example.learning_api.entity.sql.database.ClassRoomEntity;
-import com.example.learning_api.entity.sql.database.StudentEntity;
-import com.example.learning_api.entity.sql.database.TeacherEntity;
-import com.example.learning_api.entity.sql.database.UserEntity;
+import com.example.learning_api.entity.sql.database.*;
+import com.example.learning_api.enums.ForumStatus;
 import com.example.learning_api.enums.RoleEnum;
 import com.example.learning_api.enums.UserStatus;
 import com.example.learning_api.repository.database.*;
@@ -31,6 +30,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -45,6 +45,7 @@ public class AdminService implements IAdminService {
     private final FileRepository fileRepository;
     private final CloudinaryService cloudinaryService;
     private final StudentEnrollmentsRepository studentEnrollmentsRepository;
+    private final ForumRepository forumRepository;
     @Override
     public void changeRole(ChangeRoleRequest body) {
         try {
@@ -115,6 +116,19 @@ public class AdminService implements IAdminService {
             throw new IllegalArgumentException(e.getMessage());
 
         }
+    }
+
+    @Override
+    public void updateForumStatus(String forumId, String status) {
+        try {
+            forumRepository.findById(forumId).ifPresent(forumEntity -> {
+                forumEntity.setStatus(ForumStatus.valueOf(status));
+                forumRepository.save(forumEntity);
+            });
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+
     }
 
     @Override
@@ -244,6 +258,44 @@ public class AdminService implements IAdminService {
             resData.setData(classRoomEntities.getContent());
             resData.setTotalElements(classRoomEntities.getTotalElements());
             resData.setTotalPage(classRoomEntities.getTotalPages());
+            return resData;
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public GetUserDetailResponse getUserDetail(String userId) {
+        try {
+            UserEntity userEntity = userRepository.findById(userId).orElse(null);
+            Pageable pageAble = PageRequest.of(0, 99);
+            List<ClassRoomEntity> classRoomEntities = new ArrayList<>();
+            if (userEntity.getRole().equals(RoleEnum.TEACHER)) {
+                TeacherEntity teacherEntity = teacherRepository.findByUserId(userId);
+                if (teacherEntity == null) {
+                    throw new IllegalArgumentException("Teacher not found");
+                }
+                classRoomEntities = classRoomRepository.findByTeacherIdAndNameContaining(teacherEntity.getId(), "", pageAble).getContent();
+                teacherEntity.setUser(null);
+                userEntity.setTeacher(teacherEntity);
+
+            } else if (userEntity.getRole().equals(RoleEnum.USER)) {
+                StudentEntity studentEntity = studentRepository.findByUserId(userId);
+                if (studentEntity == null) {
+                    throw new IllegalArgumentException("Student not found");
+                }
+                List<String> classRoomIds = studentEnrollmentsRepository.findByStudentId(studentEntity.getId()).stream()
+                        .map(StudentEnrollmentsEntity::getClassroomId)
+                        .collect(Collectors.toList());
+                classRoomEntities= classRoomRepository.findByIdInAndNameContaining(classRoomIds, "", pageAble).getContent();
+                studentEntity.setUser(null);
+                userEntity.setStudent(studentEntity);
+
+            }
+            GetUserDetailResponse resData = new GetUserDetailResponse();
+            resData.setUser(userEntity);
+            resData.setClassRooms(classRoomEntities);
+
             return resData;
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());

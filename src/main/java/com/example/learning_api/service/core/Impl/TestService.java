@@ -564,34 +564,34 @@ public class TestService implements ITestService {
     }
 
     @Override
-    public GetTestInProgress getTestInProgress(int page,int size,String studentId) {
-        try{
-            Pageable pageAble = PageRequest.of(page, size);
+    public GetTestInProgress getTestInProgress(int page, int size, String studentId) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
             String currentTimestamp = String.valueOf(System.currentTimeMillis());
-            Slice<TestEntity> testEntities = testRepository.findTestInProgressByStudentId(studentId,currentTimestamp, pageAble);
+            Slice<TestEntity> testEntities = testRepository.findTestInProgressByStudentId(studentId, currentTimestamp, pageable);
+            long totalElements = testRepository.countTestInProgressByStudentId(studentId, currentTimestamp);
+            int totalPages = (int) Math.ceil((double) totalElements / size);
+
             GetTestInProgress resData = new GetTestInProgress();
             List<GetTestInProgress.TestResponse> testResponses = new ArrayList<>();
-            for (TestEntity testEntity : testEntities){
+            for (TestEntity testEntity : testEntities) {
                 GetTestInProgress.TestResponse testResponse = modelMapperService.mapClass(testEntity, GetTestInProgress.TestResponse.class);
                 testResponse.setStatus(testEntity.getStatus().name());
-                if (testEntity.getAttemptLimit()==null){
+                if (testEntity.getAttemptLimit() == null) {
                     testResponse.setAttemptLimit(1);
-                }
-                else{
+                } else {
                     testResponse.setAttemptLimit(testEntity.getAttemptLimit());
                 }
                 testResponses.add(testResponse);
             }
             resData.setTests(testResponses);
-            resData.setTotalElements((long) testEntities.getNumberOfElements());
-            resData.setTotalPage(testEntities.getNumber());
+            resData.setTotalElements(totalElements);
+            resData.setTotalPage(totalPages);
             return resData;
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
-
     @Override
     public GetTestInProgress getTestOnSpecificDayByStudentId(String studentId, String date, int page, int size) {
         try{
