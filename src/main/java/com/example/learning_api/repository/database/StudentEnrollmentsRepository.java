@@ -1,5 +1,6 @@
 package com.example.learning_api.repository.database;
 
+import com.example.learning_api.dto.common.StudentSubmissionCountDto;
 import com.example.learning_api.dto.response.classroom.GetClassRoomRecentResponse;
 import com.example.learning_api.dto.response.classroom.GetScheduleResponse;
 import com.example.learning_api.dto.response.deadline.DeadlineResponse;
@@ -184,4 +185,30 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
 
     StudentEnrollmentsEntity findByStudentIdAndClassroomId(String studentId, String classroomId);
     List<StudentEnrollmentsEntity> findByClassroomIdAndStatus(String classroomId, StudentEnrollmentStatus status);
+    @Aggregation(pipeline = {
+            "{$addFields: { createdAtLong: { $toLong: '$createdAt' } }}",
+            "{$match: { createdAtLong: { $exists: true, $ne: null } }}",
+            "{$group: { _id: { $dateToString: { format: '%Y-%m', date: { $toDate: '$createdAtLong' } } }, enrollmentCount: { $sum: 1 } }}",
+            "{$sort: { _id: 1 }}"
+    })
+    List<StudentSubmissionCountDto> getMonthlyEnrollmentStats();
+
+    @Aggregation(pipeline = {
+            "{ $group: { _id: '$classroomId', enrollmentCount: { $sum: 1 } } }",
+            "{ $sort: { enrollmentCount: -1 } }",
+            "{ $limit: 5 }"
+    })
+    List<StudentSubmissionCountDto> getTopEnrolledClassrooms();
+    @Aggregation(pipeline = {
+            "{$match: { " +
+                    "$expr: { " +
+                    "$and: [ " +
+                    "{ $eq: [ { $year: '$createdAt' }, { $year: new Date() } ] }, " +
+                    "{ $eq: [ { $month: '$createdAt' }, { $month: new Date() } ] } " +
+                    "] " +
+                    "} " +
+                    "}}",
+            "{$count: 'currentMonthEnrollments'}"
+    })
+    Long countCurrentMonthEnrollments();
 }

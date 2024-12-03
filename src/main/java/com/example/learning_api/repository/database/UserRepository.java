@@ -12,5 +12,8 @@ public interface UserRepository extends MongoRepository<UserEntity, String> {
     Optional<UserEntity> findByEmail(String email);
     @Query("{ 'email' : ?0, 'authType' : ?1 }")
     Optional<UserEntity> findByEmailAndAuthType(String email, String authType);
+    int countAllByRole(String role);
+    long countByRole(String role);
 
+    long countByStatus(String status);
 }

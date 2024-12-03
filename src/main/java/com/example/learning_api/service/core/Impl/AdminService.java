@@ -1,5 +1,6 @@
 package com.example.learning_api.service.core.Impl;
 
+import com.example.learning_api.dto.common.StudentSubmissionCountDto;
 import com.example.learning_api.dto.common.TotalTestOfDayDto;
 import com.example.learning_api.dto.request.admin.ChangeRoleRequest;
 import com.example.learning_api.dto.response.admin.GetAdminDashboardResponse;
@@ -43,7 +44,7 @@ public class AdminService implements IAdminService {
     private final TeacherRepository teacherRepository;
     private final FileRepository fileRepository;
     private final CloudinaryService cloudinaryService;
-
+    private final StudentEnrollmentsRepository studentEnrollmentsRepository;
     @Override
     public void changeRole(ChangeRoleRequest body) {
         try {
@@ -118,72 +119,50 @@ public class AdminService implements IAdminService {
 
     @Override
     public GetAdminDashboardResponse getAdminDashboard() {
-        try {
-
-            String startOfWeek = "2024-06-01"; // replace with your startOfWeek
-            String endOfWeek = "2024-06-08"; // replace with your endOfWeek
-
-            // Get the tests in the week
-            List<TotalTestOfDayDto> testsInWeek = testRepository.findTestsInWeek(startOfWeek, endOfWeek);
-
-            // Create a default list with 7 days and count = 0
-            List<TotalTestOfDayDto> defaultDaysTest = Arrays.asList(
-                    new TotalTestOfDayDto("Sunday", 0),
-                    new TotalTestOfDayDto("Monday", 0),
-                    new TotalTestOfDayDto("Tuesday", 0),
-                    new TotalTestOfDayDto("Wednesday", 0),
-                    new TotalTestOfDayDto("Thursday", 0),
-                    new TotalTestOfDayDto("Friday", 0),
-                    new TotalTestOfDayDto("Saturday", 0)
-            );
-
-            // Array of week days
-
-            // Merge the results from the query into the default list
-            defaultDaysTest.forEach(day -> {
-                testsInWeek.stream()
-                        .filter(result -> result.get_id().equals(day.get_id()))
-                        .findFirst()
-                        .ifPresent(result -> day.setCount(result.getCount()));
-            });
-
-            List<TotalClassroomOfDayDto> totalClassroom = classRoomRepository.countSessionsByDayOfWeek();
-
-            // Tạo danh sách mặc định với 7 ngày và count = 0
-            List<TotalClassroomOfDayDto> defaultDaysClassroom = Arrays.asList(
-                    new TotalClassroomOfDayDto("Sunday", 0),
-                    new TotalClassroomOfDayDto("Monday", 0),
-                    new TotalClassroomOfDayDto("Tuesday", 0),
-                    new TotalClassroomOfDayDto("Wednesday", 0),
-                    new TotalClassroomOfDayDto("Thursday", 0),
-                    new TotalClassroomOfDayDto("Friday", 0),
-                    new TotalClassroomOfDayDto("Saturday", 0)
-            );
-
-            // Gộp kết quả từ truy vấn vào danh sách mặc định
-            defaultDaysClassroom.forEach(day -> {
-                totalClassroom.stream()
-                        .filter(result -> result.get_id().equals(day.get_id()))
-                        .findFirst()
-                        .ifPresent(result -> day.setCount(result.getCount()));
-            });
-            int totalCourse = classRoomRepository.findAll().size();
-            int totalStudent = studentRepository.findAll().size();
-            int totalTeacher = teacherRepository.findAll().size();
-
+        try{
+            int totalTeacher = (int) userRepository.countByRole(RoleEnum.TEACHER.name());
+            int totalStudent = (int) userRepository.countByRole(RoleEnum.USER.name());
+            int totalClassroom = (int) classRoomRepository.count();
+            List<StudentSubmissionCountDto> studentSubmissionCountDto = studentEnrollmentsRepository.getMonthlyEnrollmentStats();
+            List<StudentSubmissionCountDto> classroomPerformance = studentEnrollmentsRepository.getTopEnrolledClassrooms();
+            List<GetAdminDashboardResponse.EnrollmentTrend> enrollmentTrends = new ArrayList<>();
+            List<GetAdminDashboardResponse.ClassroomPerformance> classroomPerformances = new ArrayList<>();
+            for (StudentSubmissionCountDto studentSubmissionCount : studentSubmissionCountDto) {
+                GetAdminDashboardResponse.EnrollmentTrend enrollmentTrend = new GetAdminDashboardResponse.EnrollmentTrend();
+                enrollmentTrend.setDate(studentSubmissionCount.get_id());
+                enrollmentTrend.setTotal(studentSubmissionCount.getEnrollmentCount());
+                enrollmentTrends.add(enrollmentTrend);
+            }
+            for (StudentSubmissionCountDto studentSubmissionCount : classroomPerformance) {
+                GetAdminDashboardResponse.ClassroomPerformance classroomPerformance1 = new GetAdminDashboardResponse.ClassroomPerformance();
+                classroomPerformance1.setId(studentSubmissionCount.get_id());
+                classroomPerformance1.setTotalStudent(studentSubmissionCount.getEnrollmentCount());
+                ClassRoomEntity classRoomEntity = classRoomRepository.findById(studentSubmissionCount.get_id()).orElse(null);
+                if (classRoomEntity != null) {
+                    classroomPerformance1.setName(classRoomEntity.getName());
+                }
+                classroomPerformances.add(classroomPerformance1);
+            }
             GetAdminDashboardResponse resData = new GetAdminDashboardResponse();
-            GetAdminDashboardResponse.ClassroomAndTest classroomAndTest = new GetAdminDashboardResponse.ClassroomAndTest();
-            classroomAndTest.setTotalClassroom(defaultDaysClassroom);
-            classroomAndTest.setTotalTest(defaultDaysTest);
-
-            resData.setScheduleAndTest(classroomAndTest);
-            resData.setTotalCourse(totalCourse);
-            resData.setTotalStudent(totalStudent);
+            GetAdminDashboardResponse.UserEngagement userEngagement = new GetAdminDashboardResponse.UserEngagement();
+            userEngagement.setTotalActiveUser((int) userRepository.countByStatus(UserStatus.ACTIVE.name()));
+            userEngagement.setTotalBlockUser((int) userRepository.countByStatus(UserStatus.BLOCKED.name()));
+            userEngagement.setTotalInactiveUser((int) userRepository.countByStatus(UserStatus.INACTIVE.name()));
             resData.setTotalTeacher(totalTeacher);
+            resData.setTotalStudent(totalStudent);
+            resData.setTotalClassroom(totalClassroom);
+            resData.setEnrollmentTrend(enrollmentTrends);
+            resData.setClassroomPerfomance(classroomPerformances);
+            resData.setTotalEnrollmentInMonth(studentSubmissionCountDto.get(studentSubmissionCountDto.size()-1).getEnrollmentCount());
+            resData.setRecentActivity(new ArrayList<>());
+            resData.setUserEngagement(userEngagement);
             return resData;
-        } catch (Exception e) {
+
+        }
+        catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }
+
     }
     @Override
     public GetUsersResponse getTeachers(String search, int page, int size,  String sort,String order,String status) {
@@ -257,9 +236,9 @@ public class AdminService implements IAdminService {
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(upperOrder), sort));
             Page<ClassRoomEntity> classRoomEntities;
             if (status.isEmpty()) {
-                classRoomEntities = classRoomRepository.findByNameContaining(search, pageable);
+                classRoomEntities = classRoomRepository.findByNameContainingForAdmin(search, pageable);
             } else {
-                classRoomEntities = classRoomRepository.findByNameContainingAndStatus(search, status, pageable);
+                classRoomEntities = classRoomRepository.findByNameContainingAndStatusForAdmin(search, status, pageable);
             }
             GetClassRoomsAdminResponse resData = new GetClassRoomsAdminResponse();
             resData.setData(classRoomEntities.getContent());

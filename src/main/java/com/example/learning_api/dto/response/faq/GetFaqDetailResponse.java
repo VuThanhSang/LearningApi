@@ -2,6 +2,7 @@ package com.example.learning_api.dto.response.faq;
 
 import com.example.learning_api.entity.sql.database.FaqCommentEntity;
 import com.example.learning_api.entity.sql.database.FileEntity;
+import com.example.learning_api.entity.sql.database.UserEntity;
 import com.example.learning_api.enums.FaqStatus;
 import lombok.Data;
 import org.springframework.data.mongodb.core.mapping.DBRef;
@@ -13,6 +14,7 @@ public class GetFaqDetailResponse {
     private String id;
     private String question;
     private String userId;
+    private UserEntity user;
     private FaqStatus status;
     private String createdAt;
     private String updatedAt;

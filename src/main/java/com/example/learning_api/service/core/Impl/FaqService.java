@@ -194,6 +194,19 @@ public class FaqService implements IFaqService {
             GetFaqDetailResponse response = modelMapperService.mapClass(faqEntity, GetFaqDetailResponse.class);
             response.setSources(fileRepository.findByOwnerIdAndOwnerType(id, FileOwnerType.FAQ.name()));
             List<FaqCommentEntity> comments = faqCommentRepository.findByFaqId(id);
+            UserEntity user = userRepository.findById(faqEntity.getUserId()).orElse(null);
+            if (user.getRole().equals(RoleEnum.USER)) {
+                StudentEntity student = studentRepository.findByUserId(faqEntity.getUserId());
+                if(student!=null)
+                    student.setUser(null);
+                user.setStudent(student);
+            } else if (user.getRole().equals(RoleEnum.TEACHER)) {
+                TeacherEntity teacher = teacherRepository.findByUserId(faqEntity.getUserId());
+                if(teacher!=null)
+                    teacher.setUser(null);
+                user.setTeacher(teacher);
+            }
+            response.setUser(user);
             for (FaqCommentEntity comment : comments) {
                 comment.setSources(fileRepository.findByOwnerIdAndOwnerType(comment.getId(), FileOwnerType.FAQ_COMMENT.name()));
             }

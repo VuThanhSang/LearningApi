@@ -31,4 +31,5 @@ public interface IClassRoomService {
     InviteClassByEmailResponse inviteStudentByEmail(InviteStudentByEmailRequest body);
     GetDetailStudentInClassResponse getDetailStudentInClass(String classroomId, String studentId);
     GetClassRoomForAdminResponse getClassRoomsForAdmin( String search);
+    void changeStatusClassRoom(String classroomId, String status);
 }

@@ -394,10 +394,13 @@ public class ForumService implements IForumService {
                 forumResponse.setSources(fileEntities);
                 forumResponse.setUpvote(voteRepository.countUpvoteByTargetId(forumEntity.getId()));
                 forumResponse.setDownvote(voteRepository.countDownvoteByTargetId(forumEntity.getId()));
-                VoteEntity voteEntity = voteRepository.findByAuthorIdAndTargetId(userId, forumEntity.getId());
-                if (voteEntity != null) {
-                    forumResponse.setIsUpvoted(voteEntity.isUpvote());
+                if (userId!=null){
+                    VoteEntity voteEntity = voteRepository.findByAuthorIdAndTargetId(userId, forumEntity.getId());
+                    if (voteEntity != null) {
+                        forumResponse.setIsUpvoted(voteEntity.isUpvote());
+                    }
                 }
+
                 data.add(forumResponse);
             });
             getForumsResponse.setForums(data);
