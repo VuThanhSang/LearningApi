@@ -1,5 +1,6 @@
 package com.example.learning_api.service.core.Impl;
 
+import com.example.learning_api.dto.request.notification.SendNotificationRequest;
 import com.example.learning_api.dto.request.notification.UpdateUserNotificationSettingRequest;
 import com.example.learning_api.dto.response.notification.NotificationResponse;
 import com.example.learning_api.entity.sql.database.*;
@@ -47,6 +48,8 @@ public class NotificationService implements INotificationService {
     private final SimpMessagingTemplate messagingTemplate;
     private final JavaMailSender javaMailSender;
     private final UserRepository userRepository;
+    private final StudentEnrollmentsRepository studentEnrollmentsRepository;
+    private final StudentRepository studentRepository;
     // 1. Tạo notification mới
     @Transactional
     @Override
@@ -260,6 +263,25 @@ public class NotificationService implements INotificationService {
         return userNotificationSettingsRepository.findByUserIdAndNotificationNameRegex(userId,search);
     }
 
+    @Override
+    @Async
+    public void sendNotificationByEmailForClassroom(NotificationEntity request, String classroomId) {
+        try {
+            request.setNotificationSettingId("674473d53e126c2148ce1ada");
+            List<StudentEnrollmentsEntity> userIds = studentEnrollmentsRepository.findByClassroomId(classroomId);
+            for (StudentEnrollmentsEntity userId : userIds) {
+                StudentEntity student = studentRepository.findById(userId.getStudentId()).orElse(null);
+                if (student == null) {
+                    continue;
+                }
+                sendNotificationByEmail(request, student.getUserId());
+            }
+        }
+        catch (Exception e) {
+            throw new CustomException( "Error while sending email");
+        }
+    }
+
     // Helper method để validate frequency
     private void    validateNotificationFrequency(String authorId, NotificationSettingsEntity settings) {
         if (settings.getMaxFrequencyPerDay() != null) {
@@ -297,26 +319,24 @@ public class NotificationService implements INotificationService {
             MimeMessage mimeMessage = javaMailSender.createMimeMessage();
             UserEntity user = userRepository.findById(userId).orElse(null);
             if (user == null) {
-               return;
+                return;
             }
             MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, StandardCharsets.UTF_8.name());
 
             Context context = new Context();
+            context.setVariable("title", notification.getTitle());
             context.setVariable("body", notification.getMessage());
             context.setVariable("toMail", user.getEmail());
-            String htmlContent = templateEngine.process("email-template", context);
-
+            String htmlContent = templateEngine.process("notification-email-template", context);
 
             mimeMessageHelper.setFrom(mailFrom);
             mimeMessageHelper.setTo(user.getEmail());
             mimeMessageHelper.setText(htmlContent, true);
             mimeMessageHelper.setSubject(notification.getTitle());
 
-
-
             javaMailSender.send(mimeMessage);
         } catch (MessagingException e) {
-            throw new CustomException( "Error while sending email");
+            throw new CustomException("Error while sending email");
         }
     }
 

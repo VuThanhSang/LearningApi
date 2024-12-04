@@ -55,4 +55,5 @@ public interface INotificationService {
 
     List<NotificationSettingsEntity> searchNotificationSettings( String keyword);
     List<UserNotificationSettingsEntity> getUserNotificationSettings(String userId, String search);
+    void sendNotificationByEmailForClassroom(NotificationEntity request, String classroomId);
 }
