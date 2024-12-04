@@ -19,7 +19,7 @@ public interface TestRepository extends MongoRepository<TestEntity, String> {
 
     @Aggregation({
             "{ $lookup: { from: 'student_enrollments', let: { classroomId: '$classroomId' }, pipeline: [ { $match: { $expr: { $and: [ { $eq: ['$classroomId', '$$classroomId'] }, { $eq: ['$studentId', ?0] } ] } } } ], as: 'enrollments' } }",
-            "{ $match: { $and: [ { 'enrollments': { $not: { $size: 0 } } },  { 'endTime': { $gt: ?1 } }, { 'status': {$in: ['UPCOMING', 'ONGOING', 'FINISHED']} } ] } }",
+            "{ $match: { $and: [ { 'enrollments': { $not: { $size: 0 } } },  { 'endTime': { $gt: ?1 } }, { 'status': {$in: ['UPCOMING', 'ONGOING']} } ] } }",
             "{ $project: { _id: 1, name: 1, description: 1, duration: 1, classroomId: 1, teacherId: 1, source: 1, startTime: 1, endTime: 1, status: 1, createdAt: 1, updatedAt: 1 } }"
     })
     Slice<TestEntity> findTestInProgressByStudentId(String studentId, String currentTimestamp, Pageable pageable);
@@ -60,8 +60,11 @@ public interface TestRepository extends MongoRepository<TestEntity, String> {
 
     @Aggregation({
             "{ $lookup: { from: 'student_enrollments', let: { classroomId: '$classroomId' }, pipeline: [ { $match: { $expr: { $and: [ { $eq: ['$classroomId', '$$classroomId'] }, { $eq: ['$studentId', ?0] } ] } } } ], as: 'enrollments' } }",
-            "{ $match: { $and: [ { 'enrollments': { $not: { $size: 0 } } },  { 'endTime': { $gt: ?1 } }, { 'status': {$in: ['UPCOMING', 'ONGOING', 'FINISHED']} } ] } }",
+            "{ $match: { $and: [ { 'enrollments': { $not: { $size: 0 } } },  { 'endTime': { $gt: ?1 } }, { 'status': {$in: ['UPCOMING', 'ONGOING']} } ] } }",
             "{ $count: 'total' }"
     })
-    long countTestInProgressByStudentId(String studentId, String currentTimestamp);
-}
+    Long countTestInProgressByStudentId(String studentId, String currentTimestamp);
+    @Query("{'status': {$nin: ['FINISHED', 'NOT_OPEN']}, 'endTime': {$gt: ?0}}")
+    List<TestEntity> findAllStateNotFinishedAndEndTimeNotExpired(String timestamp);
+    @Query("{'status': {$ne: 'FINISHED', }, 'endTime': {$lt: ?0}}")
+    List<TestEntity> findAllSateNotFinishedAndEndTimeExpired(String timestamp);}

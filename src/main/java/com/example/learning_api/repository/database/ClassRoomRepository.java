@@ -26,9 +26,12 @@ public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, St
 
     @Query("{ '_id' : { $in: ?0 }, 'name' : { $regex: ?1, $options: 'i' }, 'status': { $ne: 'BLOCKED' } }")
     Page<ClassRoomEntity> findByIdInAndNameContaining(List<String> classroomIds, String search, Pageable pageable);
-
+    @Query("{ '_id' : { $in: ?0 }, 'name' : { $regex: ?1, $options: 'i' }, $and: [ { 'status': ?2 }, { 'status': { $ne: 'BLOCKED' } } ] }")
+    Page<ClassRoomEntity> findByIdInAndNameContainingAndStatus(List<String> classroomIds, String search, String status, Pageable pageable);
     @Query("{ 'teacherId' : ?0, 'name' : { $regex: ?1, $options: 'i' }, 'status': { $ne: 'BLOCKED' } }")
     Page<ClassRoomEntity> findByTeacherIdAndNameContaining(String teacherId, String search, Pageable pageable);
+    @Query("{ 'teacherId' : ?0, 'name' : { $regex: ?1, $options: 'i' }, $and: [ { 'status': ?2 }, { 'status': { $ne: 'BLOCKED' } } ] }")
+    Page<ClassRoomEntity> findByTeacherIdAndNameContainingAndStatus(String teacherId, String search, String status, Pageable pageable);
 
     @Query("{ 'courseId' : ?0, 'status': { $ne: 'BLOCKED' } }")
     Page<ClassRoomEntity> findByCourseId(String courseId, Pageable pageable);

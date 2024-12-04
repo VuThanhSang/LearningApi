@@ -128,4 +128,9 @@ public interface DeadlineRepository extends MongoRepository<DeadlineEntity, Stri
             "{ $count: 'total' }"
     })
     Long countDeadlinesForClassroom(String classroomId);
+
+    @Query("{'status': {$nin: ['NOT_PUBLISHED', 'FINISHED']}, 'endDate': {$gt: ?0}}")
+    List<DeadlineEntity> findAllNotFinishedAndEndDateNotExpired(String currentDate);
+    @Query("{'status': {$ne: 'FINISHED'}, 'endDate': {$lt: ?0}}")
+    List<DeadlineEntity> findAllNotFinishedAndEndDateExpired(String currentDate);
 }

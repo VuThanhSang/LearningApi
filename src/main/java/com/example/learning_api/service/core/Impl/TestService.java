@@ -13,6 +13,7 @@ import com.example.learning_api.dto.response.test.*;
 import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.*;
 import com.example.learning_api.model.CustomException;
+import com.example.learning_api.quartz.Schedules.TestSchedulerService;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
 import com.example.learning_api.service.common.ModelMapperService;
@@ -27,6 +28,7 @@ import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -53,17 +55,34 @@ public class TestService implements ITestService {
     private final TeacherRepository teacherRepository;
     private final StudentAnswersRepository studentAnswerRepository;
     private final FileRepository fileRepository;
+    private final TestSchedulerService testSchedulerService;
     @Override
     public CreateTestResponse createTest(CreateTestRequest request) {
-        validateCreateTestRequest(request);
-        TestEntity testEntity = createTestEntity(request);
+        try {
+            validateCreateTestRequest(request);
+            TestEntity testEntity = createTestEntity(request);
 
-        testRepository.save(testEntity);
-        FileEntity fileEntity = createFileEntity(request, testEntity);
-        fileRepository.save(fileEntity);
+            // Lưu thông tin test vào database
+            long endTime = System.currentTimeMillis();
+            testEntity.setEndTime(String.valueOf(endTime+180*1000));
+            testRepository.save(testEntity);
 
-        return createTestResponse(testEntity, fileEntity);
+            // Lưu file nếu có
+            FileEntity fileEntity = createFileEntity(request, testEntity);
+            fileRepository.save(fileEntity);
+
+            if (request.getEndTime() != null) {
+//                long offsetInMillis = 3600 * 24 * 1000; // 24 giờ
+                long offsetInMillis = 100 * 1000; // 30s
+                testSchedulerService.scheduleTestReminder(testEntity, offsetInMillis);
+            }
+
+            return createTestResponse(testEntity, fileEntity);
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage(), e);
+        }
     }
+
 
     private void validateCreateTestRequest(CreateTestRequest request) {
         if (request.getTeacherId() == null) {
@@ -168,6 +187,9 @@ public class TestService implements ITestService {
             if (body.getName()!=null){
                 testEntity.setName(body.getName());
             }
+            if (body.getStatus()!=null){
+                testEntity.setStatus(TestStatus.valueOf(body.getStatus()));
+            }
             if (body.getDescription()!=null){
                 testEntity.setDescription(body.getDescription());
             }
@@ -226,26 +248,28 @@ public class TestService implements ITestService {
 
     @Override
     public void deleteTest(String id) {
-        try{
+        try {
             TestEntity testEntity = testRepository.findById(id)
                     .orElseThrow(() -> new IllegalArgumentException("Test not found"));
+
             List<FileEntity> fileEntities = fileRepository.findByOwnerIdAndOwnerType(testEntity.getId(), FileOwnerType.TEST.name());
-            for (FileEntity fileEntity : fileEntities){
-                cloudinaryService.deleteImage(fileEntity.getUrl());
-                fileEntities.remove(fileEntity);
+            for (FileEntity fileEntity : new ArrayList<>(fileEntities)) {
+                if (fileEntity.getUrl() != null) {
+                    cloudinaryService.deleteImage(fileEntity.getUrl());
+                }
+                fileRepository.delete(fileEntity);
             }
-            List<QuestionEntity> questionEntities = questionRepository.findByTestId(id,Sort.by(Sort.Direction.ASC, "index"));
-            for (QuestionEntity questionEntity : questionEntities){
+
+            List<QuestionEntity> questionEntities = questionRepository.findByTestId(id, Sort.by(Sort.Direction.ASC, "index"));
+            for (QuestionEntity questionEntity : questionEntities) {
                 answerRepository.deleteByQuestionId(questionEntity.getId());
             }
             questionRepository.deleteByTestId(id);
             testRepository.deleteById(id);
             testResultRepository.deleteByTestId(id);
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }
-
     }
 
     @Override
@@ -569,11 +593,11 @@ public class TestService implements ITestService {
             Pageable pageable = PageRequest.of(page, size);
             String currentTimestamp = String.valueOf(System.currentTimeMillis());
             Slice<TestEntity> testEntities = testRepository.findTestInProgressByStudentId(studentId, currentTimestamp, pageable);
-            long totalElements = testRepository.countTestInProgressByStudentId(studentId, currentTimestamp);
-            int totalPages = (int) Math.ceil((double) totalElements / size);
+            Long totalElements = testRepository.countTestInProgressByStudentId(studentId, currentTimestamp);
 
             GetTestInProgress resData = new GetTestInProgress();
             List<GetTestInProgress.TestResponse> testResponses = new ArrayList<>();
+            int count = 0;
             for (TestEntity testEntity : testEntities) {
                 GetTestInProgress.TestResponse testResponse = modelMapperService.mapClass(testEntity, GetTestInProgress.TestResponse.class);
                 testResponse.setStatus(testEntity.getStatus().name());
@@ -582,11 +606,16 @@ public class TestService implements ITestService {
                 } else {
                     testResponse.setAttemptLimit(testEntity.getAttemptLimit());
                 }
+                List<TestResultEntity> testResultEntities = testResultRepository.findByStudentIdAndTestId(studentId, testEntity.getId());
+                if (!testResultEntities.isEmpty()) {
+                    count++;
+                    continue;
+                }
                 testResponses.add(testResponse);
             }
             resData.setTests(testResponses);
-            resData.setTotalElements(totalElements);
-            resData.setTotalPage(totalPages);
+            resData.setTotalElements((totalElements != null ? totalElements : 0) - count);
+            resData.setTotalPage((int) Math.ceil((double) resData.getTotalElements() / size));
             return resData;
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
@@ -701,6 +730,28 @@ public class TestService implements ITestService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
+
+    @Override
+    public List<TestEntity> getAllTest() {
+        try {
+            String timestamp = String.valueOf(System.currentTimeMillis());
+            return testRepository.findAllStateNotFinishedAndEndTimeNotExpired(timestamp);
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public List<TestEntity> getAllTestExpired() {
+        try{
+            String timestamp = String.valueOf(System.currentTimeMillis());
+            return testRepository.findAllSateNotFinishedAndEndTimeExpired(timestamp);
+        }
+        catch (Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
     private TestSubmitRequest convertToTestSubmitRequest(TestResultEntity testResult,String studentId) {
         List<StudentAnswersEntity> studentAnswersEntities = studentAnswersRepository.findByStudentIdAndTestResultId(studentId, testResult.getId());
         List<TestSubmitRequest.QuestionAndAnswer> questionAndAnswers = new ArrayList<>();

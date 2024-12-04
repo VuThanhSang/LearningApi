@@ -6,6 +6,7 @@ import com.example.learning_api.dto.request.test.TestSubmitRequest;
 import com.example.learning_api.dto.request.test.UpdateTestRequest;
 import com.example.learning_api.dto.response.question.GetQuestionsResponse;
 import com.example.learning_api.dto.response.test.*;
+import com.example.learning_api.entity.sql.database.TestEntity;
 
 import java.util.List;
 
@@ -23,7 +24,7 @@ public interface ITestService {
     TestSubmitResponse submitTest( TestSubmitRequest body);
     List<TestResultResponse> getTestResult(String studentId, String testId);
     GetTestProgressResponse getProgress(String studentId, String testId);
-
-
+    List<TestEntity> getAllTest();
+    List<TestEntity> getAllTestExpired();
 
 }

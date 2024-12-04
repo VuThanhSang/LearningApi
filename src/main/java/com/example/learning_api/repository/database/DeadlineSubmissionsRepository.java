@@ -114,4 +114,7 @@ public interface DeadlineSubmissionsRepository extends MongoRepository<DeadlineS
                     "} }"
     })
     List<DeadlineSubmissionsEntity> findByStudentIdAndClassroomId(String studentId, String classroomId);
+
+    @Query("{'studentId': ?0, 'deadlineId': ?1}")
+    List<DeadlineSubmissionsEntity> findByStudentIdAndDeadlineId(String studentId, String deadlineId);
 }

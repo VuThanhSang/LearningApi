@@ -13,6 +13,7 @@ import com.example.learning_api.service.core.INotificationService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -26,6 +27,7 @@ public class NotificationService implements INotificationService {
     private final NotificationReceiveRepository notificationReceiveRepository;
     private final NotificationSettingsRepository notificationSettingsRepository;
     private final UserNotificationSettingsRepository userNotificationSettingsRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     // 1. Tạo notification mới
     @Transactional
@@ -73,6 +75,13 @@ public class NotificationService implements INotificationService {
                 .totalReceivers(savedNotification.getTotalReceivers())
                 .receiversId(receives.stream().map(NotificationReceiveEntity::getUserId).collect(Collectors.toList()))
                 .build();
+        // Send real-time WebSocket notification to each receiver
+        notificationResponse.getReceiversId().forEach(userId -> {
+            messagingTemplate.convertAndSend(
+                    "/topic/notifications/" + userId,
+                    notification
+            );
+        });
         return notificationResponse;
     }
     // 2. Filter receivers dựa trên preferences của họ

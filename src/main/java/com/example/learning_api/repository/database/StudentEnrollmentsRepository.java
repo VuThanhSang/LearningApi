@@ -9,6 +9,7 @@ import com.example.learning_api.dto.response.deadline.UpcomingDeadlinesResponse;
 import com.example.learning_api.dto.response.test.TestResultForStudentResponse;
 import com.example.learning_api.dto.response.test.TestResultsForClassroomResponse;
 import com.example.learning_api.entity.sql.database.ClassRoomEntity;
+import com.example.learning_api.entity.sql.database.DeadlineSubmissionsEntity;
 import com.example.learning_api.entity.sql.database.StudentEnrollmentsEntity;
 import com.example.learning_api.enums.StudentEnrollmentStatus;
 import org.bson.Document;
@@ -113,7 +114,16 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
             "{$project: {_id: 0, studentId: 1}}"
     })
     List<String> findStudentsNotTakenTest(String classroomId, String testId);
-
+    @Aggregation(pipeline = {
+            "{$match: {classroomId: ?0}}",
+            "{$lookup: {from: 'deadlines', localField: 'classroomId', foreignField: 'classroomId', as: 'deadlines'}}",
+            "{$unwind: '$deadlines'}",
+            "{$lookup: {from: 'deadline_submissions', let: { studentId: '$studentId', deadlineId: '$deadlines._id' }, pipeline: [{$match: {$expr: {$and: [{ $eq: ['$studentId', '$$studentId'] },{ $eq: ['$deadlineId', '$$deadlineId'] }]}}}], as: 'submissions'}}",
+            "{$unwind: {path: '$submissions', preserveNullAndEmptyArrays: true}}",
+            "{$match: {'submissions': { $size: 0 }}}",
+            "{$project: {_id: 0, studentId: 1}}"
+    })
+    List<String> findStudentsNotTakenDeadline(String classroomId, String deadlineId);
     @Aggregation(pipeline = {
             "{ $match: { studentId: ?0 } }",
             "{ $lookup: { from: 'deadlines', localField: 'classroomId', foreignField: 'classroomId', as: 'deadlines' } }",
@@ -211,4 +221,6 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
             "{$count: 'currentMonthEnrollments'}"
     })
     Long countCurrentMonthEnrollments();
+
+
 }
