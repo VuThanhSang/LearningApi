@@ -40,13 +40,7 @@ public class NotificationController {
                     request.getReceiverIds()
             );
 
-            // Send real-time WebSocket notification to each receiver
-            notification.getReceiversId().forEach(userId -> {
-                messagingTemplate.convertAndSend(
-                        "/topic/notifications/" + userId,
-                        notification
-                );
-            });
+
 
             return ResponseEntity.ok(
                     ResponseAPI.<NotificationResponse>builder()

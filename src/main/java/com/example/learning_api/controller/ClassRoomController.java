@@ -113,6 +113,7 @@ public class ClassRoomController {
             @RequestParam(name="name",required = false,defaultValue = "") String search,
                                                             @RequestParam(name="page",required = false,defaultValue = "1") int page,
                                                             @RequestParam(name="size",required = false,defaultValue = "10") int size,
+                                @RequestParam(name="status",required = false,defaultValue = "") String status,
                                 @RequestHeader(name = "Authorization") String authorizationHeader) {
         try{
             String token = authorizationHeader.replace("Bearer ", "");
@@ -128,7 +129,10 @@ public class ClassRoomController {
             else{
                 callId = "";
             }
-            GetClassRoomsResponse resData = classRoomService.getClassRooms( page-1, size,search,callId,role);
+            if (status.equals("")){
+                status =null;
+            }
+            GetClassRoomsResponse resData = classRoomService.getClassRooms( page-1, size,search,callId,role,status);
             ResponseAPI<GetClassRoomsResponse> res = ResponseAPI.<GetClassRoomsResponse>builder()
                     .timestamp(new Date())
                     .message("Get class room successfully")

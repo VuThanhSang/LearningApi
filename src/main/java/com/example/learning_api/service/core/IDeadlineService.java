@@ -28,4 +28,6 @@ public interface IDeadlineService {
     GetDeadlineStatistics getDeadlineStatistics(String classroomId, int page, int size);
     GetDeadlinesResponse getDeadlinesByTeacherIdForTeacher(String teacherId, String search, String status, String startDate, String endDate, Integer page, Integer size);
     List<DeadlineEntity> getAllDeadlinesByTeacherId(String teacherId);
+    List<DeadlineEntity> getAll();
+    List<DeadlineEntity> getAllExpiredDeadlines();
 }

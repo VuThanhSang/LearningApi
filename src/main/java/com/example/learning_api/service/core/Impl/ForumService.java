@@ -116,7 +116,7 @@ public class ForumService implements IForumService {
            }
             ForumEntity forumEntity = modelMapperService.mapClass(request, ForumEntity.class);
             List<String> tags = new ArrayList<>();
-            if (request.getIsForClass()){
+            if (request.getIsForClass()!=null&&request.getIsForClass()){
                 ClassRoomEntity classRoomEntity = classRoomRepository.findById(request.getClassId()).orElseThrow(()->new IllegalArgumentException("Class Id is not found"));
                 TagEntity tagEntity = tagRepository.findByClassId(request.getClassId());
                 if (tagEntity == null) {
@@ -420,7 +420,12 @@ public class ForumService implements IForumService {
             List<GetForumsResponse.ForumResponse> data = new ArrayList<>();
             forumEntities.forEach(forumEntity -> {
                 GetForumsResponse.ForumResponse forumResponse = GetForumsResponse.ForumResponse.formForumEntity(forumEntity);
-                forumResponse.setAuthor(userRepository.findById(userId).get());
+                if (forumEntity.getAuthorId()!=null){
+                    UserEntity userEntity = userRepository.findById(forumEntity.getAuthorId()).orElse(null);
+                    if (userEntity!=null){
+                        forumResponse.setAuthor(userEntity);
+                    }
+                }
                 List<FileEntity> fileEntities = fileRepository.findByOwnerIdAndOwnerType(forumEntity.getId(), FileOwnerType.FORUM.name());
                 forumResponse.setTags(tagRepository.findByIdIn(forumEntity.getTags()));
                 forumResponse.setSources(fileEntities);

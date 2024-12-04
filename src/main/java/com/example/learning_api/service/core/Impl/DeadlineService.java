@@ -31,10 +31,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.TemporalAdjusters;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -52,6 +49,7 @@ public class DeadlineService implements IDeadlineService {
     private final SectionRepository sectionRepository;
     private final FileRepository fileRepository;
     private final ScoringCriteriaRepository scoringCriteriaRepository;
+    private final DeadlineSubmissionsRepository deadlineSubmissionsRepository;
     public void processFiles (List<MultipartFile> files,String title, DeadlineEntity deadlineEntity){
         if (files == null) {
             return;
@@ -342,44 +340,60 @@ public class DeadlineService implements IDeadlineService {
         return startOfMonth.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
     }
     @Override
-    public GetUpcomingDeadlineResponse getUpcomingDeadlineByStudentId(String studentId,String filterType, Integer page, Integer size) {
-        try{
-            if (studentRepository.findById(studentId) == null){
+    public GetUpcomingDeadlineResponse getUpcomingDeadlineByStudentId(String studentId, String filterType, Integer page, Integer size) {
+        try {
+            if (studentRepository.findById(studentId) == null) {
                 throw new IllegalArgumentException("StudentId is not found");
             }
             Pageable pageable = PageRequest.of(page, size);
-            String date = String.valueOf(System.currentTimeMillis());
-//            String date = "1724238234617";
-            String startDate = "";
-            String endDate = "";
+            String startDate;
+            String endDate;
             if (filterType == null) {
                 startDate = String.valueOf(System.currentTimeMillis());
-                endDate = String.valueOf(System.currentTimeMillis() + 315360000000L); // 10 năm (10 * 365 * 24 * 60 * 60 * 1000)
-            }
-            else if (filterType.equals("day")){
+                endDate = String.valueOf(System.currentTimeMillis() + 315360000000L); // 10 years
+            } else if (filterType.equals("day")) {
                 startDate = String.valueOf(getStartOfDayTimestamp());
                 endDate = String.valueOf(getStartOfDayTimestamp() + 86400000);
-            }
-            else if (filterType.equals("week")){
+            } else if (filterType.equals("week")) {
                 startDate = String.valueOf(getStartOfWeekTimestamp());
                 endDate = String.valueOf(getStartOfWeekTimestamp() + 604800000);
-            }
-            else if (filterType.equals("month")){
+            } else if (filterType.equals("month")) {
                 startDate = String.valueOf(getStartOfMonthTimestamp());
                 endDate = String.valueOf(getStartOfMonthTimestamp() + 2592000000L);
+            } else {
+                throw new IllegalArgumentException("Invalid filter type");
             }
 
             List<UpcomingDeadlinesResponse> deadlineEntities = studentEnrollmentsRepository.getUpcomingDeadlines(studentId, startDate, endDate, pageable);
-
             GetUpcomingDeadlineResponse getUpcomingDeadlineResponse = new GetUpcomingDeadlineResponse();
+            Iterator<UpcomingDeadlinesResponse> iterator = deadlineEntities.iterator();
+            int count = 0;
+
+            while (iterator.hasNext()) {
+                UpcomingDeadlinesResponse deadlineEntity = iterator.next();
+                List<FileEntity> files = fileRepository.findByOwnerIdAndOwnerType(deadlineEntity.getId(), FileOwnerType.DEADLINE.name());
+                deadlineEntity.setFiles(files);
+                List<DeadlineSubmissionsEntity> deadlineSubmissionsEntity = deadlineSubmissionsRepository.findByStudentIdAndDeadlineId(studentId, deadlineEntity.getId());
+                if (!deadlineSubmissionsEntity.isEmpty()) {
+                    count++;
+                    iterator.remove();
+                }
+            }
+
+            if (deadlineEntities.isEmpty()) {
+                getUpcomingDeadlineResponse.setUpcomingDeadlines(new ArrayList<>());
+                getUpcomingDeadlineResponse.setTotalElements(0);
+                getUpcomingDeadlineResponse.setTotalPages(0);
+                return getUpcomingDeadlineResponse;
+            }
+
+            long totalElements = studentEnrollmentsRepository.countUpcomingDeadlines(studentId, startDate, endDate) != null ? studentEnrollmentsRepository.countUpcomingDeadlines(studentId, startDate, endDate) : 0;
             getUpcomingDeadlineResponse.setUpcomingDeadlines(deadlineEntities);
-            long totalElements = studentEnrollmentsRepository.countUpcomingDeadlines(studentId, startDate, endDate)!=null?studentEnrollmentsRepository.countUpcomingDeadlines(studentId, startDate, endDate):0;
-            getUpcomingDeadlineResponse.setTotalElements(totalElements);
+            getUpcomingDeadlineResponse.setTotalElements(totalElements - count);
             getUpcomingDeadlineResponse.setTotalPages((int) Math.ceil((double) totalElements / size));
             return getUpcomingDeadlineResponse;
-        }
-        catch (Exception e) {
-            log.error("Error in convertToDeadlineRequest: ", e);
+        } catch (Exception e) {
+            log.error("Error in getUpcomingDeadlineByStudentId: ", e);
             throw new IllegalArgumentException(e.getMessage());
         }
     }
@@ -653,5 +667,29 @@ public class DeadlineService implements IDeadlineService {
     @Override
     public List<DeadlineEntity> getAllDeadlinesByTeacherId(String teacherId) {
         return deadlineRepository.findAllByTeacherId(teacherId);
+    }
+
+    @Override
+    public List<DeadlineEntity> getAll() {
+        try{
+            String timestamp = String.valueOf(System.currentTimeMillis());
+            return deadlineRepository.findAllNotFinishedAndEndDateNotExpired(timestamp);
+        }
+        catch (Exception e) {
+            log.error("Error in getAll: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public List<DeadlineEntity> getAllExpiredDeadlines() {
+        try{
+            String timestamp = String.valueOf(System.currentTimeMillis());
+            return deadlineRepository.findAllNotFinishedAndEndDateExpired(timestamp);
+        }
+        catch (Exception e) {
+            log.error("Error in getAllExpiredDeadlines: ", e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
     }
 }
