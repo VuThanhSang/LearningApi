@@ -6,6 +6,7 @@ import com.example.learning_api.dto.response.notification.NotificationResponse;
 import com.example.learning_api.entity.sql.database.NotificationEntity;
 import com.example.learning_api.entity.sql.database.NotificationReceiveEntity;
 import com.example.learning_api.entity.sql.database.NotificationSettingsEntity;
+import com.example.learning_api.entity.sql.database.UserNotificationSettingsEntity;
 import jakarta.transaction.Transactional;
 
 import java.util.List;
@@ -51,4 +52,7 @@ public interface INotificationService {
     @Transactional
     void cleanupExpiredNotifications();
 
+
+    List<NotificationSettingsEntity> searchNotificationSettings( String keyword);
+    List<UserNotificationSettingsEntity> getUserNotificationSettings(String userId, String search);
 }

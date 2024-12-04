@@ -2,20 +2,30 @@ package com.example.learning_api.service.core.Impl;
 
 import com.example.learning_api.dto.request.notification.UpdateUserNotificationSettingRequest;
 import com.example.learning_api.dto.response.notification.NotificationResponse;
-import com.example.learning_api.entity.sql.database.NotificationEntity;
-import com.example.learning_api.entity.sql.database.NotificationReceiveEntity;
-import com.example.learning_api.entity.sql.database.NotificationSettingsEntity;
-import com.example.learning_api.entity.sql.database.UserNotificationSettingsEntity;
+import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.NotificationFormType;
 import com.example.learning_api.enums.RoleEnum;
+import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.core.INotificationService;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.spring6.SpringTemplateEngine;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -23,15 +33,24 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class NotificationService implements INotificationService {
+    @Value("${spring.mail.username}")
+    private String mailFrom;
+    @Autowired
+    private SpringTemplateEngine templateEngine;
+    @Autowired
+    @Lazy
+    private PasswordEncoder passwordEncoder;
     private final NotificationRepository notificationRepository;
     private final NotificationReceiveRepository notificationReceiveRepository;
     private final NotificationSettingsRepository notificationSettingsRepository;
     private final UserNotificationSettingsRepository userNotificationSettingsRepository;
     private final SimpMessagingTemplate messagingTemplate;
-
+    private final JavaMailSender javaMailSender;
+    private final UserRepository userRepository;
     // 1. Tạo notification mới
     @Transactional
     @Override
+    @Async
     public NotificationResponse createNotification(NotificationEntity notification, List<String> receiverIds) {
         // Validate notification settings
         NotificationSettingsEntity settings = notificationSettingsRepository
@@ -112,17 +131,20 @@ public class NotificationService implements INotificationService {
             List<String> receiverIds,
             NotificationEntity notification,
             NotificationSettingsEntity settings) {
-        return receiverIds.stream()
-                .map(userId -> {
-                    String deliveryMethod = determineDeliveryMethod(userId, settings);
-                    return NotificationReceiveEntity.builder()
-                            .notificationId(notification.getId())
-                            .userId(userId)
-                            .build();
-                })
-                .collect(Collectors.toList());
+        List<NotificationReceiveEntity> receives = new ArrayList<>();
+        for (String userId : receiverIds) {
+            String deliveryMethod = determineDeliveryMethod(userId, settings);
+            if (deliveryMethod.equals("email")) {
+                sendNotificationByEmail(notification, userId);
+            } else {
+                receives.add(NotificationReceiveEntity.builder()
+                        .notificationId(notification.getId())
+                        .userId(userId)
+                        .build());
+            }
+        }
+        return receives;
     }
-
     // 4. Xác định delivery method cho user
     @Override
     public String determineDeliveryMethod(String userId, NotificationSettingsEntity settings) {
@@ -191,7 +213,9 @@ public class NotificationService implements INotificationService {
                         .userId(request.getUserId())
                         .notificationSettingId(request.getNotificationSettingId())
                         .build());
-
+        NotificationSettingsEntity notificationSettings = notificationSettingsRepository
+                .findById(request.getNotificationSettingId()).orElseThrow();
+        settings.setNotificationSettingName(notificationSettings.getNotificationType());
         settings.setEnabled(request.getEnabled());
         settings.setDeliveryMethod(request.getDeliveryMethod());
         settings.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
@@ -226,6 +250,16 @@ public class NotificationService implements INotificationService {
         notificationRepository.saveAll(expiredNotifications);
     }
 
+    @Override
+    public List<NotificationSettingsEntity> searchNotificationSettings(String keyword) {
+        return notificationSettingsRepository.findByNameContainingIgnoreCase(keyword);
+    }
+
+    @Override
+    public List<UserNotificationSettingsEntity> getUserNotificationSettings(String userId,String search) {
+        return userNotificationSettingsRepository.findByUserIdAndNotificationNameRegex(userId,search);
+    }
+
     // Helper method để validate frequency
     private void    validateNotificationFrequency(String authorId, NotificationSettingsEntity settings) {
         if (settings.getMaxFrequencyPerDay() != null) {
@@ -258,5 +292,32 @@ public class NotificationService implements INotificationService {
         // Ví dụ: check role của mỗi receiver có trong allowedRoles không
     }
 
+    private void sendNotificationByEmail(NotificationEntity notification, String userId) {
+        try {
+            MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+            UserEntity user = userRepository.findById(userId).orElse(null);
+            if (user == null) {
+               return;
+            }
+            MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, StandardCharsets.UTF_8.name());
+
+            Context context = new Context();
+            context.setVariable("body", notification.getMessage());
+            context.setVariable("toMail", user.getEmail());
+            String htmlContent = templateEngine.process("email-template", context);
+
+
+            mimeMessageHelper.setFrom(mailFrom);
+            mimeMessageHelper.setTo(user.getEmail());
+            mimeMessageHelper.setText(htmlContent, true);
+            mimeMessageHelper.setSubject(notification.getTitle());
+
+
+
+            javaMailSender.send(mimeMessage);
+        } catch (MessagingException e) {
+            throw new CustomException( "Error while sending email");
+        }
+    }
 
 }
