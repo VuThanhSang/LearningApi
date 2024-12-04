@@ -175,5 +175,29 @@ public class NotificationController {
         }
     }
 
+    @PostMapping("/send-email/classroom/{classroomId}")
+    public ResponseEntity<ResponseAPI<Void>> sendNotificationByEmailForClassroom(
+            @RequestBody NotificationEntity request,
+            @PathVariable String classroomId) {
+        try {
+            notificationService.sendNotificationByEmailForClassroom(
+                    request,
+                    classroomId
+            );
+            return ResponseEntity.ok(
+                    ResponseAPI.<Void>builder()
+                            .message("Notification sent successfully")
+                            .build()
+            );
+        } catch (Exception e) {
+            log.error("Error sending notification", e);
+            return ResponseEntity.badRequest().body(
+                    ResponseAPI.<Void>builder()
+                            .message(e.getMessage())
+                            .build()
+            );
+        }
+    }
+
 
 }

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:remove="all">Notification Email Template</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+<p>Xin chào,</p>
+<p>Bạn có một thông báo mới từ ứng dụng của chúng tôi:</p>
+<p><strong>Tiêu đề:</strong> <span th:text="${title}"></span></p>
+<p><strong>Nội dung:</strong> <span th:text="${body}"></span></p>
+<p>Vui lòng kiểm tra ứng dụng để biết thêm chi tiết.</p>
+<p>Chúc bạn một ngày tốt lành!</p>
+</body>
+</html>
