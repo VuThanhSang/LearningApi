@@ -4,6 +4,8 @@ import com.example.learning_api.dto.request.notification.SendNotificationRequest
 import com.example.learning_api.dto.request.notification.UpdateUserNotificationSettingRequest;
 import com.example.learning_api.dto.response.notification.NotificationResponse;
 import com.example.learning_api.entity.sql.database.NotificationEntity;
+import com.example.learning_api.entity.sql.database.NotificationSettingsEntity;
+import com.example.learning_api.entity.sql.database.UserNotificationSettingsEntity;
 import com.example.learning_api.model.ResponseAPI;
 import com.example.learning_api.service.common.JwtService;
 import com.example.learning_api.service.core.INotificationService;
@@ -124,6 +126,50 @@ public class NotificationController {
             return ResponseEntity.badRequest().body(
                     ResponseAPI.<Void>builder()
                             .message("Failed to update user notification settings")
+                            .build()
+            );
+        }
+    }
+    @GetMapping("/user-settings")
+    public ResponseEntity<ResponseAPI<List<UserNotificationSettingsEntity>>> getUserNotificationSettings(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestParam(name = "search", required = false, defaultValue = "") String search) {
+        try {
+            String token = authorizationHeader.substring(7);
+            String currentUserId = jwtService.extractUserId(token);
+            List<UserNotificationSettingsEntity> settings = notificationService.getUserNotificationSettings(currentUserId, search);
+            return ResponseEntity.ok(
+                    ResponseAPI.<List<UserNotificationSettingsEntity>>builder()
+                            .data(settings)
+                            .message("User notification settings retrieved")
+                            .build()
+            );
+        } catch (Exception e) {
+            log.error("Error retrieving user notification settings", e);
+            return ResponseEntity.badRequest().body(
+                    ResponseAPI.<List<UserNotificationSettingsEntity>>builder()
+                            .message("Failed to retrieve user notification settings")
+                            .build()
+            );
+        }
+    }
+
+    @GetMapping("/search-settings")
+    public ResponseEntity<ResponseAPI<List<NotificationSettingsEntity>>> searchNotificationSettings(
+            @RequestParam(name = "keyword", required = false, defaultValue = "")  String keyword) {
+        try {
+            List<NotificationSettingsEntity> settings = notificationService.searchNotificationSettings(keyword);
+            return ResponseEntity.ok(
+                    ResponseAPI.<List<NotificationSettingsEntity>>builder()
+                            .data(settings)
+                            .message("Notification settings retrieved")
+                            .build()
+            );
+        } catch (Exception e) {
+            log.error("Error searching notification settings", e);
+            return ResponseEntity.badRequest().body(
+                    ResponseAPI.<List<NotificationSettingsEntity>>builder()
+                            .message("Failed to search notification settings")
                             .build()
             );
         }

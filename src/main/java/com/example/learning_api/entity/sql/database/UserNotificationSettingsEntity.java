@@ -24,6 +24,7 @@ public class UserNotificationSettingsEntity {
    private String userId;
 
    private String notificationSettingId;
+   private String notificationSettingName;
 
    @Builder.Default
    private Boolean enabled = true;
