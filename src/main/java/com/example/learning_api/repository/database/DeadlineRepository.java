@@ -133,4 +133,7 @@ public interface DeadlineRepository extends MongoRepository<DeadlineEntity, Stri
     List<DeadlineEntity> findAllNotFinishedAndEndDateNotExpired(String currentDate);
     @Query("{'status': {$ne: 'FINISHED'}, 'endDate': {$lt: ?0}}")
     List<DeadlineEntity> findAllNotFinishedAndEndDateExpired(String currentDate);
+
+    @Query("{'teacherId': ?0, 'status' : {$ne: 'FINISHED'}, 'endDate': {$gt: ?1}}")
+    List<DeadlineEntity> findByTeacherIdAndEndDateNotExpired(String teacherId, String currentDate);
 }

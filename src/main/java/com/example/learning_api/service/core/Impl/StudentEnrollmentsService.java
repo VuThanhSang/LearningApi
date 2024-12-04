@@ -193,7 +193,7 @@ public class StudentEnrollmentsService implements IStudentEnrollmentsService {
                     );
             }
 
-            // Apply sorting direction
+// Apply sorting direction AFTER creating the base comparator
             if ("desc".equalsIgnoreCase(order)) {
                 comparator = comparator.reversed();
             }

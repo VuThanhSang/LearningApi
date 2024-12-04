@@ -9,14 +9,12 @@ import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.classroom.ClassroomDeadlineResponse;
 import com.example.learning_api.dto.response.deadline.*;
 import com.example.learning_api.entity.sql.database.*;
-import com.example.learning_api.enums.DeadlineStatus;
-import com.example.learning_api.enums.DeadlineType;
-import com.example.learning_api.enums.FaqSourceType;
-import com.example.learning_api.enums.FileOwnerType;
+import com.example.learning_api.enums.*;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
 import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.IDeadlineService;
+import com.example.learning_api.service.core.INotificationService;
 import com.example.learning_api.utils.ImageUtils;
 import com.example.learning_api.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +48,7 @@ public class DeadlineService implements IDeadlineService {
     private final FileRepository fileRepository;
     private final ScoringCriteriaRepository scoringCriteriaRepository;
     private final DeadlineSubmissionsRepository deadlineSubmissionsRepository;
+    private final INotificationService notificationService;
     public void processFiles (List<MultipartFile> files,String title, DeadlineEntity deadlineEntity){
         if (files == null) {
             return;
@@ -134,7 +133,21 @@ public class DeadlineService implements IDeadlineService {
             deadlineEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             deadlineEntity.setStatus(DeadlineStatus.UPCOMING);
             deadlineRepository.save(deadlineEntity);
-
+            NotificationEntity notificationEntity = new NotificationEntity();
+            notificationEntity.setNotificationSettingId("674473d53e126c2148ce1acb");
+            notificationEntity.setTitle("Notification new Deadline ");
+            notificationEntity.setMessage("Deadline " + deadlineEntity.getTitle() + " is created");
+            notificationEntity.setAuthorId(deadlineEntity.getId());
+            notificationEntity.setPriority(NotificationPriority.NORMAL);
+            List<String> studentId = studentEnrollmentsRepository.findStudentsNotTakenDeadline(deadlineEntity.getClassroomId(), deadlineEntity.getId());
+            List<String> userIds = new ArrayList<>();
+            for (String id : studentId) {
+                StudentEntity studentEntity = studentRepository.findById(id).orElse(null);
+                if (studentEntity != null) {
+                    userIds.add(studentEntity.getUserId());
+                }
+            }
+            notificationService.createNotification(notificationEntity, userIds);
             processFiles(body.getFiles(),body.getTitle(),deadlineEntity);
         } catch (Exception e) {
             log.error("Error in createDeadline: ", e);
@@ -418,6 +431,7 @@ public class DeadlineService implements IDeadlineService {
                 List<FileEntity> files = fileRepository.findByOwnerIdAndOwnerType(deadlineResponse.getId(), FileOwnerType.DEADLINE.name());
                 List<ScoringCriteriaEntity> scoringCriteriaEntities = scoringCriteriaRepository.findByDeadlineId(deadlineResponse.getId());
                 deadlineResponse.setFiles(files);
+                deadlineResponse.setStartDate(deadlineEntity.getStartDate());
                 deadlineResponse.setScoringCriteria(scoringCriteriaEntities);
                 assert deadlineEntity != null;
                 deadlineResponse.setAllowLateSubmission(deadlineEntity.getAllowLateSubmission());

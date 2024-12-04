@@ -525,7 +525,7 @@ public class ForumService implements IForumService {
     }
 
     @Override
-    public GetForumsResponse getForumByClass(String classId, int page, int size, String search, String sortOrder, String userId, String sortBy) {
+    public GetForumsResponse getForumByClass(String classId, int page, int size, String search, String sortOrder, String userId, String sortBy,List<String> tags) {
         try {
             Sort sort;
             if ("vote".equalsIgnoreCase(sortBy)) {
@@ -533,9 +533,9 @@ public class ForumService implements IForumService {
             } else {
                 sort = sortOrder.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
             }
+            List<String> tagIds = tagRepository.findByNameIn(tags).stream().map(TagEntity::getId).collect(Collectors.toList());
             Pageable pageable = PageRequest.of(page, size, sort);
             TagEntity tagEntities = tagRepository.findByClassId(classId);
-            List<String> tagIds = new ArrayList<>();
             if (tagEntities == null){
                 GetForumsResponse getForumsResponse = new GetForumsResponse();
                 getForumsResponse.setForums(new ArrayList<>());

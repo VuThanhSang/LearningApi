@@ -1,10 +1,12 @@
 package com.example.learning_api.controller;
 
 import com.example.learning_api.constant.StatusCode;
+import com.example.learning_api.dto.request.deadline.GetUpcomingDeadlineResponse;
 import com.example.learning_api.dto.request.teacher.CreateTeacherRequest;
 import com.example.learning_api.dto.request.teacher.UpdateTeacherRequest;
 import com.example.learning_api.dto.response.teacher.CreateTeacherResponse;
 import com.example.learning_api.dto.response.teacher.GetTeachersResponse;
+import com.example.learning_api.dto.response.test.GetTestInProgress;
 import com.example.learning_api.model.ResponseAPI;
 import com.example.learning_api.service.core.ITeacherService;
 import jakarta.validation.Valid;
@@ -120,6 +122,49 @@ public class TeacherController {
         }
         catch (Exception e){
             ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
+
+
+    @GetMapping(path = "/{teacherId}/upcoming-deadline")
+    public ResponseEntity<ResponseAPI<GetUpcomingDeadlineResponse>> getUpcomingDeadline(@PathVariable String teacherId) {
+        try{
+            GetUpcomingDeadlineResponse data = teacherService.getUpcomingDeadline(teacherId);
+            ResponseAPI<GetUpcomingDeadlineResponse> res = ResponseAPI.<GetUpcomingDeadlineResponse>builder()
+                    .timestamp(new Date())
+                    .data(data)
+                    .message("Get upcoming deadline successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetUpcomingDeadlineResponse> res = ResponseAPI.<GetUpcomingDeadlineResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
+
+    @GetMapping(path = "/{teacherId}/test-in-progress")
+    public ResponseEntity<ResponseAPI<GetTestInProgress>> getTestInProgress(@PathVariable String teacherId) {
+        try{
+            GetTestInProgress data=  teacherService.getTestInProgress(teacherId);
+            ResponseAPI<GetTestInProgress> res = ResponseAPI.<GetTestInProgress>builder()
+                    .timestamp(new Date())
+                    .data(data)
+                    .message("Get test in progress successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetTestInProgress> res = ResponseAPI.<GetTestInProgress>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();
