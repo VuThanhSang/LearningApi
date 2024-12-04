@@ -8,6 +8,7 @@ import com.example.learning_api.repository.database.DeadlineRepository;
 import com.example.learning_api.repository.database.StudentEnrollmentsRepository;
 import com.example.learning_api.repository.database.StudentRepository;
 import com.example.learning_api.service.core.INotificationService;
+import lombok.RequiredArgsConstructor;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -17,11 +18,12 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
+@RequiredArgsConstructor
 public class DeadlineReminderJob implements Job {
-    private StudentEnrollmentsRepository studentEnrollmentsRepository;
-    private INotificationService notificationService;
-    private StudentRepository studentRepository;
-    private DeadlineRepository deadlineRepository;
+    private final StudentEnrollmentsRepository studentEnrollmentsRepository;
+    private final INotificationService notificationService;
+    private final  StudentRepository studentRepository;
+    private final DeadlineRepository deadlineRepository;
     private static final Logger logger = LoggerFactory.getLogger(TestReminderJob.class);
 
     @Override

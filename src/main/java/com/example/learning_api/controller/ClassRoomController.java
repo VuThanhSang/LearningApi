@@ -511,7 +511,7 @@ public class ClassRoomController {
                                                                                      @RequestParam(name="size",required = false,defaultValue = "10") int size,
                                                                                         @RequestParam(name="search",required = false,defaultValue = "") String search,
                                                                                         @RequestParam(name="sort",required = false,defaultValue = "createdAt") String sortBy,
-                                                                                        @RequestParam(name="oder",required = false,defaultValue = "desc") String sortDirection)
+                                                                                        @RequestParam(name="sortDirection",required = false,defaultValue = "desc") String sortDirection)
                                                                                       {
         try {
             GetStudentInClassResponse data = studentEnrollmentsService.getStudentInClass(classroomId, page - 1, size,search,sortBy,sortDirection);

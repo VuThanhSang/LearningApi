@@ -202,6 +202,7 @@ public class ForumController {
                                                                           @RequestParam(name = "page", required = false, defaultValue = "1") int page,
                                                                           @RequestParam(name = "size", required = false, defaultValue = "10") int size,
                                                                           @RequestParam(name = "search", required = false, defaultValue = "") String search,
+                                                                          @RequestParam(name = "tag", required = false, defaultValue = "") List<String> tags,
                                                                           @RequestParam(name = "sortOrder", required = false, defaultValue = "desc") String sortOrder,
                                                                           @RequestParam(name = "sortBy", required = false, defaultValue = "createdAt") String sortBy,
                                                                           @RequestHeader("Authorization") String authorizationHeader) {
@@ -209,7 +210,7 @@ public class ForumController {
             String callId = extractUserId(authorizationHeader);
             String role = extractRole(authorizationHeader);
 
-            GetForumsResponse data = forumService.getForumByClass(classId, page - 1, size, search, sortOrder,callId,sortBy);
+            GetForumsResponse data = forumService.getForumByClass(classId, page - 1, size, search, sortOrder,callId,sortBy,tags);
             ResponseAPI<GetForumsResponse> res = ResponseAPI.<GetForumsResponse>builder()
                     .message("Get forum by class successfully")
                     .data(data)

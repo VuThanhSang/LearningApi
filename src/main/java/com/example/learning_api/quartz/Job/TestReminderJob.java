@@ -8,6 +8,7 @@ import com.example.learning_api.repository.database.StudentEnrollmentsRepository
 import com.example.learning_api.repository.database.StudentRepository;
 import com.example.learning_api.repository.database.TestRepository;
 import com.example.learning_api.service.core.INotificationService;
+import lombok.RequiredArgsConstructor;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.slf4j.Logger;
@@ -16,11 +17,12 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
+@RequiredArgsConstructor
 public class TestReminderJob implements Job {
-    private TestRepository testRepository;
-    private StudentEnrollmentsRepository studentEnrollmentsRepository;
-    private INotificationService notificationService;
-    private StudentRepository studentRepository;
+    private final TestRepository testRepository;
+    private final  StudentEnrollmentsRepository studentEnrollmentsRepository;
+    private final INotificationService notificationService;
+    private final StudentRepository studentRepository;
     private static final Logger logger = LoggerFactory.getLogger(TestReminderJob.class);
 
     @Override

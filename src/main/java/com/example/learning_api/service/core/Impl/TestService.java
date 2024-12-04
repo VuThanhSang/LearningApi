@@ -17,6 +17,7 @@ import com.example.learning_api.quartz.Schedules.TestSchedulerService;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
 import com.example.learning_api.service.common.ModelMapperService;
+import com.example.learning_api.service.core.INotificationService;
 import com.example.learning_api.service.core.ITestService;
 import com.example.learning_api.utils.ImageUtils;
 import com.example.learning_api.utils.StringUtils;
@@ -56,6 +57,9 @@ public class TestService implements ITestService {
     private final StudentAnswersRepository studentAnswerRepository;
     private final FileRepository fileRepository;
     private final TestSchedulerService testSchedulerService;
+    private final INotificationService notificationService;
+    private final StudentEnrollmentsRepository studentEnrollmentsRepository;
+    private final StudentRepository studentRepository;
     @Override
     public CreateTestResponse createTest(CreateTestRequest request) {
         try {
@@ -76,6 +80,22 @@ public class TestService implements ITestService {
                 long offsetInMillis = 100 * 1000; // 30s
                 testSchedulerService.scheduleTestReminder(testEntity, offsetInMillis);
             }
+
+            NotificationEntity notificationEntity = new NotificationEntity();
+            notificationEntity.setNotificationSettingId("674473d53e126c2148ce1acf");
+            notificationEntity.setTitle("New Test");
+            notificationEntity.setMessage("Test " + testEntity.getName() + " has been created");
+            notificationEntity.setAuthorId(testEntity.getId());
+            notificationEntity.setPriority(NotificationPriority.NORMAL);
+            List<String> studentId = studentEnrollmentsRepository.findStudentsNotTakenTest(testEntity.getClassroomId(), testEntity.getId());
+            List<String> userIds = new ArrayList<>();
+            for (String id : studentId) {
+                StudentEntity studentEntity = studentRepository.findById(id).orElse(null);
+                if (studentEntity != null) {
+                    userIds.add(studentEntity.getUserId());
+                }
+            }
+            notificationService.createNotification( notificationEntity,userIds);
 
             return createTestResponse(testEntity, fileEntity);
         } catch (Exception e) {

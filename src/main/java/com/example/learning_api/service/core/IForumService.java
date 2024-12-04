@@ -20,7 +20,7 @@ public interface IForumService {
     GetForumDetailResponse getForumDetail(String id, String userId);
     GetForumsResponse getForumByAuthor(String authorId, int page, int size,String search,String sortOrder,String userId,String sortBy);
     GetForumsResponse getForumByTag(List<String> tags, int page, int size,String search,String sortOrder,String userId,String sortBy);
-    GetForumsResponse getForumByClass(String classId, int page, int size,String search,String sortOrder,String userId,String sortBy);
+    GetForumsResponse getForumByClass(String classId, int page, int size,String search,String sortOrder,String userId,String sortBy,List<String> tags);
     void createForumComment(CreateForumCommentRequest request);
     void updateForumComment(UpdateForumCommentRequest request);
     void deleteForumComment(String id);

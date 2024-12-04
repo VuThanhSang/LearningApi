@@ -1,16 +1,14 @@
 package com.example.learning_api.service.core.Impl;
 
+import com.example.learning_api.dto.request.deadline.GetUpcomingDeadlineResponse;
 import com.example.learning_api.dto.request.teacher.CreateTeacherRequest;
 import com.example.learning_api.dto.request.teacher.UpdateTeacherRequest;
+import com.example.learning_api.dto.response.deadline.UpcomingDeadlinesResponse;
 import com.example.learning_api.dto.response.teacher.CreateTeacherResponse;
 import com.example.learning_api.dto.response.teacher.GetTeachersResponse;
-import com.example.learning_api.entity.sql.database.SubjectSpecializationEntity;
-import com.example.learning_api.entity.sql.database.TeacherEntity;
-import com.example.learning_api.entity.sql.database.UserEntity;
-import com.example.learning_api.repository.database.MajorsRepository;
-import com.example.learning_api.repository.database.SubjectSpecializationRepository;
-import com.example.learning_api.repository.database.TeacherRepository;
-import com.example.learning_api.repository.database.UserRepository;
+import com.example.learning_api.dto.response.test.GetTestInProgress;
+import com.example.learning_api.entity.sql.database.*;
+import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.ITeacherService;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +30,8 @@ public class TeacherService implements ITeacherService {
     private final UserRepository userRepository;
     private final SubjectSpecializationRepository subjectSpecializationRepository;
     private final MajorsRepository majorsRepository;
+    private final DeadlineRepository deadlineRepository;
+    private final TestRepository testRepository;
     @Override
     public CreateTeacherResponse createTeacher(CreateTeacherRequest body) {
         try{
@@ -137,6 +137,56 @@ public class TeacherService implements ITeacherService {
     public TeacherEntity getTeacherByUserId(String teacherId) {
         try{
             return teacherRepository.findByUserId(teacherId);
+        }
+        catch (Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public GetUpcomingDeadlineResponse getUpcomingDeadline(String teacherId) {
+        try{
+            if (teacherId==null){
+                throw new IllegalArgumentException("TeacherId is required");
+            }
+            if (teacherRepository.findById(teacherId)==null){
+                throw new IllegalArgumentException("TeacherId is not found");
+            }
+            String currentTimestamp = String.valueOf(System.currentTimeMillis());
+            List<DeadlineEntity> deadlineEntities = deadlineRepository.findByTeacherIdAndEndDateNotExpired(teacherId, currentTimestamp);
+            GetUpcomingDeadlineResponse resData = new GetUpcomingDeadlineResponse();
+            List<UpcomingDeadlinesResponse> upcomingDeadlinesResponses = new ArrayList<>();
+            for (DeadlineEntity deadlineEntity : deadlineEntities){
+                UpcomingDeadlinesResponse upcomingDeadlinesResponse = modelMapperService.mapClass(deadlineEntity, UpcomingDeadlinesResponse.class);
+                upcomingDeadlinesResponses.add(upcomingDeadlinesResponse);
+            }
+            resData.setUpcomingDeadlines(upcomingDeadlinesResponses);
+            resData.setTotalElements((long) upcomingDeadlinesResponses.size());
+            resData.setTotalPages(upcomingDeadlinesResponses.isEmpty() ? 0 : 1);
+            return resData;
+        }
+        catch (Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public GetTestInProgress getTestInProgress(String teacherId) {
+        try{
+            Pageable pageable = PageRequest.of(1, 99);
+            String currentTimestamp = String.valueOf(System.currentTimeMillis());
+            List<TestEntity> testEntities = testRepository.findByTeacherIdAndEndTimeNotExpired(teacherId, currentTimestamp);
+            GetTestInProgress resData = new GetTestInProgress();
+            List<GetTestInProgress.TestResponse> testResponses = new ArrayList<>();
+            for (TestEntity testEntity : testEntities){
+                GetTestInProgress.TestResponse testResponse = GetTestInProgress.TestResponse.fromTestEntity(testEntity);
+                testResponses.add(testResponse);
+            }
+            resData.setTests(testResponses);
+            resData.setTotalElements((long) testResponses.size());
+            resData.setTotalPage(testResponses.isEmpty() ? 0 : 1);
+            return resData;
+
         }
         catch (Exception e){
             throw new IllegalArgumentException(e.getMessage());
