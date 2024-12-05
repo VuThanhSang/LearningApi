@@ -53,7 +53,6 @@ public class NotificationService implements INotificationService {
     // 1. Tạo notification mới
     @Transactional
     @Override
-    @Async
     public NotificationResponse createNotification(NotificationEntity notification, List<String> receiverIds) {
         // Validate notification settings
         NotificationSettingsEntity settings = notificationSettingsRepository

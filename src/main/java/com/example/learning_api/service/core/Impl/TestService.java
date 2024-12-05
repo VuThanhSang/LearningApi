@@ -131,6 +131,9 @@ public class TestService implements ITestService {
     }
 
     private FileEntity createFileEntity(CreateTestRequest request, TestEntity testEntity) {
+        if (request.getSource()==null){
+            return null;
+        }
         FileEntity fileEntity = new FileEntity();
         fileEntity.setOwnerType(FileOwnerType.TEST);
         fileEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
