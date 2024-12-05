@@ -86,6 +86,7 @@ public class TestService implements ITestService {
             notificationEntity.setTitle("New Test");
             notificationEntity.setMessage("Test " + testEntity.getName() + " has been created");
             notificationEntity.setAuthorId(testEntity.getId());
+            notificationEntity.setTargetUrl(testEntity.getId());
             notificationEntity.setPriority(NotificationPriority.NORMAL);
             List<String> studentId = studentEnrollmentsRepository.findStudentsNotTakenTest(testEntity.getClassroomId(), testEntity.getId());
             List<String> userIds = new ArrayList<>();

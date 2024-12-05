@@ -24,7 +24,6 @@ public class QuestionEntity {
     private QuestionType type;
     private QuestionStatus status;
     private Integer index;
-    private String fullQuestion;
     private String createdAt;
     private String updatedAt;
 

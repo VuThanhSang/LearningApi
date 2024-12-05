@@ -2,6 +2,7 @@ package com.example.learning_api.controller;
 
 import com.example.learning_api.dto.request.notification.SendNotificationRequest;
 import com.example.learning_api.dto.request.notification.UpdateUserNotificationSettingRequest;
+import com.example.learning_api.dto.response.notification.GetUserNotificationResponse;
 import com.example.learning_api.dto.response.notification.NotificationResponse;
 import com.example.learning_api.entity.sql.database.NotificationEntity;
 import com.example.learning_api.entity.sql.database.NotificationSettingsEntity;
@@ -62,14 +63,14 @@ public class NotificationController {
 
     // Lấy danh sách thông báo của người dùng
     @GetMapping("/user/{userId}")
-    public ResponseEntity<ResponseAPI<List<NotificationEntity>>> getUserNotifications(
+    public ResponseEntity<ResponseAPI<List<GetUserNotificationResponse>>> getUserNotifications(
             @PathVariable String userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         try {
-            List<NotificationEntity> notifications = notificationService.getUserNotifications(userId, page, size);
+            List<GetUserNotificationResponse> notifications = notificationService.getUserNotifications(userId, page, size);
             return ResponseEntity.ok(
-                    ResponseAPI.<List<NotificationEntity>>builder()
+                    ResponseAPI.<List<GetUserNotificationResponse>>builder()
                             .data(notifications)
                             .message("User notifications retrieved")
                             .build()
@@ -77,7 +78,7 @@ public class NotificationController {
         } catch (Exception e) {
             log.error("Error retrieving user notifications", e);
             return ResponseEntity.badRequest().body(
-                    ResponseAPI.<List<NotificationEntity>>builder()
+                    ResponseAPI.<List<GetUserNotificationResponse>>builder()
                             .message("Failed to retrieve notifications")
                             .build()
             );
