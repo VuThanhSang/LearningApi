@@ -37,6 +37,7 @@ public class TestReminderJob implements Job {
         notificationEntity.setMessage("Test " + testName + " is due soon");
         notificationEntity.setAuthorId(testId);
         notificationEntity.setPriority(NotificationPriority.NORMAL);
+        notificationEntity.setTargetUrl( testId);
         List<String> studentId = studentEnrollmentsRepository.findStudentsNotTakenTest(testEntity.getClassroomId(), testId);
         List<String> userIds = new ArrayList<>();
         for (String id : studentId) {
