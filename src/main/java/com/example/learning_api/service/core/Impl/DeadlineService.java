@@ -139,7 +139,8 @@ public class DeadlineService implements IDeadlineService {
             notificationEntity.setMessage("Deadline " + deadlineEntity.getTitle() + " is created");
             notificationEntity.setAuthorId(deadlineEntity.getId());
             notificationEntity.setPriority(NotificationPriority.NORMAL);
-            List<String> studentId = studentEnrollmentsRepository.findStudentsNotTakenDeadline(deadlineEntity.getClassroomId(), deadlineEntity.getId());
+            processFiles(body.getFiles(),body.getTitle(),deadlineEntity);
+            List<String> studentId = studentEnrollmentsRepository.findStudentsNotTakenDeadline(classRoomEntity.getId(), deadlineEntity.getId());
             List<String> userIds = new ArrayList<>();
             for (String id : studentId) {
                 StudentEntity studentEntity = studentRepository.findById(id).orElse(null);
@@ -148,7 +149,6 @@ public class DeadlineService implements IDeadlineService {
                 }
             }
             notificationService.createNotification(notificationEntity, userIds);
-            processFiles(body.getFiles(),body.getTitle(),deadlineEntity);
         } catch (Exception e) {
             log.error("Error in createDeadline: ", e);
             throw new IllegalArgumentException(e.getMessage());
