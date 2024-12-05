@@ -151,7 +151,7 @@ public class ClassRoomController {
     }
 
     @DeleteMapping(path = "/{classroomId}")
-    @PreAuthorize("hasAnyAuthority('TEACHER,ADMIN')")
+    @PreAuthorize("hasAnyAuthority('TEACHER','ADMIN')")
     public ResponseEntity<ResponseAPI<String>> deleteClassRoom(@PathVariable String classroomId) {
         try{
             classRoomService.deleteClassRoom(classroomId);
