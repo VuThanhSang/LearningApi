@@ -551,7 +551,7 @@ public class ForumService implements IForumService {
                 GetForumsResponse.ForumResponse forumResponse = GetForumsResponse.ForumResponse.formForumEntity(forumEntity);
                 forumResponse.setSources(fileRepository.findByOwnerIdAndOwnerType(forumEntity.getId(), FileOwnerType.FORUM.name()));
                 forumResponse.setTags(tagRepository.findByIdIn(forumEntity.getTags()));
-                forumResponse.setAuthor(userRepository.findById(userId).get());
+                forumResponse.setAuthor(userRepository.findById(forumResponse.getAuthorId()).get());
                 forumResponse.setUpvote(voteRepository.countUpvoteByTargetId(forumEntity.getId()));
                 forumResponse.setDownvote(voteRepository.countDownvoteByTargetId(forumEntity.getId()));
                 VoteEntity voteEntity = voteRepository.findByAuthorIdAndTargetId(userId, forumEntity.getId());
@@ -656,7 +656,7 @@ public class ForumService implements IForumService {
             forumCommentEntities.forEach(forumCommentEntity -> {
                 GetForumCommentResponse.ForumCommentResponse forumComment = modelMapperService.mapClass(forumCommentEntity, GetForumCommentResponse.ForumCommentResponse.class);
                 forumComment.setSources(fileRepository.findByOwnerIdAndOwnerType(forumCommentEntity.getId(), FileOwnerType.FORUM_COMMENT.name()));
-                forumComment.setAuthor(userRepository.findById(userId).get());
+                forumComment.setAuthor(userRepository.findById(forumComment.getAuthorId()).get());
                 VoteEntity voteEntity = voteRepository.findByAuthorIdAndTargetId(userId, forumComment.getId());
                 if (voteEntity != null) {
                     forumComment.setIsUpvoted(voteEntity.isUpvote());
@@ -684,7 +684,7 @@ public class ForumService implements IForumService {
             forumCommentEntities.forEach(forumCommentEntity -> {
                 GetForumCommentResponse.ForumCommentResponse forumComment = modelMapperService.mapClass(forumCommentEntity, GetForumCommentResponse.ForumCommentResponse.class);
                 forumComment.setSources(fileRepository.findByOwnerIdAndOwnerType(forumCommentEntity.getId(), FileOwnerType.FORUM_COMMENT.name()));
-                forumComment.setAuthor(userRepository.findById(userId).get());
+                forumComment.setAuthor(userRepository.findById(forumComment.getAuthorId()).get());
                 VoteEntity voteEntity = voteRepository.findByAuthorIdAndTargetId(userId, forumComment.getId());
                 if (voteEntity != null) {
                     forumComment.setIsUpvoted(voteEntity.isUpvote());
