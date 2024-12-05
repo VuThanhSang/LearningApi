@@ -50,7 +50,7 @@ public class DeadlineService implements IDeadlineService {
     private final DeadlineSubmissionsRepository deadlineSubmissionsRepository;
     private final INotificationService notificationService;
     public void processFiles (List<MultipartFile> files,String title, DeadlineEntity deadlineEntity){
-        if (files == null) {
+            if (files == null) {
             return;
         }
         for (MultipartFile file : files) {
@@ -139,6 +139,7 @@ public class DeadlineService implements IDeadlineService {
             notificationEntity.setMessage("Deadline " + deadlineEntity.getTitle() + " is created");
             notificationEntity.setAuthorId(deadlineEntity.getId());
             notificationEntity.setPriority(NotificationPriority.NORMAL);
+            notificationEntity.setTargetUrl(deadlineEntity.getId());
             processFiles(body.getFiles(),body.getTitle(),deadlineEntity);
             List<String> studentId = studentEnrollmentsRepository.findStudentsNotTakenDeadline(classRoomEntity.getId(), deadlineEntity.getId());
             List<String> userIds = new ArrayList<>();

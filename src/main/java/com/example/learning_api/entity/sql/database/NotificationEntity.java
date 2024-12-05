@@ -43,11 +43,11 @@ public class NotificationEntity {
     private NotificationStatus status = NotificationStatus.PENDING;
     @Builder.Default
     private NotificationPriority priority = NotificationPriority.NORMAL;
-    private String expiresAt;    // Thời gian hết hạn
+    private String expiresAt; // Thời gian hết hạn
 
     private NotificationFormType type;
 
-    private String targetUrl;  // URL liên kết khi click vào notification
+    private String targetUrl; // URL liên kết khi click vào notification
 
     @Builder.Default
     private String createdAt = String.valueOf(System.currentTimeMillis());
