@@ -69,7 +69,7 @@ public class NotificationService implements INotificationService {
         }
 
         // Kiểm tra frequency limit
-        validateNotificationFrequency(notification.getAuthorId(), settings);
+//        validateNotificationFrequency(notification.getAuthorId(), settings);
 
         // Filter receivers based on their notification preferences
         List<String> filteredReceivers = filterReceiversByPreferences(receiverIds, notification.getNotificationSettingId());

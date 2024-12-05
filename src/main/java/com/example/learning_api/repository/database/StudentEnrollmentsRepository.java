@@ -118,7 +118,7 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
             "{$match: {classroomId: ?0}}",
             "{$lookup: {from: 'deadlines', localField: 'classroomId', foreignField: 'classroomId', as: 'deadlines'}}",
             "{$unwind: '$deadlines'}",
-            "{$lookup: {from: 'deadline_submissions', let: { studentId: '$studentId', deadlineId: '$deadlines._id' }, pipeline: [{$match: {$expr: {$and: [{ $eq: ['$studentId', '$$studentId'] },{ $eq: ['$deadlineId', '$$deadlineId'] }]}}}], as: 'submissions'}}",
+            "{$lookup: {from: 'deadline_submissions', let: { studentId: '$studentId', deadlineId: {$toString: '$deadlines._id'} }, pipeline: [{$match: {$expr: {$and: [{ $eq: ['$studentId', '$$studentId'] },{ $eq: ['$deadlineId', ?1] }]}}}], as: 'submissions'}}",
             "{$unwind: {path: '$submissions', preserveNullAndEmptyArrays: true}}",
             "{$match: {'submissions': { $size: 0 }}}",
             "{$project: {_id: 0, studentId: 1}}"

@@ -73,7 +73,9 @@ public class TestService implements ITestService {
 
             // Lưu file nếu có
             FileEntity fileEntity = createFileEntity(request, testEntity);
-            fileRepository.save(fileEntity);
+            if (fileEntity != null) {
+                fileRepository.save(fileEntity);
+            }
 
             if (request.getEndTime() != null) {
 //                long offsetInMillis = 3600 * 24 * 1000; // 24 giờ
@@ -185,7 +187,12 @@ public class TestService implements ITestService {
         response.setDescription(testEntity.getDescription());
         response.setDuration(testEntity.getDuration());
         response.setId(testEntity.getId());
-        response.setSource(fileEntity.getUrl());
+
+        if (fileEntity == null) {
+            response.setSource(null);
+        } else {
+            response.setSource(fileEntity.getUrl());
+        }
         response.setName(testEntity.getName());
         response.setUpdatedAt(testEntity.getUpdatedAt());
         response.setStartTime(testEntity.getStartTime());
