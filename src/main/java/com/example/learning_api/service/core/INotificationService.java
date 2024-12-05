@@ -2,6 +2,7 @@ package com.example.learning_api.service.core;
 
 import com.example.learning_api.dto.request.notification.SendNotificationRequest;
 import com.example.learning_api.dto.request.notification.UpdateUserNotificationSettingRequest;
+import com.example.learning_api.dto.response.notification.GetUserNotificationResponse;
 import com.example.learning_api.dto.response.notification.NotificationResponse;
 import com.example.learning_api.entity.sql.database.NotificationEntity;
 import com.example.learning_api.entity.sql.database.NotificationReceiveEntity;
@@ -38,7 +39,7 @@ public interface INotificationService {
     void markNotificationAsSeen(String userId, String notificationId);
 
     // 3. Lấy danh sách notification của user
-    List<NotificationEntity> getUserNotifications(String userId, int page, int size);
+    List<GetUserNotificationResponse> getUserNotifications(String userId, int page, int size);
 
     // 4. Cập nhật user notification settings
     @Transactional

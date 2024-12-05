@@ -2,12 +2,14 @@ package com.example.learning_api.service.core.Impl;
 
 import com.example.learning_api.dto.request.notification.SendNotificationRequest;
 import com.example.learning_api.dto.request.notification.UpdateUserNotificationSettingRequest;
+import com.example.learning_api.dto.response.notification.GetUserNotificationResponse;
 import com.example.learning_api.dto.response.notification.NotificationResponse;
 import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.NotificationFormType;
 import com.example.learning_api.enums.RoleEnum;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.*;
+import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.INotificationService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -50,6 +52,7 @@ public class NotificationService implements INotificationService {
     private final UserRepository userRepository;
     private final StudentEnrollmentsRepository studentEnrollmentsRepository;
     private final StudentRepository studentRepository;
+    private final ModelMapperService modelMapperService;
     // 1. Tạo notification mới
     @Transactional
     @Override
@@ -193,16 +196,33 @@ public class NotificationService implements INotificationService {
 
     // 3. Lấy danh sách notification của user
     @Override
-    public List<NotificationEntity> getUserNotifications(String userId, int page, int size) {
+    public List<GetUserNotificationResponse> getUserNotifications(String userId, int page, int size) {
         List<NotificationReceiveEntity> receives = notificationReceiveRepository
                 .findByUserIdOrderByReceivedAtDesc(userId);
+        List<GetUserNotificationResponse> response = new ArrayList<>();
+        for (NotificationReceiveEntity receive : receives) {
+            NotificationEntity notification = notificationRepository.findById(receive.getNotificationId())
+                    .orElseThrow(() -> new RuntimeException("Notification not found"));
+            GetUserNotificationResponse notificationResponse = new GetUserNotificationResponse();
+            notificationResponse.setId(notification.getId());
+            notificationResponse.setTitle(notification.getTitle());
+            notificationResponse.setMessage(notification.getMessage());
+            notificationResponse.setAuthorId(notification.getAuthorId());
+            notificationResponse.setAuthorRole(notification.getAuthorRole());
+            notificationResponse.setNotificationSettingId(notification.getNotificationSettingId());
+            notificationResponse.setStatus(notification.getStatus());
+            notificationResponse.setPriority(notification.getPriority());
+            notificationResponse.setExpiresAt(notification.getExpiresAt());
+            notificationResponse.setType(notification.getType());
+            notificationResponse.setTargetUrl(notification.getTargetUrl());
+            notificationResponse.setCreatedAt(notification.getCreatedAt());
+            notificationResponse.setUpdatedAt(notification.getUpdatedAt());
+            notificationResponse.setSeen(receive.getSeen());
+            response.add(notificationResponse);
 
-        return receives.stream()
-                .map(receive -> notificationRepository.findById(receive.getNotificationId()))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .filter(notification -> !notification.getIsDeleted())
-                .collect(Collectors.toList());
+        }
+        return response;
+
     }
 
     // 4. Cập nhật user notification settings
