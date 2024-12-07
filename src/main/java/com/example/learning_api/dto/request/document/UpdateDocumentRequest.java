@@ -10,4 +10,6 @@ public class UpdateDocumentRequest {
     private String name;
     private String description;
     private ForumStatus status;
+    private Boolean isNeedPermission;
+
 }

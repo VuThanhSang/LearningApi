@@ -15,7 +15,7 @@ public class BlockEntity {
     private String documentId;
     private String content;
     private BlockType type;
-    private int order;
+    private int index;
     private String createdAt;
     private String updatedAt;
 }

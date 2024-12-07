@@ -444,15 +444,24 @@ public class TestService implements ITestService {
     }
 
     private void saveQuestions(List<QuestionEntity> questions) {
+        int index = 0;
         for (QuestionEntity question : questions) {
-            QuestionEntity savedQuestion = questionRepository.save(question);
+            QuestionEntity savedQuestion = new QuestionEntity();
+            savedQuestion.setId(question.getId());
+            savedQuestion.setTestId(question.getTestId());
+            savedQuestion.setContent(question.getContent());
+            savedQuestion.setType(question.getType());
+            savedQuestion.setStatus(question.getStatus());
+            savedQuestion.setIndex(index++);
+            savedQuestion.setCreatedAt(question.getCreatedAt());
+            savedQuestion.setUpdatedAt(question.getUpdatedAt());
+            questionRepository.save(question);
             for (AnswerEntity answer : question.getAnswers()) {
-                answer.setQuestionId(savedQuestion.getId());
+                answer.setQuestionId(question.getId());
                 answerRepository.save(answer);
             }
         }
     }
-
 
     @Override
     public GetTestDetailResponse getTestDetail(String id) {

@@ -18,9 +18,8 @@ public class DocumentEntity {
     private String id;
     private String name;
     private String description;
-    private String workspaceId;
     private String ownerId;
-    private RoleEnum ownerRole;
+    private Boolean isNeedPermission;
     private ForumStatus status;
     private String createdAt;
     private String updatedAt;

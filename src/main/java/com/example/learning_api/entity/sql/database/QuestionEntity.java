@@ -30,6 +30,5 @@ public class QuestionEntity {
     // New field for text and fill-in-the-blank questions
     private List<String> correctAnswers;
 
-    @DBRef
     private List<AnswerEntity> answers;
 }

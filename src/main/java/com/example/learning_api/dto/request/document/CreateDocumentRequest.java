@@ -8,10 +8,9 @@ import org.springframework.web.multipart.MultipartFile;
 @Data
 public class CreateDocumentRequest {
     private String name;
-    private String description;
-    private String workspaceId;
     private String ownerId;
-    private RoleEnum ownerRole;
+    private String description;
+    private Boolean isNeedPermission;
     private ForumStatus status;
-    private MultipartFile file;
+
 }
