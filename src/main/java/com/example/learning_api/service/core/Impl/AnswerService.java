@@ -75,9 +75,7 @@ public class AnswerService implements IAnswerService {
             QuestionEntity questionEntity1 = questionRepository.findById(body.getQuestionId())
                     .orElseThrow(() -> new IllegalArgumentException("Question not found"));
             if (questionEntity1.getType().equals(QuestionType.FILL_IN_THE_BLANK)||questionEntity1.getType().equals(QuestionType.TEXT_ANSWER)){
-                if (body.getContent()!=null){
-                    answerEntity.setCorrect(true);
-                }
+                answerEntity.setCorrect(true);
             }
             answerRepository.save(answerEntity);
             fileEntity.setOwnerId(answerEntity.getId());
