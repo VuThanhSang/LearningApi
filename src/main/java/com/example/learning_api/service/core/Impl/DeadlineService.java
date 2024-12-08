@@ -160,6 +160,7 @@ public class DeadlineService implements IDeadlineService {
     public void updateDeadline(UpdateDeadlineRequest body) {
         try{
             DeadlineEntity deadlineEntity = deadlineRepository.findById(body.getId()).orElse(null);
+            List<String> studentId = studentEnrollmentsRepository.findStudentsNotTakenDeadline(deadlineEntity.getClassroomId(), deadlineEntity.getId());
             if (deadlineEntity == null){
                 throw new IllegalArgumentException("DeadlineId is not found");
             }

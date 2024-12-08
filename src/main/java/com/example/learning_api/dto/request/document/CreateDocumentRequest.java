@@ -10,7 +10,7 @@ public class CreateDocumentRequest {
     private String name;
     private String ownerId;
     private String description;
-    private Boolean isNeedPermission;
+    private String lessonId;
     private ForumStatus status;
 
 }
