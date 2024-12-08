@@ -159,6 +159,7 @@ public class MediaService implements IMediaService {
             if (body.getDescription()!=null){
                 mediaEntity.setDescription(body.getDescription());
             }
+            mediaEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             mediaRepository.save(mediaEntity);
         }
         catch (Exception e) {

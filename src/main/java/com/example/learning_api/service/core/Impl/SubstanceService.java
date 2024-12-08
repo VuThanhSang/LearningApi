@@ -4,6 +4,7 @@ import com.example.learning_api.dto.request.substance.CreateSubstanceRequest;
 import com.example.learning_api.dto.request.substance.UpdateSubstanceRequest;
 import com.example.learning_api.dto.response.lesson.GetSubstancesResponse;
 import com.example.learning_api.entity.sql.database.SubstanceEntity;
+import com.example.learning_api.enums.SubstanceStatus;
 import com.example.learning_api.repository.database.LessonRepository;
 import com.example.learning_api.repository.database.SubstanceRepository;
 import com.example.learning_api.service.common.ModelMapperService;
@@ -37,8 +38,11 @@ public class SubstanceService implements ISubstanceService {
                 throw new IllegalArgumentException("LessonId is not found");
             }
             SubstanceEntity substanceEntity = modelMapperService.mapClass(body, SubstanceEntity.class);
-            substanceEntity.setCreatedAt(new Date());
-            substanceEntity.setUpdatedAt(new Date());
+            if (substanceEntity.getStatus()==null){
+                substanceEntity.setStatus(SubstanceStatus.PRIVATE);
+            }
+            substanceEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+            substanceEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             substanceRepository.save(substanceEntity);
 
         }
@@ -77,7 +81,13 @@ public class SubstanceService implements ISubstanceService {
                 substanceEntity.setContent(body.getContent());
 
             }
-            substanceEntity.setUpdatedAt(new Date());
+            if (body.getName()!=null){
+                substanceEntity.setName(body.getName());
+            }
+            if (body.getStatus()!=null){
+                substanceEntity.setStatus(SubstanceStatus.valueOf(body.getStatus()));
+            }
+            substanceEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             substanceRepository.save(substanceEntity);
         }
         catch (Exception e) {

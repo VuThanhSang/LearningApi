@@ -186,6 +186,7 @@ public class ClassRoomService implements IClassRoomService {
             if (body.getStatus()!=null){
                 classroom.setStatus(body.getStatus());
             }
+            classroom.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             classRoomRepository.save(classroom);
         }
         catch (Exception e){
@@ -568,6 +569,10 @@ public class ClassRoomService implements IClassRoomService {
             joinRequest.setStatus(JoinRequestStatus.APPROVED);
             joinRequest.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             joinClassRequestRepository.save(joinRequest);
+            StudentEnrollmentsEntity checkEnroll = studentEnrollmentsRepository.findByStudentIdAndClassroomId(studentId, classroomId);
+            if (checkEnroll != null) {
+                throw new IllegalArgumentException("Student is already enrolled in this class");
+            }
             StudentEnrollmentsEntity student = new StudentEnrollmentsEntity();
             student.setClassroomId(classroomId);
             student.setStudentId(studentId);
