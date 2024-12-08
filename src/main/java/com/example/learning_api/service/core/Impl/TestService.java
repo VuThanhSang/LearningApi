@@ -224,7 +224,7 @@ public class TestService implements ITestService {
             if (body.getDescription()!=null){
                 testEntity.setDescription(body.getDescription());
             }
-            if (body.getDuration()!=0){
+            if (body.getDuration()!=null){
                 testEntity.setDuration(body.getDuration());
             }
             if (body.getSource()!=null){
@@ -914,7 +914,6 @@ public class TestService implements ITestService {
                 .orElseThrow(() -> new IllegalArgumentException("Test not found"));
         GetTestDetailResponse testDetail = getTestDetailForTeacher(testResult.getTestId(), testEntity.getTeacherId());
         List<GetQuestionsResponse.QuestionResponse> questions = testDetail.getQuestions();
-
         List<TestSubmitResponse.QuestionResponse> questionResponses = processQuestions(questions, body, testResult);
         int totalCorrectAnswers = calculateTotalCorrectAnswers(questionResponses);
         if (testResult.getState() == TestState.FINISHED) {
@@ -955,62 +954,108 @@ public class TestService implements ITestService {
         questionResponse.setAnswers(answerResponses);
         return questionResponse;
     }
-
     private List<TestSubmitResponse.AnswerResponse> processTextOrFillInBlankAnswers(
             GetQuestionsResponse.QuestionResponse question,
             TestSubmitRequest body,
             int questionIndex,
             TestResultEntity testResult) {
         List<TestSubmitResponse.AnswerResponse> answerResponses = new ArrayList<>();
-        List<String> submittedTextAnswers;
-        if (body.getQuestionAndAnswers().get(questionIndex).getTextAnswers()!=null){
-            submittedTextAnswers = body.getQuestionAndAnswers().size() > questionIndex
-                    ? body.getQuestionAndAnswers().get(questionIndex).getTextAnswers()
-                    : Collections.emptyList();
-        }else{
-            submittedTextAnswers = new ArrayList<>();
+
+        if (body.getQuestionAndAnswers() == null || body.getQuestionAndAnswers().size() <= questionIndex) {
+            TestSubmitResponse.AnswerResponse answerResponse = new TestSubmitResponse.AnswerResponse();
+            answerResponse.setContent("");
+            answerResponse.setSelected(false);
+            answerResponse.setCorrect(false);
+            saveStudentAnswer(testResult, question.getId(), null, null);
+            answerResponses.add(answerResponse);
+            return answerResponses; // Skip processing
         }
 
+        TestSubmitRequest.QuestionAndAnswer questionAndAnswer = body.getQuestionAndAnswers().get(questionIndex);
 
-        // For TEXT_ANSWER and FILL_IN_THE_BLANK, we'll check against the expected answers
-        boolean isQuestionCorrect = false;
-        for (String submittedAnswer : submittedTextAnswers) {
-            boolean matchFound = question.getAnswers().stream()
-                    .anyMatch(correctAnswer ->
-                            isTextAnswerCorrect(submittedAnswer, correctAnswer.getContent())
-                    );
+        if (questionAndAnswer.getTextAnswers() == null || questionAndAnswer.getTextAnswers().isEmpty()) {
+            TestSubmitResponse.AnswerResponse answerResponse = new TestSubmitResponse.AnswerResponse();
+            answerResponse.setContent("");
+            answerResponse.setSelected(false);
+            answerResponse.setCorrect(false);
+            GetQuestionsResponse.AnswerResponse answer = new GetQuestionsResponse.AnswerResponse();
+            saveStudentAnswer(testResult, question.getId(), answer, false);
+            answerResponses.add(answerResponse);
+            return answerResponses; // Skip processing
+        }
 
-            if (matchFound) {
-                isQuestionCorrect = true;
-                break;
+        if (question.getType().equals(QuestionType.TEXT_ANSWER.name())) {
+            if (question.getAnswers() == null || question.getAnswers().isEmpty()) {
+                TestSubmitResponse.AnswerResponse answerResponse = new TestSubmitResponse.AnswerResponse();
+                answerResponse.setContent("");
+                answerResponse.setSelected(false);
+                answerResponse.setCorrect(false);
+                GetQuestionsResponse.AnswerResponse answer = new GetQuestionsResponse.AnswerResponse();
+
+                saveStudentAnswer(testResult, question.getId(), answer, false);
+                answerResponses.add(answerResponse);
+                return answerResponses; // Skip processing
             }
-        }
 
-        // Create answer responses based on submitted answers
-        for (String submittedAnswer : submittedTextAnswers) {
+            boolean check = questionAndAnswer.getTextAnswers().get(0).equals(question.getAnswers().get(0).getContent());
             TestSubmitResponse.AnswerResponse answerResponse = new TestSubmitResponse.AnswerResponse();
 
-            // Find the matching correct answer, if any
-            GetQuestionsResponse.AnswerResponse matchingAnswer = question.getAnswers().stream()
-                    .filter(correctAnswer ->
-                            isTextAnswerCorrect(submittedAnswer, correctAnswer.getContent())
-                    )
-                    .findFirst()
-                    .orElse(null);
+            answerResponse.setContent(questionAndAnswer.getTextAnswers().get(0));
+            answerResponse.setSelected(check);
+            answerResponse.setCorrect(check);
 
-            // Set answer response details
-            answerResponse.setContent(submittedAnswer);
-            answerResponse.setAnswerText(submittedAnswer);
-            answerResponse.setSelected(matchingAnswer != null);
-            answerResponse.setCorrect(matchingAnswer != null);
             GetQuestionsResponse.AnswerResponse answer = new GetQuestionsResponse.AnswerResponse();
-            answer.setContent(submittedAnswer);
+            answer.setContent(questionAndAnswer.getTextAnswers().get(0));
             answer.setQuestionId(question.getId());
-            answer.setAnswerText(submittedAnswer);
+
             // Save student answer with the submitted text
-            saveStudentAnswer(testResult, question.getId(), answer, matchingAnswer != null);
+            saveStudentAnswer(testResult, question.getId(), answer, check);
 
             answerResponses.add(answerResponse);
+        } else {
+            if (question.getAnswers() == null || question.getAnswers().isEmpty()) {
+                TestSubmitResponse.AnswerResponse answerResponse = new TestSubmitResponse.AnswerResponse();
+                answerResponse.setContent("");
+                answerResponse.setSelected(false);
+                answerResponse.setCorrect(false);
+                GetQuestionsResponse.AnswerResponse answer = new GetQuestionsResponse.AnswerResponse();
+
+                saveStudentAnswer(testResult, question.getId(), answer, false);
+                answerResponses.add(answerResponse);
+                return answerResponses; // Skip processing
+            }
+
+            for (int i = 0; i < question.getAnswers().size(); i++) {
+                GetQuestionsResponse.AnswerResponse answer = question.getAnswers().get(i);
+
+                if (questionAndAnswer.getTextAnswers().size() <= i) {
+                    TestSubmitResponse.AnswerResponse answerResponse = new TestSubmitResponse.AnswerResponse();
+                    answerResponse.setContent("");
+                    answerResponse.setSelected(false);
+                    answerResponse.setCorrect(false);
+                    GetQuestionsResponse.AnswerResponse answer1 = new GetQuestionsResponse.AnswerResponse();
+
+                    saveStudentAnswer(testResult, question.getId(), answer1, false);
+                    answerResponses.add(answerResponse);
+                    continue; // Skip this answer
+                }
+
+                boolean check = questionAndAnswer.getTextAnswers().get(i).equals(answer.getContent());
+                TestSubmitResponse.AnswerResponse answerResponse = new TestSubmitResponse.AnswerResponse();
+
+                answerResponse.setContent(questionAndAnswer.getTextAnswers().get(i));
+                answerResponse.setSelected(check);
+                answerResponse.setCorrect(check);
+
+                GetQuestionsResponse.AnswerResponse answer1 = new GetQuestionsResponse.AnswerResponse();
+                answer1.setContent(questionAndAnswer.getTextAnswers().get(i));
+                answer1.setQuestionId(question.getId());
+
+                // Save student answer1 with the submitted text
+                saveStudentAnswer(testResult, question.getId(), answer1, check);
+
+                answerResponses.add(answerResponse);
+            }
         }
 
         return answerResponses;
@@ -1163,21 +1208,24 @@ public class TestService implements ITestService {
 
     // You might also want to update the isQuestionCorrect method in the main submit method
     private boolean isQuestionCorrect(TestSubmitResponse.QuestionResponse questionResponse) {
-        if (questionResponse.getType().equals(QuestionType.TEXT_ANSWER.name()) ||
-                questionResponse.getType().equals(QuestionType.FILL_IN_THE_BLANK.name())) {
-            // For text-based questions, check if at least one answer is correct
+        if (questionResponse.getType().equals(QuestionType.TEXT_ANSWER.name())) {
+            // For TEXT_ANSWER, check if the answer is selected and correct
             return questionResponse.getAnswers().stream()
-                    .anyMatch(TestSubmitResponse.AnswerResponse::isCorrect);
+                    .allMatch(answer -> answer.isSelected() && answer.isCorrect());
+        } else if (questionResponse.getType().equals(QuestionType.FILL_IN_THE_BLANK.name())) {
+            // For FILL_IN_THE_BLANK, ensure all answers are correct and selected
+            return questionResponse.getAnswers().stream()
+                    .allMatch(answer -> answer.isSelected() && answer.isCorrect());
+        } else {
+            // Existing logic for other question types
+            long correctAnswersCount = questionResponse.getAnswers().stream()
+                    .filter(TestSubmitResponse.AnswerResponse::isCorrect)
+                    .count();
+            long selectedCorrectAnswersCount = questionResponse.getAnswers().stream()
+                    .filter(answer -> answer.isCorrect() && answer.isSelected())
+                    .count();
+            return correctAnswersCount == selectedCorrectAnswersCount;
         }
-
-        // Existing logic for other question types
-        long correctAnswersCount = questionResponse.getAnswers().stream()
-                .filter(TestSubmitResponse.AnswerResponse::isCorrect)
-                .count();
-        long selectedCorrectAnswersCount = questionResponse.getAnswers().stream()
-                .filter(answer -> answer.isCorrect() && answer.isSelected())
-                .count();
-        return correctAnswersCount == selectedCorrectAnswersCount;
     }
 
     private void updateTestResult(TestResultEntity testResult, int totalCorrectAnswers, int totalQuestions) {
