@@ -9,5 +9,5 @@ public class UpdateSubstanceRequest {
     private String id;
     private String content;
     private String name;
-
+    private String status;
 }

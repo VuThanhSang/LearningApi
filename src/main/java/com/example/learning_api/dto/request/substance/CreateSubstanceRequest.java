@@ -10,4 +10,5 @@ public class CreateSubstanceRequest {
     private String lessonId;
     private String name;
     private String content;
+    private String status;
 }

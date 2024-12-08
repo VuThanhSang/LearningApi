@@ -82,6 +82,7 @@ public class SectionService implements ISectionService {
             if (body.getStatus()!=null){
                 sectionEntity.setStatus(SectionStatus.valueOf(body.getStatus()));
             }
+            sectionEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             sectionRepository.save(sectionEntity);
 
         }

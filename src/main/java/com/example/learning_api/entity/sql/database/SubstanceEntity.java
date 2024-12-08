@@ -18,6 +18,6 @@ public class SubstanceEntity {
     private String lessonId;
     private String content;
     private SubstanceStatus status;
-    private Date createdAt;
-    private Date updatedAt;
+    private String createdAt;
+    private String updatedAt;
 }
