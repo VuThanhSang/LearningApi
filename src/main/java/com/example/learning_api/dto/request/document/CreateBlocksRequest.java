@@ -8,10 +8,5 @@ import java.util.List;
 @Data
 public class CreateBlocksRequest {
     private String documentId;
-    List<Block> blocks;
-    @Data
-    public static class Block {
-        private String content;
-        private BlockType type;
-    }
+    List<String> blocks;
 }
