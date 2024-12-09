@@ -67,8 +67,6 @@ public class TestService implements ITestService {
             TestEntity testEntity = createTestEntity(request);
 
             // Lưu thông tin test vào database
-            long endTime = System.currentTimeMillis();
-            testEntity.setEndTime(String.valueOf(endTime+180*1000));
             testRepository.save(testEntity);
 
             // Lưu file nếu có
@@ -401,6 +399,18 @@ public class TestService implements ITestService {
 
             QuestionEntity question = createQuestion(questionText, testId);
             List<AnswerEntity> answers = parseAnswers(answerGroup, question.getId());
+            int count=0;
+            for (AnswerEntity answer : answers) {
+                if (answer.isCorrect()){
+                    count++;
+                }
+            }
+            if(count==1){
+                question.setType(QuestionType.SINGLE_CHOICE);
+            }
+            else{
+                question.setType(QuestionType.MULTIPLE_CHOICE);
+            }
             question.setAnswers(answers);
             questions.add(question);
         }

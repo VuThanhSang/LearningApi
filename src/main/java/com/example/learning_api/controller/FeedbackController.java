@@ -4,6 +4,7 @@ import com.example.learning_api.constant.StatusCode;
 import com.example.learning_api.dto.request.feedback.CreateFeedbackAnswerRequest;
 import com.example.learning_api.dto.request.feedback.CreateFeedbackRequest;
 import com.example.learning_api.dto.request.feedback.UpdateFeedbackRequest;
+import com.example.learning_api.dto.response.feedback.GetFeedBackByStudentResponse;
 import com.example.learning_api.dto.response.feedback.GetFeedBacksResponse;
 import com.example.learning_api.dto.response.feedback.FeedbackAnswerResponse;
 import com.example.learning_api.entity.sql.database.FeedbackAnswerEntity;
@@ -105,19 +106,23 @@ public class FeedbackController {
     }
 
     @GetMapping(path = "/student/{studentId}/{formType}/{formId}")
-    public ResponseEntity<ResponseAPI<List<FeedbackEntity>>> getFeedbacksByStudentIdAndTestId(@PathVariable String studentId,@PathVariable String formType, @PathVariable String formId) {
+    public ResponseEntity<ResponseAPI<GetFeedBacksResponse>> getFeedbacksByStudentIdAndTestId(@PathVariable String studentId,@PathVariable String formType, @PathVariable String formId) {
         try {
             formType = formType.toUpperCase();
+            GetFeedBacksResponse testFeedbacks = new GetFeedBacksResponse();
             List<FeedbackEntity> testFeedback = feedbackService.getFeedbacksByStudentIdAndTestId(studentId, formId, formType);
-            ResponseAPI<List<FeedbackEntity>> res = ResponseAPI.<List<FeedbackEntity>>builder()
+            testFeedbacks.setFeedbacks(testFeedback);
+            testFeedbacks.setTotalPage(1);
+            testFeedbacks.setTotalElements((long) testFeedback.size());
+            ResponseAPI<GetFeedBacksResponse> res = ResponseAPI.<GetFeedBacksResponse>builder()
                     .timestamp(new Date())
-                    .data(testFeedback)
+                    .data(testFeedbacks)
                     .message("Get test feedback successfully")
                     .build();
             return new ResponseEntity<>(res, StatusCode.OK);
         } catch (Exception e) {
             log.error("Error get test feedback: ", e);
-            ResponseAPI<List<FeedbackEntity>> res = ResponseAPI.<List<FeedbackEntity>>builder()
+            ResponseAPI<GetFeedBacksResponse> res = ResponseAPI.<GetFeedBacksResponse>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();
