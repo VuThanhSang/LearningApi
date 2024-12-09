@@ -41,7 +41,7 @@ public class FeedbackController {
             log.error("Error create  feedback: ", e);
             ResponseAPI<String> res = ResponseAPI.<String>builder()
                     .timestamp(new Date())
-                    .message("Error create feedback feedback")
+                    .message(e.getMessage())
                     .build();
             return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
         }

@@ -44,29 +44,38 @@ public class FeedbackService implements IFeedbackService {
     private final FileRepository fileRepository;
     @Override
     public void createFeedback(CreateFeedbackRequest body) {
-        if (body.getFormId() == null) {
-            throw new RuntimeException("TestId is required");
+        try{
+            if (body.getFormId() == null) {
+                throw new RuntimeException("formId is required");
+            }
+            if (body.getStudentId() == null) {
+                throw new RuntimeException("StudentId is required");
+            }
+            if (body.getFormType()==null)
+                throw new RuntimeException("FormType is required");
+            if (body.getFormType().equals(FeedbackFormType.DEADLINE)){
+                if (deadlinerepository.findById(body.getFormId()).isEmpty()) {
+                    throw new RuntimeException("DeadlineId not found");
+                }
+            }else {
+                if (testRepository.findById(body.getFormId()).isEmpty()) {
+                    throw new RuntimeException("TestId not found");
+                }
+            }
+            if (studentRepository.findById(body.getStudentId()).isEmpty()) {
+                throw new RuntimeException("StudentId not found");
+            }
+            FeedbackEntity feedbackEntity = modelMapperService.mapClass(body, FeedbackEntity.class);
+            feedbackEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+            feedbackEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+            feedbackRepository.save(feedbackEntity);
+            progressSources(body.getFiles(), body.getFeedback(), feedbackEntity);
         }
-        if (body.getStudentId() == null) {
-            throw new RuntimeException("StudentId is required");
+        catch (Exception e){
+            log.error("Error creating feedback: " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
         }
-       if (body.getFormType().equals(FeedbackFormType.DEADLINE)){
-           if (deadlinerepository.findById(body.getFormId()).isEmpty()) {
-               throw new RuntimeException("DeadlineId not found");
-           }
-       }else {
-           if (testRepository.findById(body.getFormId()).isEmpty()) {
-               throw new RuntimeException("TestId not found");
-           }
-       }
-        if (studentRepository.findById(body.getStudentId()).isEmpty()) {
-            throw new RuntimeException("StudentId not found");
-        }
-        FeedbackEntity feedbackEntity = modelMapperService.mapClass(body, FeedbackEntity.class);
-        feedbackEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
-        feedbackEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
-        feedbackRepository.save(feedbackEntity);
-        progressSources(body.getFiles(), body.getFeedback(), feedbackEntity);
+
 
     }
 
