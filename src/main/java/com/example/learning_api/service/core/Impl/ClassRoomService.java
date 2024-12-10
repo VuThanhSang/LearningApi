@@ -619,7 +619,8 @@ public class ClassRoomService implements IClassRoomService {
                 throw new IllegalArgumentException("Student is not enrolled in this class");
             }
             studentEnrollmentsRepository.delete(studentEnrollmentsEntity);
-            classRoom.setCurrentEnrollment(classRoom.getCurrentEnrollment() - 1);
+            if (classRoom.getCurrentEnrollment() - 1>=0)
+                classRoom.setCurrentEnrollment(classRoom.getCurrentEnrollment() - 1);
             classRoomRepository.save(classRoom);
 
         }
@@ -730,7 +731,7 @@ public class ClassRoomService implements IClassRoomService {
                                 entity.setTestId(result.getTestId());
                                 entity.setStudentId(result.getStudentId());
                                 entity.setGrade(result.getGrade());
-                                entity.setPassed(result.isPassed());
+                                entity.setIsPassed(result.getIsPassed());
                                 entity.setAttendedAt(result.getAttendedAt());
                                 entity.setFinishedAt(result.getFinishedAt());
                                 entity.setState(TestState.valueOf(result.getState()));

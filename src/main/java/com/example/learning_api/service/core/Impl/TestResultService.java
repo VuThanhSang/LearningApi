@@ -101,8 +101,8 @@ public class TestResultService implements ITestResultService {
             if (body.getGrade() != 0 && body.getGrade() != testResultEntity.getGrade()) {
                 testResultEntity.setGrade(body.getGrade());
             }
-            if (body.isPassed() != testResultEntity.isPassed()) {
-                testResultEntity.setPassed(body.isPassed());
+            if (body.isPassed() != testResultEntity.getIsPassed()) {
+                testResultEntity.setIsPassed(body.isPassed());
             }
 
             testResultRepository.save(testResultEntity);
@@ -213,7 +213,6 @@ public class TestResultService implements ITestResultService {
         validateTestIdf(testId);
         List<TestResultOfTestResponse> results = testResultRepository.findHighestGradesByTestIdAndFinishedStateSortedAscending(testId);
 
-
         if (results.isEmpty()) {
             OverviewResultResponse response = new OverviewResultResponse();
             response.setTotalStudent(0);
@@ -257,7 +256,7 @@ public class TestResultService implements ITestResultService {
         int minGrade = Integer.MAX_VALUE;
 
         for (TestResultOfTestResponse result : results) {
-            if (result.isPassed()) {
+            if (result.getIsPassed()) {
                 totalPassed++;
             } else {
                 totalFailed++;
@@ -435,6 +434,7 @@ public class TestResultService implements ITestResultService {
         response.setTotalCorrect(totalCorrect);
         response.setTotalIncorrect(totalQuestion - totalCorrect);
         response.setTotalAttempted(totalAttempted);
+        response.setIsPassed((double)totalCorrect/totalQuestion*100>=5);
         response.setGrade(result.getGrade());
         response.setAttemptLimit(test.getAttemptLimit());
         return response;
@@ -488,7 +488,7 @@ public class TestResultService implements ITestResultService {
         int totalCorrect = 0;
         int totalIncorrect = 0;
         for (StatisticsResultResponse.Answers answer : answers) {
-            if (answer.isCorrect()) {
+            if (answer.getIsCorrect()) {
                 totalCorrect += answer.getTotalSelected();
             } else {
                 totalIncorrect += answer.getTotalSelected();

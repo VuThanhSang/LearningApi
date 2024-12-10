@@ -22,7 +22,7 @@ public class ScoreDistributionResponse {
         private Integer totalAttempted;
         private Integer grade;
         private Integer attemptLimit;
-        private boolean isPassed;
+        private Boolean isPassed;
 
     }
 

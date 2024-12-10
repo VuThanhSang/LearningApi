@@ -31,12 +31,14 @@ public class StatisticsResultResponse {
     public static class Answers {
         private String id;
         private String content;
-        private boolean isCorrect;
+        private Boolean isCorrect;
         private String questionId;
         private FileEntity source;
         private Integer totalSelected;
         private String createdAt;
         private String updatedAt;
+
+
     }
 
 }

@@ -12,4 +12,8 @@ public interface AnswerRepository extends MongoRepository<AnswerEntity, String>{
     List<AnswerEntity> findByQuestionId(String questionId);
     @Query(value = "{questionId: ?0}", sort = "{index: -1}")
     Integer getIndexMaxByQuestionId(String questionId);
+    @Query("{ 'questionId': { $in: ?0 } }")
+    List<AnswerEntity> findByIdIn(List<String> ids);
+    @Query("{ 'questionId': { $in: ?0 } }")
+    List<AnswerEntity> findByQuestionIds(List<String> questionIds);
 }

@@ -126,6 +126,7 @@ public class TestService implements ITestService {
 
     private TestEntity createTestEntity(CreateTestRequest request) {
         TestEntity testEntity = modelMapperService.mapClass(request, TestEntity.class);
+        testEntity.setEndTime(request.getEndTime());
         testEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
         testEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
         return testEntity;
@@ -520,6 +521,7 @@ public class TestService implements ITestService {
                     answerResponse.setIsCorrect(answerRepository.findById(answerResponse.getId()).get().isCorrect());
                     newAnswerResponses.add(answerResponse);
                 }
+                questionResponse.setAnswers(newAnswerResponses);
 
             }
         }
@@ -1244,6 +1246,7 @@ public class TestService implements ITestService {
         double grade = calculateGrade(totalCorrectAnswers, totalQuestions);
         testResult.setState(TestState.FINISHED);
         testResult.setGrade(grade);
+        testResult.setIsPassed(grade >= 5);
         testResultRepository.save(testResult);
     }
 
