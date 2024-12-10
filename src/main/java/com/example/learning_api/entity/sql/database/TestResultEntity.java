@@ -18,7 +18,7 @@ public class TestResultEntity {
     private String studentId;
     private double grade;
     private String testId;
-    private boolean isPassed;
+    private Boolean isPassed;
     private String attendedAt;
     private String finishedAt;
     private TestState state;

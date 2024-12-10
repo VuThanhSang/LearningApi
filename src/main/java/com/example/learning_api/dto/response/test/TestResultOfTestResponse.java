@@ -8,7 +8,7 @@ public class TestResultOfTestResponse {
     private String studentId;
     private int grade;
     private String resultId;
-    private boolean isPassed;
+    private Boolean isPassed;
     private String attendedAt;
     private String finishedAt;
     private String state;
