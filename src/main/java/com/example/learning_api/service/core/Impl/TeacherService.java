@@ -8,6 +8,7 @@ import com.example.learning_api.dto.response.teacher.CreateTeacherResponse;
 import com.example.learning_api.dto.response.teacher.GetTeachersResponse;
 import com.example.learning_api.dto.response.test.GetTestInProgress;
 import com.example.learning_api.entity.sql.database.*;
+import com.example.learning_api.enums.TeacherStatus;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.ITeacherService;
@@ -69,6 +70,24 @@ public class TeacherService implements ITeacherService {
             }
             if (body.getQualifications()!=null){
                 teacherEntity.setQualifications(body.getQualifications());
+            }
+            if (body.getPhone()!=null){
+                teacherEntity.setPhone(body.getPhone());
+            }
+            if (body.getAddress()!=null){
+                teacherEntity.setAddress(body.getAddress());
+            }
+            if (body.getGender()!=null){
+                teacherEntity.setGender(body.getGender());
+            }
+            if (body.getDateOfBirth()!=null){
+                teacherEntity.setDateOfBirth(body.getDateOfBirth());
+            }
+            if (body.getExperience()!=null){
+                teacherEntity.setExperience(body.getExperience());
+            }
+            if (body.getStatus()!=null){
+                teacherEntity.setStatus(TeacherStatus.valueOf(body.getStatus()));
             }
             teacherRepository.save(teacherEntity);
         }

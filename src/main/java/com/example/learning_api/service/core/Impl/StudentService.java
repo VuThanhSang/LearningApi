@@ -63,6 +63,20 @@ public class StudentService implements IStudentService {
             if (body.getGradeLevel()!=null){
                 studentEntity.setGradeLevel(body.getGradeLevel());
             }
+            if (body.getAddress()!=null){
+                studentEntity.setAddress(body.getAddress());
+            }
+            if (body.getPhone()!=null){
+                studentEntity.setPhone(body.getPhone());
+            }
+            if (body.getGender()!=null){
+                studentEntity.setGender(body.getGender());
+            }
+
+            if (body.getDateOfBirth()!=null){
+                studentEntity.setDateOfBirth(body.getDateOfBirth());
+            }
+
             studentRepository.save(studentEntity);
         }
         catch (Exception e){
