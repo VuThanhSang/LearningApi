@@ -304,6 +304,7 @@ public class  DeadlineSubmissionsService implements IDeadlineSubmissionsService 
                 }
             }
 
+
             // If status is not specifically NOT_SUBMITTED, get submitted assignments
             if (status == null || !DeadlineSubmissionStatus.NOT_SUBMITTED.toString().equals(status)) {
                 // Convert status to enum value for submitted assignments
@@ -359,7 +360,13 @@ public class  DeadlineSubmissionsService implements IDeadlineSubmissionsService 
                             GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse::getCreatedAt,
                             Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
             }
-
+            Iterator<GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse> iterator = allSubmissions.iterator();
+            while (iterator.hasNext()) {
+                GetDeadlineSubmissionsResponse.DeadlineSubmissionResponse submission = iterator.next();
+                if (!submission.getStudentName().toLowerCase().contains(search.toLowerCase())) {
+                    iterator.remove();
+                }
+            }
             if (sortDirection == Sort.Direction.DESC) {
                 comparator = comparator.reversed();
             }
