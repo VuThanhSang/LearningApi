@@ -25,7 +25,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -762,7 +764,6 @@ public class ForumService implements IForumService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
-
     @Override
     public GetForumsResponse getBalancedPersonalizedNewsfeed(String userId, int page, int size, String sortOrder, String sortBy) {
         try {
@@ -817,35 +818,39 @@ public class ForumService implements IForumService {
             // Tạo response
             GetForumsResponse getForumsResponse = new GetForumsResponse();
             List<GetForumsResponse.ForumResponse> data = new ArrayList<>();
+            Set<String> uniqueForumIds = new HashSet<>();
 
             // Xử lý từng forum
             forumEntities.forEach(forumEntity -> {
-                GetForumsResponse.ForumResponse forumResponse = GetForumsResponse.ForumResponse.formForumEntity(forumEntity);
+                if (!uniqueForumIds.contains(forumEntity.getId())) {
+                    uniqueForumIds.add(forumEntity.getId());
+                    GetForumsResponse.ForumResponse forumResponse = GetForumsResponse.ForumResponse.formForumEntity(forumEntity);
 
-                // Lấy thông tin user
-                forumResponse.setAuthor(userRepository.findById(userId).get());
+                    // Lấy thông tin user
+                    forumResponse.setAuthor(userRepository.findById(userId).get());
 
-                // Lấy files
-                List<FileEntity> fileEntities = fileRepository.findByOwnerIdAndOwnerType(
-                        forumEntity.getId(),
-                        FileOwnerType.FORUM.name()
-                );
-                forumResponse.setSources(fileEntities);
+                    // Lấy files
+                    List<FileEntity> fileEntities = fileRepository.findByOwnerIdAndOwnerType(
+                            forumEntity.getId(),
+                            FileOwnerType.FORUM.name()
+                    );
+                    forumResponse.setSources(fileEntities);
 
-                // Lấy tags
-                forumResponse.setTags(tagRepository.findByIdIn(forumEntity.getTags()));
+                    // Lấy tags
+                    forumResponse.setTags(tagRepository.findByIdIn(forumEntity.getTags()));
 
-                // Tính toán votes
-                forumResponse.setUpvote(voteRepository.countUpvoteByTargetId(forumEntity.getId()));
-                forumResponse.setDownvote(voteRepository.countDownvoteByTargetId(forumEntity.getId()));
+                    // Tính toán votes
+                    forumResponse.setUpvote(voteRepository.countUpvoteByTargetId(forumEntity.getId()));
+                    forumResponse.setDownvote(voteRepository.countDownvoteByTargetId(forumEntity.getId()));
 
-                // Kiểm tra vote của user
-                VoteEntity voteEntity = voteRepository.findByAuthorIdAndTargetId(userId, forumEntity.getId());
-                if (voteEntity != null) {
-                    forumResponse.setIsUpvoted(voteEntity.isUpvote());
+                    // Kiểm tra vote của user
+                    VoteEntity voteEntity = voteRepository.findByAuthorIdAndTargetId(userId, forumEntity.getId());
+                    if (voteEntity != null) {
+                        forumResponse.setIsUpvoted(voteEntity.isUpvote());
+                    }
+
+                    data.add(forumResponse);
                 }
-
-                data.add(forumResponse);
             });
 
             // Điền thông tin response
