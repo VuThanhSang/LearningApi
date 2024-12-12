@@ -270,7 +270,7 @@ public class  DeadlineSubmissionsService implements IDeadlineSubmissionsService 
 
                 // Get existing submissions
                 List<DeadlineSubmissionsEntity> existingSubmissions = deadlineSubmissionsRepository
-                        .findAllByDeadlineIdWithFilters(deadlineId, search, null, Pageable.unpaged());
+                        .findAllByDeadlineIdWithFilters(deadlineId, "", null, Pageable.unpaged());
 
                 // Create set of students who have submitted
                 Set<String> submittedStudentIds = existingSubmissions.stream()
@@ -319,7 +319,7 @@ public class  DeadlineSubmissionsService implements IDeadlineSubmissionsService 
                 }
 
                 List<DeadlineSubmissionsEntity> submittedAssignments = deadlineSubmissionsRepository
-                        .findAllByDeadlineIdWithFilters(deadlineId, search, submissionStatus, Pageable.unpaged());
+                        .findAllByDeadlineIdWithFilters(deadlineId, "", submissionStatus, Pageable.unpaged());
 
                 // Add submitted assignments to the list
                 for (DeadlineSubmissionsEntity entity : submittedAssignments) {
