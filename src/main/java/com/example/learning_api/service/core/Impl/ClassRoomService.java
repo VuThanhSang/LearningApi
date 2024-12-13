@@ -232,6 +232,8 @@ public class ClassRoomService implements IClassRoomService {
             for (ClassRoomEntity classRoom : classRooms){
                 log.info("classRoom: {}", classRoom);
                 GetClassRoomsResponse.ClassRoomResponse classRoomResponse = modelMapperService.mapClass(classRoom, GetClassRoomsResponse.ClassRoomResponse.class);
+                int count = studentEnrollmentsRepository.countByClassroomId(classRoom.getId());
+                classRoomResponse.setCurrentEnrollment(count);
                 resData.add(classRoomResponse);
             }
             GetClassRoomsResponse res = new GetClassRoomsResponse();
@@ -490,6 +492,8 @@ public class ClassRoomService implements IClassRoomService {
                 resClassRoom.setClassRoom(classRoomRepository.findById(classRoom.getClassId())
                         .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND)));
                 resClassRoom.setLastAccessedAt(classRoom.getLastAccessedAt());
+                int count = studentEnrollmentsRepository.countByClassroomId(classRoom.getClassId());
+                resClassRoom.getClassRoom().setCurrentEnrollment(count);
                 data.add(resClassRoom);
             }
             resData.setData(data);
