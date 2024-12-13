@@ -195,7 +195,7 @@ public class AdminService implements IAdminService {
             GetUsersResponse resData = new GetUsersResponse();
             List<UserEntity> userEntities = new ArrayList<>();
             for (TeacherEntity teacherEntity : teacherEntities) {
-                UserEntity userEntity = teacherEntity.getUser();
+                UserEntity userEntity = userRepository.findById(teacherEntity.getUserId()).orElse(null);
                 teacherEntity.setUser(null);
                 userEntity.setTeacher(teacherEntity);
                 userEntities.add(userEntity);
@@ -226,7 +226,7 @@ public class AdminService implements IAdminService {
             GetUsersResponse resData = new GetUsersResponse();
             List<UserEntity> userEntities = new ArrayList<>();
             for (StudentEntity studentEntity : studentEntities) {
-                UserEntity userEntity = studentEntity.getUser();
+                UserEntity userEntity = userRepository.findById(studentEntity.getUserId()).orElse(null);
                 studentEntity.setUser(null);
                 userEntity.setStudent(studentEntity);
                 userEntities.add(userEntity);
