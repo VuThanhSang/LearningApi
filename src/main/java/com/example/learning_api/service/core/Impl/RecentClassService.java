@@ -1,10 +1,9 @@
 package com.example.learning_api.service.core.Impl;
 
+import com.example.learning_api.entity.sql.database.ClassRoomEntity;
 import com.example.learning_api.entity.sql.database.RecentClassEntity;
-import com.example.learning_api.repository.database.ClassRoomRepository;
-import com.example.learning_api.repository.database.RecentClassRepository;
-import com.example.learning_api.repository.database.StudentRepository;
-import com.example.learning_api.repository.database.TeacherRepository;
+import com.example.learning_api.entity.sql.database.StudentEnrollmentsEntity;
+import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.core.IRecentClassService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -21,7 +21,7 @@ public class RecentClassService implements IRecentClassService {
     private final ClassRoomRepository classRoomRepository;
     private final StudentRepository studentRepository;
     private final TeacherRepository teacherRepository;
-
+    private final StudentEnrollmentsRepository studentEnrollmentsService;
     @Override
     public void createRecentClass(String userId , String role,String classroomId) {
         try{
@@ -40,7 +40,14 @@ public class RecentClassService implements IRecentClassService {
                     newData.setStudentId(userId);
                     newData.setClassroomId(classroomId);
                     newData.setLastAccessedAt(String.valueOf(System.currentTimeMillis()));
-                    recentClassRepository.save(newData);
+                    StudentEnrollmentsEntity studentEnrollmentsEntity = studentEnrollmentsService.findByStudentIdAndClassroomId(userId,classroomId);
+                    if (studentEnrollmentsEntity == null)
+                    {
+                        return;
+                    }else{
+                        recentClassRepository.save(newData);
+
+                    }
                 }
                 else{
                     recentClassEntity.setLastAccessedAt(String.valueOf(System.currentTimeMillis()));
@@ -49,12 +56,17 @@ public class RecentClassService implements IRecentClassService {
             }
             else if(role.equals("TEACHER")){
                 RecentClassEntity recentClassEntity = recentClassRepository.findByTeacherIdAndClassroomId(userId,classroomId);
+                ClassRoomEntity classRoomEntity = classRoomRepository.findById(classroomId).get();
+                if (!Objects.equals(classRoomEntity.getTeacherId(), userId)) {
+                   return;
+                }
                 if (recentClassEntity == null)
                 {
                     RecentClassEntity newData = new RecentClassEntity();
                     newData.setLastAccessedAt(String.valueOf(System.currentTimeMillis()));
                     newData.setTeacherId(userId);
                     newData.setClassroomId(classroomId);
+
                     recentClassRepository.save(newData);
                 }
                 else{

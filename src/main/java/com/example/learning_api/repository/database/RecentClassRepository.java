@@ -15,7 +15,7 @@ public interface RecentClassRepository extends MongoRepository<RecentClassEntity
             "{ $addFields: { _classroomId: { $toObjectId: '$classroomId' } } }",
             "{ $lookup: { from: 'classrooms', localField: '_classroomId', foreignField: '_id', as: 'classInfo' } }",
             "{ $unwind: '$classInfo' }",
-            "{ $match: { teacherId: ?0, 'classInfo.teacherId': ?0, 'classInfo.status': { $nin: ['BLOCKED', 'PENDING'] } } }",
+            "{ $match: { teacherId: ?0, 'classInfo.teacherId': ?0, 'classInfo.status': { $nin: ['BLOCKED'] } } }",
             "{ $sort: { lastAccessedAt: -1 } }",
             "{ $project: { " +
                     "_id: 0, " +
