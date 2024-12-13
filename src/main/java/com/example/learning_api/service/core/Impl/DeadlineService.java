@@ -10,6 +10,7 @@ import com.example.learning_api.dto.response.classroom.ClassroomDeadlineResponse
 import com.example.learning_api.dto.response.deadline.*;
 import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.*;
+import com.example.learning_api.quartz.Schedules.DeadlineSchedulerService;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
 import com.example.learning_api.service.common.ModelMapperService;
@@ -48,7 +49,9 @@ public class DeadlineService implements IDeadlineService {
     private final FileRepository fileRepository;
     private final ScoringCriteriaRepository scoringCriteriaRepository;
     private final DeadlineSubmissionsRepository deadlineSubmissionsRepository;
+    private final NotificationRepository notificationRepository;
     private final INotificationService notificationService;
+    private final DeadlineSchedulerService deadlineSch;
     public void processFiles (List<MultipartFile> files,String title, DeadlineEntity deadlineEntity){
             if (files == null) {
             return;
@@ -141,6 +144,10 @@ public class DeadlineService implements IDeadlineService {
             notificationEntity.setPriority(NotificationPriority.NORMAL);
             notificationEntity.setTargetUrl(deadlineEntity.getId());
             processFiles(body.getFiles(),body.getTitle(),deadlineEntity);
+            if(body.getEndDate()!=null){
+                long offsetInMillis = 3600 * 24 * 1000; // 24 giờ
+                deadlineSch.scheduleTestReminder(deadlineEntity, offsetInMillis);
+            }
             List<String> studentId = studentEnrollmentsRepository.findStudentsNotTakenDeadline(classRoomEntity.getId(), deadlineEntity.getId());
             List<String> userIds = new ArrayList<>();
             for (String id : studentId) {
@@ -204,6 +211,8 @@ public class DeadlineService implements IDeadlineService {
             if (deadlineEntity == null){
                 throw new IllegalArgumentException("DeadlineId is not found");
             }
+            List<NotificationEntity> notificationEntity = notificationRepository.findByAuthorId(deadlineId);
+            notificationRepository.deleteAllById(notificationEntity.stream().map(NotificationEntity::getId).collect(Collectors.toList()));
             deadlineRepository.deleteById(deadlineId);
         }
         catch (Exception e) {
