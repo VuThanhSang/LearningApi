@@ -15,7 +15,7 @@ public interface RecentClassRepository extends MongoRepository<RecentClassEntity
             "{ $addFields: { _classroomId: { $toObjectId: '$classroomId' } } }",
             "{ $lookup: { from: 'classrooms', localField: '_classroomId', foreignField: '_id', as: 'classInfo' } }",
             "{ $unwind: '$classInfo' }",
-            "{ $match: { teacherId: ?0, 'classInfo.status': { $ne: 'BLOCKED' } } }",
+            "{ $match: { teacherId: ?0, 'classInfo.teacherId': ?0, 'classInfo.status': { $nin: ['BLOCKED', 'PENDING'] } } }",
             "{ $sort: { lastAccessedAt: -1 } }",
             "{ $project: { " +
                     "_id: 0, " +
@@ -36,12 +36,13 @@ public interface RecentClassRepository extends MongoRepository<RecentClassEntity
             "{ $limit: ?2 }"
     })
     List<RecentClassDTO> findRecentClassesByTeacherId(String teacherId, int skip, int limit);
-
     @Aggregation(pipeline = {
             "{ $addFields: { _classroomId: { $toObjectId: '$classroomId' } } }",
             "{ $lookup: { from: 'classrooms', localField: '_classroomId', foreignField: '_id', as: 'classInfo' } }",
             "{ $unwind: '$classInfo' }",
-            "{ $match: { studentId: ?0, 'classInfo.status': { $ne: 'BLOCKED' } } }",
+            "{ $lookup: { from: 'student_enrollments', localField: 'classroomId', foreignField: 'classroomId', as: 'enrollments' } }",
+            "{ $unwind: '$enrollments' }",
+            "{ $match: { 'enrollments.studentId': ?0, 'classInfo.status': { $nin: ['BLOCKED', 'PENDING'] } } }",
             "{ $sort: { lastAccessedAt: -1 } }",
             "{ $project: { " +
                     "_id: 0, " +
