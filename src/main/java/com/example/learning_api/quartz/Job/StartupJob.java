@@ -38,15 +38,15 @@ public class StartupJob implements Job {
             for (TestEntity testEntity : testNotExpired) {
                 if (testEntity.getEndTime() != null) {
                 long offsetInMillis = 3600 * 24 * 1000; // 24 giờ
-                    testSchedulerService.scheduleTestReminder(testEntity, Long.parseLong(testEntity.getEndTime())-offsetInMillis,"USER");
-                    testSchedulerService.scheduleTestReminder(testEntity, Long.parseLong(testEntity.getEndTime()),"TEACHER");
+                    testSchedulerService.scheduleTestReminder(testEntity, offsetInMillis,"USER");
+                    testSchedulerService.scheduleTestReminder(testEntity, 1000,"TEACHER");
                 }
             }
             for (DeadlineEntity deadlineEntity : deadlineNotExpired) {
                 if (deadlineEntity.getEndDate() != null) {
                     long offsetInMillis = 3600 * 24 * 1000; // 24 giờ
-                    deadlineSchedulerService.scheduleTestReminder(deadlineEntity, Long.parseLong(deadlineEntity.getEndDate())-offsetInMillis,"USER");
-                    deadlineSchedulerService.scheduleTestReminder(deadlineEntity, Long.parseLong(deadlineEntity.getEndDate()),"TEACHER");
+                    deadlineSchedulerService.scheduleTestReminder(deadlineEntity, offsetInMillis,"USER");
+                    deadlineSchedulerService.scheduleTestReminder(deadlineEntity, 1000,"TEACHER");
 
                 }
             }
