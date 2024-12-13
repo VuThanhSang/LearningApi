@@ -51,6 +51,7 @@ public class ClassRoomService implements IClassRoomService {
     private final DeadlineRepository deadlineRepository;
     private final DeadlineSubmissionsRepository deadlineSubmissionsRepository;
     private final LessonRepository lessonRepository;
+    private final NotificationService notificationService;
     @Override
     public CreateClassRoomResponse createClassRoom(CreateClassRoomRequest body) {
         try{
@@ -583,13 +584,14 @@ public class ClassRoomService implements IClassRoomService {
             student.setCreatedAt(String.valueOf(System.currentTimeMillis()));
             student.setEnrolledAt(String.valueOf(System.currentTimeMillis()));
             student.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
-            studentEnrollmentsRepository.save(student);
-
-
             ClassRoomEntity classRoom = classRoomRepository.findById(classroomId
+
             ).orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
-            classRoom.setCurrentEnrollment(classRoom.getCurrentEnrollment() + 1);
-            classRoomRepository.save(classRoom);
+            if (classRoom.getEnrollmentCapacity()>=classRoom.getCurrentEnrollment() + 1 ){
+                studentEnrollmentsRepository.save(student);
+                classRoom.setCurrentEnrollment(classRoom.getCurrentEnrollment() + 1);
+                classRoomRepository.save(classRoom);
+            }
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }
@@ -616,7 +618,6 @@ public class ClassRoomService implements IClassRoomService {
                     .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
             if (!classRoom.getTeacherId().equals(teacherId)) {
                 throw new IllegalArgumentException("TeacherId is not authorized to remove students");
-
             }
             StudentEnrollmentsEntity studentEnrollmentsEntity = studentEnrollmentsRepository.findByStudentIdAndClassroomId(studentId, classroomId);
             if (studentEnrollmentsEntity == null) {
@@ -626,7 +627,6 @@ public class ClassRoomService implements IClassRoomService {
             if (classRoom.getCurrentEnrollment() - 1>=0)
                 classRoom.setCurrentEnrollment(classRoom.getCurrentEnrollment() - 1);
             classRoomRepository.save(classRoom);
-
         }
         catch (Exception e){
             throw new IllegalArgumentException(e.getMessage());
@@ -668,7 +668,13 @@ public class ClassRoomService implements IClassRoomService {
                     newData.setEnrolledAt(String.valueOf(System.currentTimeMillis()));
                     newData.setCreatedAt(String.valueOf(System.currentTimeMillis()));
                     newData.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
-                    studentEnrollmentsRepository.save(newData);
+                    if (classRoom.getEnrollmentCapacity()>=classRoom.getCurrentEnrollment() + 1)
+                    {
+                        classRoom.setCurrentEnrollment(classRoom.getCurrentEnrollment() + 1);
+                        classRoomRepository.save(classRoom);
+                        studentEnrollmentsRepository.save(newData);
+
+                    }
                     success.add(row.get(0));
                 }
             }else{
@@ -691,7 +697,13 @@ public class ClassRoomService implements IClassRoomService {
                     newData.setEnrolledAt(String.valueOf(System.currentTimeMillis()));
                     newData.setCreatedAt(String.valueOf(System.currentTimeMillis()));
                     newData.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
-                    studentEnrollmentsRepository.save(newData);
+                    if (classRoom.getEnrollmentCapacity()>=classRoom.getCurrentEnrollment() + 1)
+                    {
+                        classRoom.setCurrentEnrollment(classRoom.getCurrentEnrollment() + 1);
+                        classRoomRepository.save(classRoom);
+                        studentEnrollmentsRepository.save(newData);
+
+                    }
                     success.add(email);
                 }
             }
@@ -832,6 +844,17 @@ public class ClassRoomService implements IClassRoomService {
             ClassRoomEntity classRoomEntity = classRoomRepository.findById(classroomId)
                     .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
             classRoomEntity.setStatus(ClassRoomStatus.valueOf(status));
+            NotificationEntity notificationEntity = new NotificationEntity();
+            notificationEntity.setNotificationSettingId("674473d53e126c2148ce1acf");
+            notificationEntity.setTitle("New Test");
+            notificationEntity.setMessage("Your Class:  " + classRoomEntity.getName() + " has been " + status);
+            notificationEntity.setAuthorId(classRoomEntity.getId());
+            notificationEntity.setTargetUrl(classRoomEntity.getId());
+            notificationEntity.setPriority(NotificationPriority.NORMAL);
+            List<String> ids= new ArrayList<>();
+            ids.add(classRoomEntity.getTeacherId());
+            notificationService.createNotification( notificationEntity,ids);
+
             classRoomRepository.save(classRoomEntity);
         }
         catch (Exception e){

@@ -14,21 +14,23 @@ public class TestSchedulerService {
     @Autowired
     private Scheduler scheduler;
 
-    public void scheduleTestReminder(TestEntity test, long offsetInMillis) throws SchedulerException {
+    public void scheduleTestReminder(TestEntity test, long offsetInMillis,String role) throws SchedulerException {
         // Tính toán thời gian trigger
         long triggerTimeMillis = Long.parseLong(test.getEndTime()) - offsetInMillis;
         Date triggerTime = new Date(triggerTimeMillis);
 
         // Tạo JobDetail
         JobDetail jobDetail = JobBuilder.newJob(TestReminderJob.class)
-                .withIdentity("TestReminderJob-" + test.getId(), "TestReminderGroup")
+                .withIdentity("TestReminderJob-" + test.getId()+"-role-"+role, "TestReminderGroup")
                 .usingJobData("testId", test.getId())
                 .usingJobData("testName", test.getName())
+                .usingJobData("role",role)
+                .usingJobData("teacherId",test.getTeacherId())
                 .build();
 
         // Tạo Trigger
         Trigger trigger = TriggerBuilder.newTrigger()
-                .withIdentity("Trigger-" + test.getId(), "TestReminderGroup")
+                .withIdentity("Trigger-" + test.getId(), "TestReminderGroup-"+role)
                 .startAt(triggerTime) // Thời gian trigger
                 .withSchedule(SimpleScheduleBuilder.simpleSchedule())
                 .build();

@@ -32,19 +32,33 @@ public class DeadlineReminderJob implements Job {
         String deadlineTitle = jobExecutionContext.getJobDetail().getJobDataMap().getString("deadlineTitle");
         DeadlineEntity deadlineEntity = deadlineRepository.findById(deadlineId).orElse(null);
         NotificationEntity notificationEntity = new NotificationEntity();
-        notificationEntity.setNotificationSettingId("674473d53e126c2148ce1acc");
-        notificationEntity.setTitle("Notification Deadline due soon");
-        notificationEntity.setMessage("Deadline " + deadlineTitle + " is due soon");
         notificationEntity.setAuthorId(deadlineId);
         notificationEntity.setPriority(NotificationPriority.NORMAL);
-        List<String> studentId = studentEnrollmentsRepository.findStudentsNotTakenDeadline(deadlineEntity.getClassroomId(), deadlineId);
-        List<String> userIds = new ArrayList<>();
-        for (String id : studentId) {
-            StudentEntity studentEntity = studentRepository.findById(id).orElse(null);
-            if (studentEntity != null) {
-                userIds.add(studentEntity.getUserId());
+        notificationEntity.setTargetUrl(deadlineId);
+        if (jobExecutionContext.getJobDetail().getJobDataMap().getString("role").equals("TEACHER")){
+            notificationEntity.setNotificationSettingId("674473d53e126c2148ce1acc");
+            notificationEntity.setTitle("Notification Deadline is expired");
+            notificationEntity.setMessage("Deadline " + deadlineTitle + " is expired");
+            List<String> ids = new ArrayList<>();
+            if (deadlineEntity == null) {
+                return;
             }
+            notificationService.createNotification(notificationEntity, ids);
         }
-        notificationService.createNotification(notificationEntity, userIds);
+        else{
+            notificationEntity.setNotificationSettingId("674473d53e126c2148ce1ad0");
+            notificationEntity.setTitle("Notification Deadline due soon");
+            notificationEntity.setMessage("Deadline " + deadlineTitle + " is due soon");
+            List<String> studentId = studentEnrollmentsRepository.findStudentsNotTakenDeadline(deadlineEntity.getClassroomId(), deadlineId);
+            List<String> userIds = new ArrayList<>();
+            for (String id : studentId) {
+                StudentEntity studentEntity = studentRepository.findById(id).orElse(null);
+                if (studentEntity != null) {
+                    userIds.add(studentEntity.getUserId());
+                }
+            }
+            notificationService.createNotification(notificationEntity, userIds);
+        }
+
     }
 }

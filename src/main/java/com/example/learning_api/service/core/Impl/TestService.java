@@ -78,7 +78,8 @@ public class TestService implements ITestService {
 
             if (request.getEndTime() != null) {
                 long offsetInMillis = 3600 * 24 * 1000; // 24 giờ
-                testSchedulerService.scheduleTestReminder(testEntity, offsetInMillis);
+                testSchedulerService.scheduleTestReminder(testEntity, offsetInMillis, "USER");
+                testSchedulerService.scheduleTestReminder(testEntity, 0, "TEACHER");
             }
 
             NotificationEntity notificationEntity = new NotificationEntity();

@@ -13,21 +13,23 @@ public class DeadlineSchedulerService {
     @Autowired
     private Scheduler scheduler;
 
-    public void scheduleTestReminder(DeadlineEntity deadline, long offsetInMillis) throws SchedulerException {
+    public void scheduleTestReminder(DeadlineEntity deadline, long offsetInMillis,String role) throws SchedulerException {
         // Calculate trigger time
         long triggerTimeMillis = Long.parseLong(deadline.getEndDate()) - offsetInMillis;
         Date triggerTime = new Date(triggerTimeMillis);
 
         // Create JobDetail
         JobDetail jobDetail = JobBuilder.newJob(DeadlineReminderJob.class)
-                .withIdentity("DeadlineReminderJob-" + deadline.getId(), "DeadlineReminderGroup")
+                .withIdentity("DeadlineReminderJob-" + deadline.getId()+"-"+role, "DeadlineReminderGroup")
                 .usingJobData("deadlineId", deadline.getId())
                 .usingJobData("deadlineTitle", deadline.getTitle())
+                .usingJobData("role",role)
+                .usingJobData("teacherId",deadline.getTeacherId())
                 .build();
 
         // Create Trigger
         Trigger trigger = TriggerBuilder.newTrigger()
-                .withIdentity("Trigger-" + deadline.getId(), "DeadlineReminderGroup")
+                .withIdentity("Trigger-" + deadline.getId(), "DeadlineReminderGroup-"+role)
                 .startAt(triggerTime) // Trigger time
                 .withSchedule(SimpleScheduleBuilder.simpleSchedule())
                 .build();
