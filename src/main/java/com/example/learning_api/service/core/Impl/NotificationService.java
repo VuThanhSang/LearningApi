@@ -310,7 +310,7 @@ public class NotificationService implements INotificationService {
             );
 
             if (dailyCount >= settings.getMaxFrequencyPerDay()) {
-                throw new RuntimeException("Daily notification limit exceeded");
+                return;
             }
         }
 
