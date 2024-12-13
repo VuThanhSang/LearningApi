@@ -7,9 +7,14 @@ import org.springframework.data.mongodb.repository.Query;
 
 import java.util.List;
 
-public interface NotificationRepository extends MongoRepository<NotificationEntity, String>{
+public interface NotificationRepository extends MongoRepository<NotificationEntity, String> {
     List<NotificationEntity> findByNotificationSettingId(String notificationSettingId);
+
     List<NotificationEntity> findByExpiresAtLessThanAndIsDeletedFalse(String expiresAt);
+
     Long countByAuthorIdAndCreatedAtAfter(String authorId, String createdAt);
+
     List<NotificationEntity> findTopByAuthorIdOrderByCreatedAtDesc(String authorId);
+
+    List<NotificationEntity> findByAuthorId(String authorId);
 }

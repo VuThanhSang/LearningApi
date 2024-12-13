@@ -60,6 +60,7 @@ public class TestService implements ITestService {
     private final INotificationService notificationService;
     private final StudentEnrollmentsRepository studentEnrollmentsRepository;
     private final StudentRepository studentRepository;
+    private final NotificationRepository notificationRepository;
     @Override
     public CreateTestResponse createTest(CreateTestRequest request) {
         try {
@@ -76,8 +77,7 @@ public class TestService implements ITestService {
             }
 
             if (request.getEndTime() != null) {
-//                long offsetInMillis = 3600 * 24 * 1000; // 24 giờ
-                long offsetInMillis = 100 * 1000; // 30s
+                long offsetInMillis = 3600 * 24 * 1000; // 24 giờ
                 testSchedulerService.scheduleTestReminder(testEntity, offsetInMillis);
             }
 
@@ -295,6 +295,8 @@ public class TestService implements ITestService {
                 answerRepository.deleteByQuestionId(questionEntity.getId());
             }
             questionRepository.deleteByTestId(id);
+            List<NotificationEntity> notificationEntity = notificationRepository.findByAuthorId(id);
+            notificationRepository.deleteAllById(notificationEntity.stream().map(NotificationEntity::getId).collect(Collectors.toList()));
             testRepository.deleteById(id);
             testResultRepository.deleteByTestId(id);
         } catch (Exception e) {

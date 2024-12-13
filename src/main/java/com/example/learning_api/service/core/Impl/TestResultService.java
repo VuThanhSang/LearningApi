@@ -488,11 +488,18 @@ public class TestResultService implements ITestResultService {
         int totalCorrect = 0;
         int totalIncorrect = 0;
         for (StatisticsResultResponse.Answers answer : answers) {
-            if (answer.getIsCorrect()) {
-                totalCorrect += answer.getTotalSelected();
-            } else {
+
+            if (answer.getIsCorrect()!=null)
+            {
+                if (answer.getIsCorrect()) {
+                    totalCorrect += answer.getTotalSelected();
+                } else {
+                    totalIncorrect += answer.getTotalSelected();
+                }
+            }else{
                 totalIncorrect += answer.getTotalSelected();
             }
+
         }
         return new int[]{totalCorrect, totalIncorrect};
     }

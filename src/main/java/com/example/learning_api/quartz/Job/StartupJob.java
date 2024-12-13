@@ -37,14 +37,13 @@ public class StartupJob implements Job {
             List<TestEntity> testExpired = testService.getAllTestExpired();
             for (TestEntity testEntity : testNotExpired) {
                 if (testEntity.getEndTime() != null) {
-//                long offsetInMillis = 3600 * 24 * 1000; // 24 giờ
-                    long offsetInMillis = 60 * 1000; // 60s
+                long offsetInMillis = 3600 * 24 * 1000; // 24 giờ
                     testSchedulerService.scheduleTestReminder(testEntity, offsetInMillis);
                 }
             }
             for (DeadlineEntity deadlineEntity : deadlineNotExpired) {
                 if (deadlineEntity.getEndDate() != null) {
-                    long offsetInMillis = 60 * 1000; // 24 giờ
+                    long offsetInMillis = 3600 * 24 * 1000; // 24 giờ
                     deadlineSchedulerService.scheduleTestReminder(deadlineEntity, offsetInMillis);
                 }
             }

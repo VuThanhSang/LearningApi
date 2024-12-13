@@ -69,7 +69,7 @@ public class NotificationService implements INotificationService {
         }
 
         // Kiểm tra frequency limit
-//        validateNotificationFrequency(notification.getAuthorId(), settings);
+        validateNotificationFrequency(notification.getAuthorId(), settings);
 
         // Filter receivers based on their notification preferences
         List<String> filteredReceivers = filterReceiversByPreferences(receiverIds, notification.getNotificationSettingId());
@@ -324,7 +324,7 @@ public class NotificationService implements INotificationService {
 
             long minInterval = settings.getMinIntervalMinutes() * 60 * 1000;
             if (System.currentTimeMillis() - lastNotificationTime < minInterval) {
-                throw new RuntimeException("Minimum interval between notifications not met");
+                return;
             }
         }
     }
