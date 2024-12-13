@@ -845,8 +845,8 @@ public class ClassRoomService implements IClassRoomService {
                     .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
             classRoomEntity.setStatus(ClassRoomStatus.valueOf(status));
             NotificationEntity notificationEntity = new NotificationEntity();
-            notificationEntity.setNotificationSettingId("674473d53e126c2148ce1acf");
-            notificationEntity.setTitle("New Test");
+            notificationEntity.setNotificationSettingId("674473d53e126c2148ce1ada");
+            notificationEntity.setTitle("Classroom has been " + status);
             notificationEntity.setMessage("Your Class:  " + classRoomEntity.getName() + " has been " + status);
             notificationEntity.setAuthorId(classRoomEntity.getId());
             notificationEntity.setTargetUrl(classRoomEntity.getId());

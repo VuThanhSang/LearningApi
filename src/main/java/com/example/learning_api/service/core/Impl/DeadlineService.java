@@ -570,7 +570,9 @@ public class DeadlineService implements IDeadlineService {
                     .collect(Collectors.toList());
            Long totalElements = studentEnrollmentsRepository.countStudentDeadlines(
                     studentId, status, search, startDate, endDate, classroomId);
-
+            if (totalElements == null) {
+                totalElements = 0L;
+            }
             int totalPages = (int) Math.ceil((double) totalElements / size);
 
             return GetDeadlinesResponse.builder()
