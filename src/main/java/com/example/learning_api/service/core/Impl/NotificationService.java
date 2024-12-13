@@ -69,8 +69,10 @@ public class NotificationService implements INotificationService {
         }
 
         // Kiểm tra frequency limit
-        validateNotificationFrequency(notification.getAuthorId(), settings);
-
+        Boolean check = validateNotificationFrequency(notification.getAuthorId(), settings);
+        if (!check) {
+            throw new CustomException("Exceeded notification frequency limit");
+        }
         // Filter receivers based on their notification preferences
         List<String> filteredReceivers = filterReceiversByPreferences(receiverIds, notification.getNotificationSettingId());
 
@@ -200,9 +202,16 @@ public class NotificationService implements INotificationService {
         List<NotificationReceiveEntity> receives = notificationReceiveRepository
                 .findByUserIdOrderByReceivedAtDesc(userId);
         List<GetUserNotificationResponse> response = new ArrayList<>();
+        Set<String> uniqueNotificationIds = new HashSet<>();
+
         for (NotificationReceiveEntity receive : receives) {
+            if (uniqueNotificationIds.contains(receive.getNotificationId())) {
+                continue; // Skip if the notification ID is already processed
+            }
+
             NotificationEntity notification = notificationRepository.findById(receive.getNotificationId())
                     .orElseThrow(() -> new RuntimeException("Notification not found"));
+
             GetUserNotificationResponse notificationResponse = new GetUserNotificationResponse();
             notificationResponse.setId(notification.getId());
             notificationResponse.setTitle(notification.getTitle());
@@ -218,11 +227,11 @@ public class NotificationService implements INotificationService {
             notificationResponse.setCreatedAt(notification.getCreatedAt());
             notificationResponse.setUpdatedAt(notification.getUpdatedAt());
             notificationResponse.setSeen(receive.getSeen());
-            response.add(notificationResponse);
 
+            response.add(notificationResponse);
+            uniqueNotificationIds.add(receive.getNotificationId());
         }
         return response;
-
     }
 
     // 4. Cập nhật user notification settings
@@ -302,7 +311,7 @@ public class NotificationService implements INotificationService {
     }
 
     // Helper method để validate frequency
-    private void    validateNotificationFrequency(String authorId, NotificationSettingsEntity settings) {
+    private Boolean    validateNotificationFrequency(String authorId, NotificationSettingsEntity settings) {
         if (settings.getMaxFrequencyPerDay() != null) {
             long dailyCount = notificationRepository.countByAuthorIdAndCreatedAtAfter(
                     authorId,
@@ -310,7 +319,7 @@ public class NotificationService implements INotificationService {
             );
 
             if (dailyCount >= settings.getMaxFrequencyPerDay()) {
-                return;
+                return false;
             }
         }
 
@@ -323,10 +332,9 @@ public class NotificationService implements INotificationService {
                     .orElse(0L);
 
             long minInterval = settings.getMinIntervalMinutes() * 60 * 1000;
-            if (System.currentTimeMillis() - lastNotificationTime < minInterval) {
-                return;
-            }
+            return System.currentTimeMillis() - lastNotificationTime >= minInterval;
         }
+        return true;
     }
     private void validateReceiverRoles(List<String> receiverIds, List<String> allowedRoles) {
         // Implement validation logic here
