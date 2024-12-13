@@ -1,11 +1,10 @@
 package com.example.learning_api.quartz.Job;
 
-import com.example.learning_api.entity.sql.database.NotificationEntity;
-import com.example.learning_api.entity.sql.database.StudentEntity;
-import com.example.learning_api.entity.sql.database.TestEntity;
+import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.NotificationPriority;
 import com.example.learning_api.repository.database.StudentEnrollmentsRepository;
 import com.example.learning_api.repository.database.StudentRepository;
+import com.example.learning_api.repository.database.TeacherRepository;
 import com.example.learning_api.repository.database.TestRepository;
 import com.example.learning_api.service.core.INotificationService;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +22,7 @@ public class TestReminderJob implements Job {
     private final  StudentEnrollmentsRepository studentEnrollmentsRepository;
     private final INotificationService notificationService;
     private final StudentRepository studentRepository;
+    private final TeacherRepository teacherRepository;
     private static final Logger logger = LoggerFactory.getLogger(TestReminderJob.class);
 
     @Override
@@ -32,21 +32,37 @@ public class TestReminderJob implements Job {
         String testName = context.getJobDetail().getJobDataMap().getString("testName");
         TestEntity testEntity = testRepository.findById(testId).orElse(null);
         NotificationEntity notificationEntity = new NotificationEntity();
-        notificationEntity.setNotificationSettingId("674473d53e126c2148ce1ad0");
-        notificationEntity.setTitle("Notification Test due soon");
-        notificationEntity.setMessage("Test " + testName + " is due soon");
         notificationEntity.setAuthorId(testId);
         notificationEntity.setPriority(NotificationPriority.NORMAL);
         notificationEntity.setTargetUrl( testId);
-        List<String> studentId = studentEnrollmentsRepository.findStudentsNotTakenTest(testEntity.getClassroomId(), testId);
-        List<String> userIds = new ArrayList<>();
-        for (String id : studentId) {
-            StudentEntity studentEntity = studentRepository.findById(id).orElse(null);
-            if (studentEntity != null) {
-                userIds.add(studentEntity.getUserId());
+        if ( context.getJobDetail().getJobDataMap().getString("role").equals("TEACHER")){
+            notificationEntity.setNotificationSettingId("674473d53e126c2148ce1acc");
+            notificationEntity.setTitle("Notification Test is expired");
+            notificationEntity.setMessage("Test " + testName + " is expired");
+            List<String> ids = new ArrayList<>();
+            if (testEntity == null) {
+                return;
             }
+            TeacherEntity userEntity = teacherRepository.findById(testEntity.getTeacherId()).orElse(null);
+            ids.add(userEntity.getUserId());
+            notificationService.createNotification(notificationEntity, ids);
         }
-        notificationService.createNotification( notificationEntity,userIds);
+        else{
+            notificationEntity.setNotificationSettingId("674473d53e126c2148ce1ad0");
+            notificationEntity.setTitle("Notification Test due soon");
+            notificationEntity.setMessage("Test " + testName + " is due soon");
+            List<String> studentId = studentEnrollmentsRepository.findStudentsNotTakenTest(testEntity.getClassroomId(), testId);
+            List<String> userIds = new ArrayList<>();
+            for (String id : studentId) {
+                StudentEntity studentEntity = studentRepository.findById(id).orElse(null);
+                if (studentEntity != null) {
+                    userIds.add(studentEntity.getUserId());
+                }
+            }
+            notificationService.createNotification( notificationEntity,userIds);
+
+        }
+
         logger.info("Trigger reminder for Test: ID = {}, Name = {}", testId, testName);
 
 

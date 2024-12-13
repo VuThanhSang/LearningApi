@@ -146,7 +146,8 @@ public class DeadlineService implements IDeadlineService {
             processFiles(body.getFiles(),body.getTitle(),deadlineEntity);
             if(body.getEndDate()!=null){
                 long offsetInMillis = 3600 * 24 * 1000; // 24 giờ
-                deadlineSch.scheduleTestReminder(deadlineEntity, offsetInMillis);
+                deadlineSch.scheduleTestReminder(deadlineEntity, offsetInMillis,"USER");
+                deadlineSch.scheduleTestReminder(deadlineEntity, 0,"TEACHER");
             }
             List<String> studentId = studentEnrollmentsRepository.findStudentsNotTakenDeadline(classRoomEntity.getId(), deadlineEntity.getId());
             List<String> userIds = new ArrayList<>();

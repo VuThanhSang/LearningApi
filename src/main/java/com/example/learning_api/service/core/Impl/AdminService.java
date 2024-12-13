@@ -254,6 +254,9 @@ public class AdminService implements IAdminService {
             } else {
                 classRoomEntities = classRoomRepository.findByNameContainingAndStatusForAdmin(search, status, pageable);
             }
+            for (ClassRoomEntity classRoomEntity : classRoomEntities) {
+                classRoomEntity.setCurrentEnrollment(studentEnrollmentsRepository.countByClassroomId(classRoomEntity.getId()));
+            }
             GetClassRoomsAdminResponse resData = new GetClassRoomsAdminResponse();
             resData.setData(classRoomEntities.getContent());
             resData.setTotalElements(classRoomEntities.getTotalElements());
