@@ -144,6 +144,9 @@ public class TestResultService implements ITestResultService {
                     for (String text : questionAndAnswer.getTextAnswers()) {
                         StudentAnswersEntity studentAnswersEntity = studentAnswerRepository
                                 .findByStudentIdAndTestResultIdAndQuestionIdAndAnswerId(testResultEntity.getStudentId(), body.getTestResultId(), questionAndAnswer.getQuestionId(), null);
+                        if (studentAnswersEntity == null) {
+                            studentAnswersEntity = new StudentAnswersEntity();
+                        }
                         studentAnswersEntity.setQuestionId(questionAndAnswer.getQuestionId());
                         studentAnswersEntity.setTestResultId(body.getTestResultId());
                         studentAnswersEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
@@ -156,6 +159,9 @@ public class TestResultService implements ITestResultService {
                     for (String answerId : questionAndAnswer.getAnswers()) {
                         StudentAnswersEntity studentAnswersEntity = studentAnswerRepository
                                 .findByStudentIdAndTestResultIdAndQuestionIdAndAnswerId(testResultEntity.getStudentId(), body.getTestResultId(), questionAndAnswer.getQuestionId(), answerId);
+                        if (studentAnswersEntity == null) {
+                            studentAnswersEntity = new StudentAnswersEntity();
+                        }
                         studentAnswersEntity.setAnswerId(answerId);
                         studentAnswersEntity.setQuestionId(questionAndAnswer.getQuestionId());
                         studentAnswersEntity.setTestResultId(body.getTestResultId());
