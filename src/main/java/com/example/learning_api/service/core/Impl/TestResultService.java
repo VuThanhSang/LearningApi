@@ -21,10 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -468,13 +465,16 @@ public class TestResultService implements ITestResultService {
 
         for (String studentId : studentIds) {
             TestResultEntity testResultEntity = testResultRepository.findHighestGradeByStudentIdAndTestId(studentId, testId);
+            if (testResultEntity == null) {
+                continue;
+            }
             List<StudentAnswersEntity> studentAnswersEntities = studentAnswerRepository.findByStudentIdAndTestResultIdAndQuestionId(studentId, testResultEntity.getId(), question.getId());
 
             boolean isCorrect;
             if (questionRes.getType().equals(QuestionType.TEXT_ANSWER.name()) || questionRes.getType().equals(QuestionType.FILL_IN_THE_BLANK.name())) {
                 isCorrect = questionRes.getAnswers().stream()
                         .allMatch(answer -> studentAnswersEntities.stream()
-                                .anyMatch(studentAnswer -> studentAnswer.getContent().equals(answer.getContent())));
+                                .anyMatch(studentAnswer -> Objects.requireNonNullElse(normalizeAnswer(studentAnswer.getContent()), "").equals(normalizeAnswer(answer.getContent()))));
             } else {
                 long correctAnswersCount = questionRes.getAnswers().stream().filter(StatisticsResultResponse.Answers::getIsCorrect).count();
                 long studentCorrectAnswersCount = studentAnswersEntities.stream().filter(studentAnswer -> {
@@ -555,6 +555,22 @@ public class TestResultService implements ITestResultService {
     private double calculateIncorrectRate(StatisticsResultResponse.Question question) {
         int total = question.getTotalCorrect() + question.getTotalIncorrect();
         return total == 0 ? 0 : (double) question.getTotalIncorrect() / total;
+    }
+    private String normalizeAnswer(String answer) {
+        if (answer == null) {
+            return "";
+        }
+        return answer.trim()
+                .toLowerCase()
+                .replaceAll("[àáạảãâầấậẩẫăằắặẳẵ]", "a")
+                .replaceAll("[èéẹẻẽêềếệểễ]", "e")
+                .replaceAll("[ìíịỉĩ]", "i")
+                .replaceAll("[òóọỏõôồốộổỗơờớợởỡ]", "o")
+                .replaceAll("[ùúụủũưừứựửữ]", "u")
+                .replaceAll("[ỳýỵỷỹ]", "y")
+                .replaceAll("[đ]", "d")
+                .replaceAll("\\p{Punct}", "") // Remove punctuation
+                .replaceAll("\\s+", " "); // Replace multiple spaces with single space
     }
 
 }
