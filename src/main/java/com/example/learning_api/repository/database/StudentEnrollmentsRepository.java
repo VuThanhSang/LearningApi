@@ -116,6 +116,14 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
     List<String> findStudentsNotTakenTest(String classroomId, String testId);
     @Aggregation(pipeline = {
             "{$match: {classroomId: ?0}}",
+            "{$lookup: {from: 'test_results', let: { student_id: '$studentId' }, pipeline: [{$match: {$expr: {$and: [{ $eq: ['$studentId', '$$student_id'] },{ $eq: ['$testId', ?1] }]}}}], as: 'result'}}",
+            "{$match: {$expr: {$gt: [{$size: '$result'}, 0]}}}",
+            "{$group: {_id: '$studentId'}}",
+            "{$project: {_id: 0, studentId: '$_id'}}"
+    })
+    List<String> findStudentsTakenTest(String classroomId, String testId);
+    @Aggregation(pipeline = {
+            "{$match: {classroomId: ?0}}",
             "{$lookup: {from: 'deadlines', localField: 'classroomId', foreignField: 'classroomId', as: 'deadlines'}}",
             "{$unwind: '$deadlines'}",
             "{$lookup: {from: 'deadline_submissions', let: { studentId: '$studentId', deadlineId: {$toString: '$deadlines._id'} }, pipeline: [{$match: {$expr: {$and: [{ $eq: ['$studentId', '$$studentId'] },{ $eq: ['$deadlineId', '$$deadlineId'] }]}}}] , as: 'submissions'}}",

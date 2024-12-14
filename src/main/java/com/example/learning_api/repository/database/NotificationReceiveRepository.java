@@ -9,4 +9,5 @@ import java.util.Optional;
 public interface NotificationReceiveRepository extends MongoRepository<NotificationReceiveEntity, String> {
     Optional<NotificationReceiveEntity> findByUserIdAndNotificationId(String userId, String NotificationId);
     List<NotificationReceiveEntity> findByUserIdOrderByReceivedAtDesc(String userId);
+    void deleteByNotificationId(String notificationId);
 }

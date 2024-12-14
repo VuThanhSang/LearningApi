@@ -3,10 +3,7 @@ package com.example.learning_api.service.core.Impl;
 import com.example.learning_api.dto.common.StudentSubmissionCountDto;
 import com.example.learning_api.dto.common.TotalTestOfDayDto;
 import com.example.learning_api.dto.request.admin.ChangeRoleRequest;
-import com.example.learning_api.dto.response.admin.GetAdminDashboardResponse;
-import com.example.learning_api.dto.response.admin.GetClassRoomsAdminResponse;
-import com.example.learning_api.dto.response.admin.GetUserDetailResponse;
-import com.example.learning_api.dto.response.admin.GetUsersResponse;
+import com.example.learning_api.dto.response.admin.*;
 import com.example.learning_api.dto.response.classroom.GetClassRoomsResponse;
 import com.example.learning_api.dto.response.classroom.TotalClassroomOfDayDto;
 import com.example.learning_api.dto.response.student.GetStudentsResponse;
@@ -46,6 +43,7 @@ public class AdminService implements IAdminService {
     private final CloudinaryService cloudinaryService;
     private final StudentEnrollmentsRepository studentEnrollmentsRepository;
     private final ForumRepository forumRepository;
+    private final NotificationRepository notificationRepository;
     @Override
     public void changeRole(ChangeRoleRequest body) {
         try {
@@ -168,7 +166,17 @@ public class AdminService implements IAdminService {
             resData.setEnrollmentTrend(enrollmentTrends);
             resData.setClassroomPerfomance(classroomPerformances);
             resData.setTotalEnrollmentInMonth(studentSubmissionCountDto.get(studentSubmissionCountDto.size()-1).getEnrollmentCount());
-            resData.setRecentActivity(new ArrayList<>());
+            Pageable pageable = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "createdAt"));
+            List<NotificationEntity> notificationEntities = notificationRepository.findAll();
+            List<GetRecentActivity> recentActivities = new ArrayList<>();
+            int size  = Math.min(notificationEntities.size(), 5);
+            for (int i = 0; i < size; i++) {
+                GetRecentActivity getRecentActivity = new GetRecentActivity();
+                getRecentActivity.setTitle(notificationEntities.get(i).getTitle());
+                getRecentActivity.setTime(notificationEntities.get(i).getCreatedAt());
+                recentActivities.add(getRecentActivity);
+            }
+            resData.setRecentActivity(recentActivities);
             resData.setUserEngagement(userEngagement);
             return resData;
 

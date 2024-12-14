@@ -50,6 +50,7 @@ public class DeadlineService implements IDeadlineService {
     private final ScoringCriteriaRepository scoringCriteriaRepository;
     private final DeadlineSubmissionsRepository deadlineSubmissionsRepository;
     private final NotificationRepository notificationRepository;
+    private final NotificationReceiveRepository notificationReceiveRepository;
     private final INotificationService notificationService;
     private final DeadlineSchedulerService deadlineSch;
     public void processFiles (List<MultipartFile> files,String title, DeadlineEntity deadlineEntity){
@@ -213,6 +214,9 @@ public class DeadlineService implements IDeadlineService {
                 throw new IllegalArgumentException("DeadlineId is not found");
             }
             List<NotificationEntity> notificationEntity = notificationRepository.findByAuthorId(deadlineId);
+            for (NotificationEntity notification : notificationEntity){
+                notificationReceiveRepository.deleteByNotificationId(notification.getId());
+            }
             notificationRepository.deleteAllById(notificationEntity.stream().map(NotificationEntity::getId).collect(Collectors.toList()));
             deadlineRepository.deleteById(deadlineId);
         }

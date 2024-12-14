@@ -70,45 +70,46 @@ public class NotificationService implements INotificationService {
 
         // Kiểm tra frequency limit
         Boolean check = validateNotificationFrequency(notification.getAuthorId(), settings);
-        if (!check) {
-            throw new CustomException("Exceeded notification frequency limit");
+        if (check) {
+            // Filter receivers based on their notification preferences
+            List<String> filteredReceivers = filterReceiversByPreferences(receiverIds, notification.getNotificationSettingId());
+
+            // Lưu notification
+            notification.setTotalReceivers(filteredReceivers.size());
+            notification.setType(NotificationFormType.valueOf(settings.getNotificationType()));
+            NotificationEntity savedNotification = notificationRepository.save(notification);
+
+            // Tạo notification receive cho từng user với delivery method từ preferences
+            List<NotificationReceiveEntity> receives = createNotificationReceives(filteredReceivers, savedNotification, settings);
+            notificationReceiveRepository.saveAll(receives);
+            NotificationResponse notificationResponse = NotificationResponse.builder()
+                    .id(savedNotification.getId())
+                    .title(savedNotification.getTitle())
+                    .message(savedNotification.getMessage())
+                    .authorId(savedNotification.getAuthorId())
+                    .notificationSettingId(savedNotification.getNotificationSettingId())
+                    .status(savedNotification.getStatus().name())
+                    .priority(savedNotification.getPriority().name())
+                    .expiresAt(savedNotification.getExpiresAt())
+                    .type(savedNotification.getType().name())
+                    .targetUrl(savedNotification.getTargetUrl())
+                    .createdAt(savedNotification.getCreatedAt())
+                    .updatedAt(savedNotification.getUpdatedAt())
+                    .isDeleted(savedNotification.getIsDeleted())
+                    .totalReceivers(savedNotification.getTotalReceivers())
+                    .receiversId(receives.stream().map(NotificationReceiveEntity::getUserId).collect(Collectors.toList()))
+                    .build();
+            // Send real-time WebSocket notification to each receiver
+            notificationResponse.getReceiversId().forEach(userId -> {
+                messagingTemplate.convertAndSend(
+                        "/topic/notifications/" + userId,
+                        notification
+                );
+            });
+            return notificationResponse;
         }
-        // Filter receivers based on their notification preferences
-        List<String> filteredReceivers = filterReceiversByPreferences(receiverIds, notification.getNotificationSettingId());
+        return null;
 
-        // Lưu notification
-        notification.setTotalReceivers(filteredReceivers.size());
-        notification.setType(NotificationFormType.valueOf(settings.getNotificationType()));
-        NotificationEntity savedNotification = notificationRepository.save(notification);
-
-        // Tạo notification receive cho từng user với delivery method từ preferences
-        List<NotificationReceiveEntity> receives = createNotificationReceives(filteredReceivers, savedNotification, settings);
-        notificationReceiveRepository.saveAll(receives);
-        NotificationResponse notificationResponse = NotificationResponse.builder()
-                .id(savedNotification.getId())
-                .title(savedNotification.getTitle())
-                .message(savedNotification.getMessage())
-                .authorId(savedNotification.getAuthorId())
-                .notificationSettingId(savedNotification.getNotificationSettingId())
-                .status(savedNotification.getStatus().name())
-                .priority(savedNotification.getPriority().name())
-                .expiresAt(savedNotification.getExpiresAt())
-                .type(savedNotification.getType().name())
-                .targetUrl(savedNotification.getTargetUrl())
-                .createdAt(savedNotification.getCreatedAt())
-                .updatedAt(savedNotification.getUpdatedAt())
-                .isDeleted(savedNotification.getIsDeleted())
-                .totalReceivers(savedNotification.getTotalReceivers())
-                .receiversId(receives.stream().map(NotificationReceiveEntity::getUserId).collect(Collectors.toList()))
-                .build();
-        // Send real-time WebSocket notification to each receiver
-        notificationResponse.getReceiversId().forEach(userId -> {
-            messagingTemplate.convertAndSend(
-                    "/topic/notifications/" + userId,
-                    notification
-            );
-        });
-        return notificationResponse;
     }
     // 2. Filter receivers dựa trên preferences của họ
     @Override

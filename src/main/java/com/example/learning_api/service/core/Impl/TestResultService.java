@@ -129,18 +129,21 @@ public class TestResultService implements ITestResultService {
 
     @Override
     public void saveProgress(SaveProgressRequest body) {
-        try{
-            TestResultEntity testResultEntity = testResultRepository.findById(body.getTestResultId()).orElseThrow(() -> new IllegalArgumentException("Test result does not exist"));
+        try {
+            TestResultEntity testResultEntity = testResultRepository.findById(body.getTestResultId())
+                    .orElseThrow(() -> new IllegalArgumentException("Test result does not exist"));
             if (testResultEntity.getState() == TestState.FINISHED) {
                 throw new IllegalArgumentException("Test is already finished");
             }
             studentAnswerRepository.deleteByTestResultId(body.getTestResultId());
             for (SaveProgressRequest.QuestionAndAnswer questionAndAnswer : body.getQuestionAndAnswers()) {
-                QuestionEntity questionEntity = questionRepository.findById(questionAndAnswer.getQuestionId()).orElseThrow(() -> new IllegalArgumentException("Question does not exist"));
+                QuestionEntity questionEntity = questionRepository.findById(questionAndAnswer.getQuestionId())
+                        .orElseThrow(() -> new IllegalArgumentException("Question does not exist"));
 
-                if (questionEntity.getType().equals(QuestionType.TEXT_ANSWER)||questionEntity.getType().equals(QuestionType.FILL_IN_THE_BLANK)){
+                if (questionEntity.getType().equals(QuestionType.TEXT_ANSWER) || questionEntity.getType().equals(QuestionType.FILL_IN_THE_BLANK)) {
                     for (String text : questionAndAnswer.getTextAnswers()) {
-                        StudentAnswersEntity studentAnswersEntity = new StudentAnswersEntity();
+                        StudentAnswersEntity studentAnswersEntity = studentAnswerRepository
+                                .findByStudentIdAndTestResultIdAndQuestionIdAndAnswerId(testResultEntity.getStudentId(), body.getTestResultId(), questionAndAnswer.getQuestionId(), null);
                         studentAnswersEntity.setQuestionId(questionAndAnswer.getQuestionId());
                         studentAnswersEntity.setTestResultId(body.getTestResultId());
                         studentAnswersEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
@@ -148,12 +151,11 @@ public class TestResultService implements ITestResultService {
                         studentAnswersEntity.setStudentId(testResultEntity.getStudentId());
                         studentAnswersEntity.setTextAnswer(text);
                         studentAnswerRepository.save(studentAnswersEntity);
-
                     }
-                }
-                else{
+                } else {
                     for (String answerId : questionAndAnswer.getAnswers()) {
-                        StudentAnswersEntity studentAnswersEntity = new StudentAnswersEntity();
+                        StudentAnswersEntity studentAnswersEntity = studentAnswerRepository
+                                .findByStudentIdAndTestResultIdAndQuestionIdAndAnswerId(testResultEntity.getStudentId(), body.getTestResultId(), questionAndAnswer.getQuestionId(), answerId);
                         studentAnswersEntity.setAnswerId(answerId);
                         studentAnswersEntity.setQuestionId(questionAndAnswer.getQuestionId());
                         studentAnswersEntity.setTestResultId(body.getTestResultId());
@@ -163,15 +165,11 @@ public class TestResultService implements ITestResultService {
                         studentAnswerRepository.save(studentAnswersEntity);
                     }
                 }
-
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
-
         }
     }
-
     @Override
     public List<TestResultsForClassroomResponse> getTestResultsForClassroom(String classroomId) {
         try{
@@ -287,7 +285,7 @@ public class TestResultService implements ITestResultService {
         List<TestResultOfTestResponse> results = testResultRepository.findHighestGradesByTestIdAndFinishedStateSortedAscending(testId);
 
         StatisticsResultResponse response = new StatisticsResultResponse();
-        List<StatisticsResultResponse.Question> processedQuestions = processQuestions(testDetail.getQuestions(), results);
+        List<StatisticsResultResponse.Question> processedQuestions = processQuestions(testDetail.getQuestions(), results,testDetail.getId(),testDetail.getClassroomId());
         response.setQuestionSortByIncorrectRate(sortQuestionsByIncorrectRate(processedQuestions));
         setOverviewStatistics(response, overviewResult);
 
@@ -367,7 +365,7 @@ public class TestResultService implements ITestResultService {
         GetTestDetailResponse testDetail = testService.getTestDetail(testId);
         List<TestResultOfTestResponse> results = testResultRepository.findHighestGradesByTestIdAndFinishedStateSortedAscending(testId);
 
-        List<StatisticsResultResponse.Question> processedQuestions = processQuestions(testDetail.getQuestions(), results);
+        List<StatisticsResultResponse.Question> processedQuestions = processQuestions(testDetail.getQuestions(), results,testDetail.getId(),testDetail.getClassroomId());
 
         List<StatisticsResultResponse.Question> filteredQuestions = filterQuestions(processedQuestions, questionContent, minCorrectCount, maxCorrectCount);
 
@@ -434,7 +432,7 @@ public class TestResultService implements ITestResultService {
         response.setTotalCorrect(totalCorrect);
         response.setTotalIncorrect(totalQuestion - totalCorrect);
         response.setTotalAttempted(totalAttempted);
-        response.setIsPassed((double)totalCorrect/totalQuestion*100>=5);
+        response.setIsPassed(result.getIsPassed());
         response.setGrade(result.getGrade());
         response.setAttemptLimit(test.getAttemptLimit());
         return response;
@@ -449,19 +447,45 @@ public class TestResultService implements ITestResultService {
         }
     }
 
-    private List<StatisticsResultResponse.Question> processQuestions(List<GetQuestionsResponse.QuestionResponse> questions, List<TestResultOfTestResponse> results) {
+    private List<StatisticsResultResponse.Question> processQuestions(List<GetQuestionsResponse.QuestionResponse> questions, List<TestResultOfTestResponse> results,String testId,String classroomId) {
         return questions.stream()
-                .map(question -> processQuestion(question, results))
+                .map(question -> processQuestion(question, results,testId,classroomId))
                 .collect(Collectors.toList());
     }
 
-    private StatisticsResultResponse.Question processQuestion(GetQuestionsResponse.QuestionResponse question, List<TestResultOfTestResponse> results) {
+    private StatisticsResultResponse.Question processQuestion(GetQuestionsResponse.QuestionResponse question, List<TestResultOfTestResponse> results, String testId, String classroomId) {
         StatisticsResultResponse.Question questionRes = modelMapperService.mapClass(question, StatisticsResultResponse.Question.class);
         questionRes.setAnswers(processAnswers(question.getAnswers(), results));
         questionRes.setSources(fileRepository.findByOwnerIdAndOwnerType(question.getId(), FileOwnerType.QUESTION.name()));
-        int[] totals = calculateTotals(questionRes.getAnswers());
-        questionRes.setTotalCorrect(totals[0]);
-        questionRes.setTotalIncorrect(totals[1]);
+        List<String> studentIds = studentEnrollmentsRepository.findStudentsTakenTest(classroomId, testId);
+        questionRes.setTotalCorrect(0);
+        questionRes.setTotalIncorrect(0);
+
+        for (String studentId : studentIds) {
+            TestResultEntity testResultEntity = testResultRepository.findHighestGradeByStudentIdAndTestId(studentId, testId);
+            List<StudentAnswersEntity> studentAnswersEntities = studentAnswerRepository.findByStudentIdAndTestResultIdAndQuestionId(studentId, testResultEntity.getId(), question.getId());
+
+            boolean isCorrect;
+            if (questionRes.getType().equals(QuestionType.TEXT_ANSWER.name()) || questionRes.getType().equals(QuestionType.FILL_IN_THE_BLANK.name())) {
+                isCorrect = questionRes.getAnswers().stream()
+                        .allMatch(answer -> studentAnswersEntities.stream()
+                                .anyMatch(studentAnswer -> studentAnswer.getTextAnswer().equals(answer.getContent())));
+            } else {
+                long correctAnswersCount = questionRes.getAnswers().stream().filter(StatisticsResultResponse.Answers::getIsCorrect).count();
+                long studentCorrectAnswersCount = studentAnswersEntities.stream().filter(studentAnswer -> {
+                    AnswerEntity answer = answerRepository.findById(studentAnswer.getAnswerId()).orElse(null);
+                    return answer != null && answer.getIsCorrect();
+                }).count();
+                isCorrect = correctAnswersCount == studentCorrectAnswersCount;
+            }
+
+            if (isCorrect) {
+                questionRes.setTotalCorrect(questionRes.getTotalCorrect() + 1);
+            } else {
+                questionRes.setTotalIncorrect(questionRes.getTotalIncorrect() + 1);
+            }
+        }
+
         return questionRes;
     }
 
@@ -474,6 +498,8 @@ public class TestResultService implements ITestResultService {
     private StatisticsResultResponse.Answers processAnswer(GetQuestionsResponse.AnswerResponse answer, List<TestResultOfTestResponse> results) {
         StatisticsResultResponse.Answers answerRes = modelMapperService.mapClass(answer, StatisticsResultResponse.Answers.class);
         int count = countStudentAnswers(answer.getId(), results);
+        AnswerEntity answerEntity = answerRepository.findById(answer.getId()).orElse(null);
+        answerRes.setIsCorrect(answerEntity!=null?answerEntity.getIsCorrect():null);
         answerRes.setTotalSelected(count);
         return answerRes;
     }

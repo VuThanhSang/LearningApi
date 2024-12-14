@@ -17,7 +17,7 @@ public class StudentAnswersEntity {
     private String textAnswer;
     private String testResultId;
     private String testType;
-    private boolean isCorrect;
+    private Boolean isCorrect;
     private String createdAt;
     private String updatedAt;
 }
