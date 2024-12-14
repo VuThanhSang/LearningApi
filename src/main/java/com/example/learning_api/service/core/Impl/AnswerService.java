@@ -75,7 +75,7 @@ public class AnswerService implements IAnswerService {
             QuestionEntity questionEntity1 = questionRepository.findById(body.getQuestionId())
                     .orElseThrow(() -> new IllegalArgumentException("Question not found"));
             if (questionEntity1.getType().equals(QuestionType.FILL_IN_THE_BLANK)||questionEntity1.getType().equals(QuestionType.TEXT_ANSWER)){
-                answerEntity.setCorrect(true);
+                answerEntity.setIsCorrect(true);
             }
             answerRepository.save(answerEntity);
             fileEntity.setOwnerId(answerEntity.getId());
@@ -110,7 +110,7 @@ public class AnswerService implements IAnswerService {
               if(body.getContent()!=null)
                 answerEntity.setContent(body.getContent());
               if(body.getIsCorrect()!=null)
-                answerEntity.setCorrect(body.getIsCorrect());
+                answerEntity.setIsCorrect(body.getIsCorrect());
 
 
               if (body.getSource()!=null){
@@ -139,7 +139,7 @@ public class AnswerService implements IAnswerService {
                       .orElseThrow(() -> new IllegalArgumentException("Question not found"));
               if (questionEntity.getType().equals(QuestionType.FILL_IN_THE_BLANK)||questionEntity.getType().equals(QuestionType.TEXT_ANSWER)){
                   if (answerEntity.getContent()!=null){
-                      answerEntity.setCorrect(true);
+                      answerEntity.setIsCorrect(true);
                       answerRepository.save(answerEntity);
                   }
               }

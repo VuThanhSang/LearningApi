@@ -854,7 +854,7 @@ public class ClassRoomService implements IClassRoomService {
             List<String> ids= new ArrayList<>();
             TeacherEntity teacherEntity = teacherRepository.findById(classRoomEntity.getTeacherId()).get();
             ids.add(teacherEntity.getUserId());
-            notificationService.createNotification( notificationEntity,ids);
+            notificationService.createNotification(notificationEntity,ids);
 
             classRoomRepository.save(classRoomEntity);
         }

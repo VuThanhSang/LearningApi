@@ -58,6 +58,12 @@ public interface TestResultRepository extends MongoRepository<TestResultEntity, 
     })
     List<TestResultOfTestResponse> findHighestGradesByTestIdAndFinishedStateSortedAscending(String testId);
     @Aggregation(pipeline = {
+            "{ $match: { studentId: ?0, testId: ?1, state: 'FINISHED' } }",
+            "{ $sort: { grade: -1 } }",
+            "{ $limit: 1 }"
+    })
+    TestResultEntity findHighestGradeByStudentIdAndTestId(String studentId, String testId);
+    @Aggregation(pipeline = {
             "{ $match: { testId: ?0, state: 'FINISHED' } }",
             "{ $sort: { grade: -1 } }",
             "{ $group: { " +

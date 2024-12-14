@@ -15,7 +15,7 @@ public class GetAdminDashboardResponse {
     private List<EnrollmentTrend> enrollmentTrend;
     private List<ClassroomPerformance> classroomPerfomance;
     private UserEngagement userEngagement;
-    private List<String> recentActivity;
+    private List<GetRecentActivity> recentActivity;
     @Data
     public static class EnrollmentTrend{
         private String date;

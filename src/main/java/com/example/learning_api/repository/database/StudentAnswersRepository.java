@@ -33,4 +33,7 @@ public interface StudentAnswersRepository extends MongoRepository<StudentAnswers
     int countByStudentIdAndTestResultIdAndAnswerId(String studentId, String testResultId, String answerId);
     @Query(value = "{ 'testResultId' : ?0, 'isCorrect': true }", count = true)
     int countCorrectAnswersByTestResultId(String testResultId);
+
+    @Query("{ studentId: ?0, testResultId: ?1, questionId: ?2 }")
+    List<StudentAnswersEntity> findByStudentIdAndTestResultIdAndQuestionId(String studentId, String testResultId, String questionId);
 }

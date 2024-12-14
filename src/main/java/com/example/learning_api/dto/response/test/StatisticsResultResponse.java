@@ -38,7 +38,6 @@ public class StatisticsResultResponse {
         private String createdAt;
         private String updatedAt;
 
-
     }
 
 }

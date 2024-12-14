@@ -61,6 +61,7 @@ public class TestService implements ITestService {
     private final StudentEnrollmentsRepository studentEnrollmentsRepository;
     private final StudentRepository studentRepository;
     private final NotificationRepository notificationRepository;
+    private final NotificationReceiveRepository notificationReceiveRepository;
     @Override
     public CreateTestResponse createTest(CreateTestRequest request) {
         try {
@@ -297,6 +298,9 @@ public class TestService implements ITestService {
             }
             questionRepository.deleteByTestId(id);
             List<NotificationEntity> notificationEntity = notificationRepository.findByAuthorId(id);
+            for (NotificationEntity notification : notificationEntity) {
+                notificationReceiveRepository.deleteByNotificationId(notification.getId());
+            }
             notificationRepository.deleteAllById(notificationEntity.stream().map(NotificationEntity::getId).collect(Collectors.toList()));
             testRepository.deleteById(id);
             testResultRepository.deleteByTestId(id);
@@ -405,7 +409,7 @@ public class TestService implements ITestService {
             List<AnswerEntity> answers = parseAnswers(answerGroup, question.getId());
             int count=0;
             for (AnswerEntity answer : answers) {
-                if (answer.isCorrect()){
+                if (answer.getIsCorrect()){
                     count++;
                 }
             }
@@ -453,7 +457,7 @@ public class TestService implements ITestService {
         answer.setQuestionId(questionId);
         answer.setCreatedAt(String.valueOf(System.currentTimeMillis()));
         answer.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
-        answer.setCorrect(isCorrect);
+        answer.setIsCorrect(isCorrect);
         return answer;
     }
 
@@ -521,7 +525,7 @@ public class TestService implements ITestService {
                 List<GetQuestionsResponse.AnswerResponse> newAnswerResponses = new ArrayList<>();
                 for (GetQuestionsResponse.AnswerResponse answerResponse : answerResponses) {
                     answerResponse.setSource(fileRepository.findByOwnerIdAndOwnerType(answerResponse.getId(), FileOwnerType.ANSWER.name()).stream().findFirst().orElse(null));
-                    answerResponse.setIsCorrect(answerRepository.findById(answerResponse.getId()).get().isCorrect());
+                    answerResponse.setIsCorrect(answerRepository.findById(answerResponse.getId()).get().getIsCorrect());
                     newAnswerResponses.add(answerResponse);
                 }
                 questionResponse.setAnswers(newAnswerResponses);
@@ -596,7 +600,7 @@ public class TestService implements ITestService {
 
     private GetQuestionsResponse.AnswerResponse mapAnswerEntityToResponse(AnswerEntity answerEntity) {
         GetQuestionsResponse.AnswerResponse answerResponse = modelMapperService.mapClass(answerEntity, GetQuestionsResponse.AnswerResponse.class);
-        answerResponse.setIsCorrect(answerEntity.isCorrect());
+        answerResponse.setIsCorrect(answerEntity.getIsCorrect());
         if (answerEntity.getId()!=null)
             answerResponse.setSource(fileRepository.findByOwnerIdAndOwnerType(answerEntity.getId(), FileOwnerType.ANSWER.name()).stream().findFirst().orElse(null));
         return answerResponse;
@@ -733,7 +737,7 @@ public class TestService implements ITestService {
                 }
 
                 TestResultResponse resData = new TestResultResponse();
-                int totalCorrect = studentAnswerRepository.countCorrectAnswersByTestResultId(testResultEntity.getId());
+
                 int totalQuestion = questionRepository.countByTestId(testResultEntity.getTestId());
                 resData.setTestId(testResultEntity.getTestId());
                 resData.setGrade(testResultEntity.getGrade());
@@ -743,6 +747,10 @@ public class TestService implements ITestService {
                 resData.setFinishedAt(testResultEntity.getFinishedAt().toString());
                 resData.setTestType("test");
                 updateSelectedAnswers(clonedQuestionResponses, studentAnswersEntities, testResultEntity.getId());
+                int totalCorrect = (int) clonedQuestionResponses.stream()
+                        .filter(questionResponse -> questionResponse.getAnswers().stream()
+                                .allMatch(answerResponse -> answerResponse.isSelected() == answerResponse.getIsCorrect()))
+                        .count();
                 resData.setQuestions(clonedQuestionResponses);
                 resData.setTotalCorrect(totalCorrect);
                 resData.setTotalIncorrect(totalQuestion - totalCorrect);
@@ -852,7 +860,7 @@ public class TestService implements ITestService {
                                 AnswerEntity answerEntity = answerRepository.findById(answer.getId())
                                         .orElseThrow(() -> new IllegalArgumentException("Answer not found"));
                                 BeanUtils.copyProperties(answer, clonedAnswer);
-                                clonedAnswer.setIsCorrect(answerEntity.isCorrect());
+                                clonedAnswer.setIsCorrect(answerEntity.getIsCorrect());
                                 return clonedAnswer;
                             })
                             .collect(Collectors.toList());
@@ -1205,7 +1213,7 @@ public class TestService implements ITestService {
         studentAnswer.setTestResultId(testResult.getId());
         studentAnswer.setCreatedAt(String.valueOf(System.currentTimeMillis()));
         studentAnswer.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
-        studentAnswer.setCorrect(isCorrect);
+        studentAnswer.setIsCorrect(isCorrect);
 
         // Only set answerId if it's not null
         if (answer.getId() != null) {

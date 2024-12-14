@@ -20,7 +20,7 @@ public class AnswerEntity {
     private QuestionEntity question;
 
     private String content;
-    private boolean isCorrect;
+    private Boolean isCorrect;
     private String questionId;
     private String createdAt;
     private String updatedAt;
