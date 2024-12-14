@@ -35,5 +35,7 @@ public interface StudentAnswersRepository extends MongoRepository<StudentAnswers
     int countCorrectAnswersByTestResultId(String testResultId);
 
     @Query("{ studentId: ?0, testResultId: ?1, questionId: ?2 }")
+
     List<StudentAnswersEntity> findByStudentIdAndTestResultIdAndQuestionId(String studentId, String testResultId, String questionId);
+    void deleteByStudentIdAndTestResultIdAndQuestionId(String studentId, String testResultId, String questionId);
 }

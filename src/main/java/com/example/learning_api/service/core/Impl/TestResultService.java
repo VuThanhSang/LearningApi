@@ -139,35 +139,34 @@ public class TestResultService implements ITestResultService {
             for (SaveProgressRequest.QuestionAndAnswer questionAndAnswer : body.getQuestionAndAnswers()) {
                 QuestionEntity questionEntity = questionRepository.findById(questionAndAnswer.getQuestionId())
                         .orElseThrow(() -> new IllegalArgumentException("Question does not exist"));
-
+                List<StudentAnswersEntity> studentAnswersEntities = studentAnswerRepository.findByStudentIdAndTestResultIdAndQuestionId(testResultEntity.getStudentId(), testResultEntity.getId(), questionAndAnswer.getQuestionId());
+                for (StudentAnswersEntity answerId : studentAnswersEntities) {
+                    studentAnswerRepository.delete(answerId);
+                }
                 if (questionEntity.getType().equals(QuestionType.TEXT_ANSWER) || questionEntity.getType().equals(QuestionType.FILL_IN_THE_BLANK)) {
                     for (String text : questionAndAnswer.getTextAnswers()) {
-                        StudentAnswersEntity studentAnswersEntity = studentAnswerRepository
-                                .findByStudentIdAndTestResultIdAndQuestionIdAndAnswerId(testResultEntity.getStudentId(), body.getTestResultId(), questionAndAnswer.getQuestionId(), null);
-                        if (studentAnswersEntity == null) {
-                            studentAnswersEntity = new StudentAnswersEntity();
-                        }
+                       StudentAnswersEntity studentAnswersEntity = new StudentAnswersEntity();
+                        studentAnswersEntity.setTextAnswer(text);
+                        studentAnswersEntity.setContent(text);
                         studentAnswersEntity.setQuestionId(questionAndAnswer.getQuestionId());
                         studentAnswersEntity.setTestResultId(body.getTestResultId());
                         studentAnswersEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
                         studentAnswersEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
                         studentAnswersEntity.setStudentId(testResultEntity.getStudentId());
-                        studentAnswersEntity.setTextAnswer(text);
                         studentAnswerRepository.save(studentAnswersEntity);
+
                     }
                 } else {
                     for (String answerId : questionAndAnswer.getAnswers()) {
-                        StudentAnswersEntity studentAnswersEntity = studentAnswerRepository
-                                .findByStudentIdAndTestResultIdAndQuestionIdAndAnswerId(testResultEntity.getStudentId(), body.getTestResultId(), questionAndAnswer.getQuestionId(), answerId);
-                        if (studentAnswersEntity == null) {
-                            studentAnswersEntity = new StudentAnswersEntity();
-                        }
+                        StudentAnswersEntity  studentAnswersEntity = new StudentAnswersEntity();
                         studentAnswersEntity.setAnswerId(answerId);
                         studentAnswersEntity.setQuestionId(questionAndAnswer.getQuestionId());
                         studentAnswersEntity.setTestResultId(body.getTestResultId());
                         studentAnswersEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
                         studentAnswersEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
                         studentAnswersEntity.setStudentId(testResultEntity.getStudentId());
+                        studentAnswersEntity.setTextAnswer("");
+                        studentAnswersEntity.setContent("");
                         studentAnswerRepository.save(studentAnswersEntity);
                     }
                 }
@@ -475,7 +474,7 @@ public class TestResultService implements ITestResultService {
             if (questionRes.getType().equals(QuestionType.TEXT_ANSWER.name()) || questionRes.getType().equals(QuestionType.FILL_IN_THE_BLANK.name())) {
                 isCorrect = questionRes.getAnswers().stream()
                         .allMatch(answer -> studentAnswersEntities.stream()
-                                .anyMatch(studentAnswer -> studentAnswer.getTextAnswer().equals(answer.getContent())));
+                                .anyMatch(studentAnswer -> studentAnswer.getContent().equals(answer.getContent())));
             } else {
                 long correctAnswersCount = questionRes.getAnswers().stream().filter(StatisticsResultResponse.Answers::getIsCorrect).count();
                 long studentCorrectAnswersCount = studentAnswersEntities.stream().filter(studentAnswer -> {

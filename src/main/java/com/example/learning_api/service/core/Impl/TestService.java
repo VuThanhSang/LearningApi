@@ -747,13 +747,10 @@ public class TestService implements ITestService {
                 resData.setFinishedAt(testResultEntity.getFinishedAt().toString());
                 resData.setTestType("test");
                 updateSelectedAnswers(clonedQuestionResponses, studentAnswersEntities, testResultEntity.getId());
-                int totalCorrect = (int) clonedQuestionResponses.stream()
-                        .filter(questionResponse -> questionResponse.getAnswers().stream()
-                                .allMatch(answerResponse -> answerResponse.isSelected() == answerResponse.getIsCorrect()))
-                        .count();
+
                 resData.setQuestions(clonedQuestionResponses);
-                resData.setTotalCorrect(totalCorrect);
-                resData.setTotalIncorrect(totalQuestion - totalCorrect);
+                resData.setTotalCorrect((int) ((resData.getGrade()*totalQuestion)/10));
+                resData.setTotalIncorrect(totalQuestion - resData.getTotalCorrect());
                 resData.setTotalQuestions(totalQuestion);
                 return resData;
             }).collect(Collectors.toList());
@@ -1188,7 +1185,7 @@ public class TestService implements ITestService {
         TestSubmitResponse.AnswerResponse answerResponse = new TestSubmitResponse.AnswerResponse();
         answerResponse.setId(answer.getId());
         answerResponse.setContent(answer.getContent());
-        answerResponse.setCorrect(answer.getIsCorrect());
+        answerResponse.setCorrect(answer.getIsCorrect()!=null?answer.getIsCorrect():false);
         answerResponse.setQuestionId(answer.getQuestionId());
         return answerResponse;
     }
