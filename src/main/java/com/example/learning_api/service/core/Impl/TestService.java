@@ -746,7 +746,7 @@ public class TestService implements ITestService {
                 resData.setCreatedAt(testResultEntity.getCreatedAt().toString());
                 resData.setFinishedAt(testResultEntity.getFinishedAt().toString());
                 resData.setTestType("test");
-                updateSelectedAnswers(clonedQuestionResponses, studentAnswersEntities, testResultEntity.getId());
+            updateSelectedAnswers(clonedQuestionResponses, studentAnswersEntities, testResultEntity.getId(),"GET_RESULT");
 
                 resData.setQuestions(clonedQuestionResponses);
                 resData.setTotalCorrect((int) ((resData.getGrade()*totalQuestion)/10));
@@ -781,7 +781,7 @@ public class TestService implements ITestService {
             }
             List<StudentAnswersEntity> studentAnswersEntities = studentAnswersRepository.findByStudentIdAndTestResultId(studentId, testResultEntity.getId());
             List<GetQuestionsResponse.QuestionResponse> questionResponses = getQuestionResponses(testId);
-            updateSelectedAnswers(questionResponses, studentAnswersEntities, testResultEntity.getId());
+            updateSelectedAnswers(questionResponses, studentAnswersEntities, testResultEntity.getId(),"");
             GetTestProgressResponse resData = new GetTestProgressResponse();
             resData.setTestResult(testResultEntity);
             resData.setQuestions(questionResponses);
@@ -870,7 +870,7 @@ public class TestService implements ITestService {
 
     private void updateSelectedAnswers(List<GetQuestionsResponse.QuestionResponse> questionResponses,
                                        List<StudentAnswersEntity> studentAnswersEntities,
-                                       String testResultId) {
+                                       String testResultId,String type) {
         TestResultEntity testResult = testResultRepository.findById(testResultId)
                 .orElseThrow(() -> new IllegalArgumentException("TestResult not found"));
         TestEntity testEntity = testRepository.findById(testResult.getTestId())
@@ -895,9 +895,10 @@ public class TestService implements ITestService {
                 if (questionResponse.getType().equals(QuestionType.TEXT_ANSWER.name()) ||
                         questionResponse.getType().equals(QuestionType.FILL_IN_THE_BLANK.name())){
                     if (count<textAnswers.size()){
-                        if (testEntity.getShowResultType().equals(TestShowResultType.SHOW_RESULT_IMMEDIATELY)||testEntity.getShowResultType().equals(TestShowResultType.SHOW_RESULT_AFTER_TEST_END)){
+                        if (testEntity.getShowResultType().equals(TestShowResultType.SHOW_RESULT_IMMEDIATELY)||testEntity.getShowResultType().equals(TestShowResultType.SHOW_RESULT_AFTER_TEST_END)||type.equals("GET_RESULT")){
                             answerResponse.setIsCorrect(isTextAnswerCorrect(textAnswers.get(count), answerResponse.getContent()));
                             answerResponse.setAnswerText(answerResponse.getContent());
+                            answerResponse.setSelected(true);
                         }else{
                             answerResponse.setIsCorrect(false);
                             answerResponse.setAnswerText(null);
@@ -985,7 +986,7 @@ public class TestService implements ITestService {
             TestSubmitResponse.AnswerResponse answerResponse = new TestSubmitResponse.AnswerResponse();
             answerResponse.setContent("");
             answerResponse.setSelected(false);
-            answerResponse.setCorrect(false);
+            answerResponse.setIsCorrect(false);
             saveStudentAnswer(testResult, question.getId(), null, null);
             answerResponses.add(answerResponse);
             return answerResponses; // Skip processing
@@ -997,7 +998,7 @@ public class TestService implements ITestService {
             TestSubmitResponse.AnswerResponse answerResponse = new TestSubmitResponse.AnswerResponse();
             answerResponse.setContent("");
             answerResponse.setSelected(false);
-            answerResponse.setCorrect(false);
+            answerResponse.setIsCorrect(false);
             GetQuestionsResponse.AnswerResponse answer = new GetQuestionsResponse.AnswerResponse();
             saveStudentAnswer(testResult, question.getId(), answer, false);
             answerResponses.add(answerResponse);
@@ -1009,7 +1010,7 @@ public class TestService implements ITestService {
                 TestSubmitResponse.AnswerResponse answerResponse = new TestSubmitResponse.AnswerResponse();
                 answerResponse.setContent("");
                 answerResponse.setSelected(false);
-                answerResponse.setCorrect(false);
+                answerResponse.setIsCorrect(false);
                 GetQuestionsResponse.AnswerResponse answer = new GetQuestionsResponse.AnswerResponse();
 
                 saveStudentAnswer(testResult, question.getId(), answer, false);
@@ -1017,12 +1018,12 @@ public class TestService implements ITestService {
                 return answerResponses; // Skip processing
             }
 
-            boolean check = questionAndAnswer.getTextAnswers().get(0).equals(question.getAnswers().get(0).getContent());
+            boolean check = normalizeAnswer(questionAndAnswer.getTextAnswers().get(0)).equals(normalizeAnswer(question.getAnswers().get(0).getContent()));
             TestSubmitResponse.AnswerResponse answerResponse = new TestSubmitResponse.AnswerResponse();
 
             answerResponse.setContent(questionAndAnswer.getTextAnswers().get(0));
             answerResponse.setSelected(check);
-            answerResponse.setCorrect(check);
+            answerResponse.setIsCorrect(check);
 
             GetQuestionsResponse.AnswerResponse answer = new GetQuestionsResponse.AnswerResponse();
             answer.setContent(questionAndAnswer.getTextAnswers().get(0));
@@ -1037,7 +1038,7 @@ public class TestService implements ITestService {
                 TestSubmitResponse.AnswerResponse answerResponse = new TestSubmitResponse.AnswerResponse();
                 answerResponse.setContent("");
                 answerResponse.setSelected(false);
-                answerResponse.setCorrect(false);
+                answerResponse.setIsCorrect(false);
                 GetQuestionsResponse.AnswerResponse answer = new GetQuestionsResponse.AnswerResponse();
 
                 saveStudentAnswer(testResult, question.getId(), answer, false);
@@ -1052,7 +1053,7 @@ public class TestService implements ITestService {
                     TestSubmitResponse.AnswerResponse answerResponse = new TestSubmitResponse.AnswerResponse();
                     answerResponse.setContent("");
                     answerResponse.setSelected(false);
-                    answerResponse.setCorrect(false);
+                    answerResponse.setIsCorrect(false);
                     GetQuestionsResponse.AnswerResponse answer1 = new GetQuestionsResponse.AnswerResponse();
 
                     saveStudentAnswer(testResult, question.getId(), answer1, false);
@@ -1060,12 +1061,13 @@ public class TestService implements ITestService {
                     continue; // Skip this answer
                 }
 
-                boolean check = questionAndAnswer.getTextAnswers().get(i).equals(answer.getContent());
+                boolean check = normalizeAnswer(questionAndAnswer.getTextAnswers().get(i)).equals(normalizeAnswer(answer.getContent()));
                 TestSubmitResponse.AnswerResponse answerResponse = new TestSubmitResponse.AnswerResponse();
 
                 answerResponse.setContent(questionAndAnswer.getTextAnswers().get(i));
+                answerResponse.setAnswerText(questionAndAnswer.getTextAnswers().get(i));
                 answerResponse.setSelected(check);
-                answerResponse.setCorrect(check);
+                answerResponse.setIsCorrect(check);
 
                 GetQuestionsResponse.AnswerResponse answer1 = new GetQuestionsResponse.AnswerResponse();
                 answer1.setContent(questionAndAnswer.getTextAnswers().get(i));
@@ -1108,6 +1110,7 @@ public class TestService implements ITestService {
                 .replaceAll("[ùúụủũưừứựửữ]", "u")
                 .replaceAll("[ỳýỵỷỹ]", "y")
                 .replaceAll("[đ]", "d")
+                .replaceAll("–", "-") // Replace en dash with hyphen
                 .replaceAll("\\p{Punct}", "") // Remove punctuation
                 .replaceAll("\\s+", " "); // Replace multiple spaces with single space
     }
@@ -1185,7 +1188,7 @@ public class TestService implements ITestService {
         TestSubmitResponse.AnswerResponse answerResponse = new TestSubmitResponse.AnswerResponse();
         answerResponse.setId(answer.getId());
         answerResponse.setContent(answer.getContent());
-        answerResponse.setCorrect(answer.getIsCorrect()!=null?answer.getIsCorrect():false);
+        answerResponse.setIsCorrect(answer.getIsCorrect()!=null?answer.getIsCorrect():false);
         answerResponse.setQuestionId(answer.getQuestionId());
         return answerResponse;
     }
@@ -1217,7 +1220,7 @@ public class TestService implements ITestService {
             studentAnswer.setAnswerId(answer.getId());
         }
         studentAnswer.setTextAnswer(answer.getAnswerText());
-
+        studentAnswer.setContent(answer.getAnswerText());
         studentAnswersRepository.save(studentAnswer);
     }
     private int calculateTotalCorrectAnswers(List<TestSubmitResponse.QuestionResponse> questionResponses) {
@@ -1231,18 +1234,18 @@ public class TestService implements ITestService {
         if (questionResponse.getType().equals(QuestionType.TEXT_ANSWER.name())) {
             // For TEXT_ANSWER, check if the answer is selected and correct
             return questionResponse.getAnswers().stream()
-                    .allMatch(answer -> answer.isSelected() && answer.isCorrect());
+                    .allMatch(answer -> answer.isSelected() && answer.getIsCorrect());
         } else if (questionResponse.getType().equals(QuestionType.FILL_IN_THE_BLANK.name())) {
             // For FILL_IN_THE_BLANK, ensure all answers are correct and selected
             return questionResponse.getAnswers().stream()
-                    .allMatch(answer -> answer.isSelected() && answer.isCorrect());
+                    .allMatch(answer -> answer.isSelected() && answer.getIsCorrect());
         } else {
             // Existing logic for other question types
             long correctAnswersCount = questionResponse.getAnswers().stream()
-                    .filter(TestSubmitResponse.AnswerResponse::isCorrect)
+                    .filter(TestSubmitResponse.AnswerResponse::getIsCorrect)
                     .count();
             long selectedCorrectAnswersCount = questionResponse.getAnswers().stream()
-                    .filter(answer -> answer.isCorrect() && answer.isSelected())
+                    .filter(answer -> answer.getIsCorrect() && answer.isSelected())
                     .count();
             return correctAnswersCount == selectedCorrectAnswersCount;
         }

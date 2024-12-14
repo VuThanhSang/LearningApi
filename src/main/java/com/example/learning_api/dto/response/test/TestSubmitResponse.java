@@ -39,7 +39,7 @@ public class TestSubmitResponse {
     public static class AnswerResponse {
         private String id;
         private String content;
-        private boolean isCorrect;
+        private Boolean isCorrect;
         private boolean isSelected;
         private String questionId;
         private String source;
@@ -48,7 +48,7 @@ public class TestSubmitResponse {
             AnswerResponse answerResponse = new AnswerResponse();
             answerResponse.setId(answerEntity.getId());
             answerResponse.setContent(answerEntity.getContent());
-            answerResponse.setCorrect(answerEntity.isCorrect());
+            answerResponse.setIsCorrect(answerEntity.isCorrect());
             answerResponse.setQuestionId(answerEntity.getQuestionId());
             answerResponse.setSource(answerEntity.getSource());
             return answerResponse;
