@@ -21,15 +21,12 @@ public class UpdateClassRoomRequest {
     private String name;
     @Schema(example = DESCRIPTION_EX)
     private String description;
-
     private MultipartFile image;
     @Schema(example = TEACHER_ID_EX)
-    private String courseId;
     private String teacherId;
-    private String termId;
-    private String facultyId;
     private Integer enrollmentCapacity;
-    private Integer credits;
+    private Integer price;
+    private Integer duration;
+    private List<String> categories;
     private ClassRoomStatus status;
-    private List<ClassSessionRequest> sessions;
 }

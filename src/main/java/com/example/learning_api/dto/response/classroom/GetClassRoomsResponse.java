@@ -12,6 +12,17 @@ public class GetClassRoomsResponse {
     private Integer totalPage;
     private Long totalElements;
     private List<ClassRoomResponse> classRooms;
+
+    public GetClassRoomsResponse(List<ClassRoomResponse> resData, int totalPages, long totalElements) {
+        this.classRooms = resData;
+        this.totalPage = totalPages;
+        this.totalElements = totalElements;
+    }
+
+    public GetClassRoomsResponse() {
+
+    }
+
     @Data
     public static class ClassRoomResponse {
         private String id;
@@ -51,5 +62,7 @@ public class GetClassRoomsResponse {
             return classRoomResponse;
         }
     }
+
+
 
 }
