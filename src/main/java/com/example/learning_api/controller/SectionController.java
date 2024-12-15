@@ -8,6 +8,8 @@ import com.example.learning_api.dto.request.section.UpdateSectionRequest;
 import com.example.learning_api.dto.response.section.CreateSectionResponse;
 import com.example.learning_api.dto.response.section.GetSectionsResponse;
 import com.example.learning_api.model.ResponseAPI;
+import com.example.learning_api.repository.database.StudentRepository;
+import com.example.learning_api.repository.database.TeacherRepository;
 import com.example.learning_api.service.common.JwtService;
 import com.example.learning_api.service.core.ISectionService;
 import jakarta.validation.Valid;
@@ -28,7 +30,8 @@ import static com.example.learning_api.constant.RouterConstant.SECTION_BASE_PATH
 public class SectionController {
     private final ISectionService sectionService;
     private final JwtService jwtService;
-
+    private final StudentRepository studentRepository;
+    private final TeacherRepository teacherRepository;
     @PostMapping(path = "")
     @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<CreateSectionResponse>> createSection(@RequestBody @Valid CreateSectionRequest body) {
@@ -131,7 +134,15 @@ public class SectionController {
         try{
             String accessToken = authorizationHeader.replace("Bearer ", "");
             String role = jwtService.extractRole(accessToken);
-            GetSectionsResponse resData = sectionService.getSectionsByClassRoomId(classroomId, page-1, size,role);
+            String userId = jwtService.extractUserId(accessToken);
+            String id="";
+            if(role.equals("USER")){
+                id = studentRepository.findByUserId(userId).getId();
+            }
+            else if (role.equals("TEACHER")){
+                id = teacherRepository.findByUserId(userId).getId();
+            }
+            GetSectionsResponse resData = sectionService.getSectionsByClassRoomId(classroomId, page-1, size,role,id);
             ResponseAPI<GetSectionsResponse> res = ResponseAPI.<GetSectionsResponse>builder()
                     .timestamp(new Date())
                     .message("Get sections successfully")

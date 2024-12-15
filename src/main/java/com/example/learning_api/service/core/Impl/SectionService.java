@@ -3,6 +3,7 @@ package com.example.learning_api.service.core.Impl;
 import com.example.learning_api.dto.request.section.CreateSectionRequest;
 import com.example.learning_api.dto.request.section.DeleteSectionRequest;
 import com.example.learning_api.dto.request.section.UpdateSectionRequest;
+import com.example.learning_api.dto.response.lesson.GetLessonDetailResponse;
 import com.example.learning_api.dto.response.section.CreateSectionResponse;
 import com.example.learning_api.dto.response.section.GetSectionsResponse;
 import com.example.learning_api.entity.sql.database.LessonEntity;
@@ -10,6 +11,7 @@ import com.example.learning_api.entity.sql.database.SectionEntity;
 import com.example.learning_api.enums.SectionStatus;
 import com.example.learning_api.repository.database.ClassRoomRepository;
 import com.example.learning_api.repository.database.LessonRepository;
+import com.example.learning_api.repository.database.ProgressRepository;
 import com.example.learning_api.repository.database.SectionRepository;
 import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.ISectionService;
@@ -24,6 +26,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +36,7 @@ public class SectionService implements ISectionService {
     private final SectionRepository sectionRepository;
     private final ClassRoomRepository classRoomRepository;
     private final LessonRepository lessonRepository;
+    private final ProgressRepository progressRepository;
     @Override
     public CreateSectionResponse createSection(CreateSectionRequest body) {
         try {
@@ -128,7 +132,7 @@ public class SectionService implements ISectionService {
     }
 
     @Override
-    public GetSectionsResponse getSectionsByClassRoomId(String classRoomId, int page, int size, String role) {
+    public GetSectionsResponse getSectionsByClassRoomId(String classRoomId, int page, int size, String role,String userId) {
         List<String> statuses = new ArrayList<>();
         if (role.equals("TEACHER")){
             statuses.add(SectionStatus.PUBLIC.toString());
@@ -141,8 +145,37 @@ public class SectionService implements ISectionService {
         Page<SectionEntity> sectionEntities = sectionRepository.findByClassRoomId(classRoomId, pageAble,statuses);
         List<GetSectionsResponse.SectionResponse> sectionResponses = modelMapperService.mapList(sectionEntities.getContent(), GetSectionsResponse.SectionResponse.class);
         for (GetSectionsResponse.SectionResponse sectionResponse : sectionResponses){
+            SectionEntity previousSection = sectionRepository.findByClassRoomIdAndIndex(sectionResponse.getClassRoomId(), sectionResponse.getIndex() - 1);
+            if (sectionResponse.getIndex()==0||role.equals("TEACHER")){
+                sectionResponse.setCanAccess(true);
+            }else if (previousSection == null) {
+                sectionResponse.setCanAccess(false);
+            }else{
+                sectionResponse.setCanAccess(progressRepository.existsByStudentIdAndClassroomIdAndSectionIdAndCompleted(userId, sectionResponse.getClassRoomId(), previousSection.getId(), true));
+            }
+            sectionResponse.setComplete(progressRepository.existsByStudentIdAndClassroomIdAndSectionIdAndCompleted(userId, sectionResponse.getClassRoomId(), sectionResponse.getId(), true));
+
             List<LessonEntity> lessonEntities = lessonRepository.findBySectionId(sectionResponse.getId(), Sort.by(Sort.Direction.ASC, "index"),statuses);
-            sectionResponse.setLessons(lessonEntities);
+            List<GetSectionsResponse.LessonResponse> lessonResponses = new ArrayList<>();
+            for (LessonEntity lessonEntity : lessonEntities){
+                GetSectionsResponse.LessonResponse getLessonDetailResponse = modelMapperService.mapClass(lessonEntity, GetSectionsResponse.LessonResponse.class);
+                LessonEntity previousLesson = lessonRepository.findBySectionIdAndIndex(sectionResponse.getId(),lessonEntity.getIndex()-1);
+                Optional<SectionEntity> sectionEntity = sectionRepository.findById(sectionResponse.getId());
+                if (lessonEntity.getIndex()==0||role.equals("TEACHER")){
+                    getLessonDetailResponse.setCanAccess(true);
+                } else if (previousLesson==null) {
+                    getLessonDetailResponse.setCanAccess(false);
+
+                }else{
+                    getLessonDetailResponse.setCanAccess(progressRepository.existsByStudentIdAndClassroomIdAndLessonIdAndCompleted(userId,sectionEntity.get().getClassRoomId(),previousLesson.getId(),true));
+                }
+                getLessonDetailResponse.setType(lessonEntity.getType().toString());
+
+                getLessonDetailResponse.setIsComplete(progressRepository.existsByStudentIdAndClassroomIdAndLessonIdAndCompleted(userId,sectionEntity.get().getClassRoomId(),lessonEntity.getId(),true));
+
+                lessonResponses.add(getLessonDetailResponse);
+            }
+            sectionResponse.setLessons(lessonResponses);
         }
         GetSectionsResponse resData = new GetSectionsResponse();
         resData.setTotalPage(sectionEntities.getTotalPages());

@@ -30,7 +30,5 @@ public class ClassRoomEntity {
     private String teacherId;
     private String createdAt;
     private String updatedAt;
-    @DBRef
-    private List<SectionEntity> sections;
 
 }

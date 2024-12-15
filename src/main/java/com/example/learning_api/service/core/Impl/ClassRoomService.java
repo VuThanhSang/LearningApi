@@ -367,7 +367,18 @@ public class ClassRoomService implements IClassRoomService {
             status.add("PUBLIC");
             GetClassRoomDetailResponse resData = new GetClassRoomDetailResponse();
             Pageable pageAble = PageRequest.of(0, 15);
-            resData.setClassRoom(classRoomEntity);
+            resData.setId(classRoomEntity.getId());
+            resData.setName(classRoomEntity.getName());
+            resData.setDescription(classRoomEntity.getDescription());
+            resData.setImage(classRoomEntity.getImage());
+            resData.setEnrollmentCapacity(classRoomEntity.getEnrollmentCapacity());
+            resData.setCurrentEnrollment(classRoomEntity.getCurrentEnrollment());
+            resData.setInviteCode(classRoomEntity.getInviteCode());
+            resData.setStatus(classRoomEntity.getStatus());
+            resData.setCredits(classRoomEntity.getCredits());
+            resData.setTeacherId(classRoomEntity.getTeacherId());
+            resData.setCreatedAt(classRoomEntity.getCreatedAt());
+            resData.setUpdatedAt(classRoomEntity.getUpdatedAt());
             Page<SectionEntity> sectionEntities = sectionRepository.findByClassRoomId(classRoomEntity.getId(),pageAble,status);
             List<GetClassRoomDetailResponse.Section> sections = new ArrayList<>();
             for (SectionEntity sectionEntity : sectionEntities){
@@ -408,7 +419,18 @@ public class ClassRoomService implements IClassRoomService {
 
                 GetClassRoomDetailResponse resData = new GetClassRoomDetailResponse();
                 Pageable pageAble = PageRequest.of(0, 15);
-                resData.setClassRoom(classRoomEntity);
+                resData.setId(classRoomEntity.getId());
+                resData.setName(classRoomEntity.getName());
+                resData.setDescription(classRoomEntity.getDescription());
+                resData.setImage(classRoomEntity.getImage());
+                resData.setEnrollmentCapacity(classRoomEntity.getEnrollmentCapacity());
+                resData.setCurrentEnrollment(classRoomEntity.getCurrentEnrollment());
+                resData.setInviteCode(classRoomEntity.getInviteCode());
+                resData.setStatus(classRoomEntity.getStatus());
+                resData.setCredits(classRoomEntity.getCredits());
+                resData.setTeacherId(classRoomEntity.getTeacherId());
+                resData.setCreatedAt(classRoomEntity.getCreatedAt());
+                resData.setUpdatedAt(classRoomEntity.getUpdatedAt());
                 Page<SectionEntity> sectionEntities = sectionRepository.findByClassRoomId(classroomId,pageAble,status);
                 List<GetClassRoomDetailResponse.Section> sections = new ArrayList<>();
                 for (SectionEntity sectionEntity : sectionEntities){
