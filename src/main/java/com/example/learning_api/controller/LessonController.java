@@ -5,6 +5,8 @@ import com.example.learning_api.dto.request.lesson.CreateLessonRequest;
 import com.example.learning_api.dto.request.lesson.UpdateLessonRequest;
 import com.example.learning_api.dto.response.lesson.GetLessonDetailResponse;
 import com.example.learning_api.model.ResponseAPI;
+import com.example.learning_api.repository.database.StudentRepository;
+import com.example.learning_api.repository.database.TeacherRepository;
 import com.example.learning_api.service.common.JwtService;
 import com.example.learning_api.service.core.ILessonService;
 import jakarta.validation.Valid;
@@ -26,6 +28,8 @@ import static com.example.learning_api.constant.RouterConstant.*;
 public class LessonController {
     private final ILessonService lessonService;
     private final JwtService jwtService;
+    private final StudentRepository studentRepository;
+    private final TeacherRepository teacherRepository;
     @PostMapping(path = "")
     @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<String>> createLesson(@RequestBody @Valid CreateLessonRequest body) {
@@ -112,7 +116,15 @@ public class LessonController {
         try{
             String accessToken = authorizationHeader.replace("Bearer ", "");
             String role = jwtService.extractRole(accessToken);
-            List<GetLessonDetailResponse> data= lessonService.getLessonBySectionId(sectionId,role);
+            String userId = jwtService.extractUserId(accessToken);
+            String id="";
+            if(role.equals("USER")){
+                id = studentRepository.findByUserId(userId).getId();
+            }
+            else if(role.equals("TEACHER")){
+                id = teacherRepository.findByUserId(userId).getId();
+            }
+            List<GetLessonDetailResponse> data= lessonService.getLessonBySectionId(sectionId,role,id);
             ResponseAPI<List<GetLessonDetailResponse>> res = ResponseAPI.<List<GetLessonDetailResponse>>builder()
                     .timestamp(new Date())
                     .data(data)

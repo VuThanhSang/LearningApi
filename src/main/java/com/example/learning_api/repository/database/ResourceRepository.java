@@ -8,4 +8,5 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface ResourceRepository extends MongoRepository<ResourceEntity, String> {
     Page<ResourceEntity> findByLessonId(String lessonId, Pageable pageable);
+    void deleteByLessonId(String lessonId);
 }

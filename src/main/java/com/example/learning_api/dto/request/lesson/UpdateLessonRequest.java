@@ -11,4 +11,5 @@ public class UpdateLessonRequest {
     private String description;
     private String status;
     private Integer index;
+    private String type;
 }

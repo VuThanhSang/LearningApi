@@ -1,5 +1,6 @@
 package com.example.learning_api.entity.sql.database;
 
+import com.example.learning_api.enums.LessonType;
 import com.example.learning_api.enums.SectionStatus;
 import jakarta.persistence.Id;
 import lombok.Data;
@@ -15,6 +16,7 @@ public class LessonEntity {
     @Id
     private String id;
     private String sectionId;
+    private LessonType type;
     private String name;
     private String description;
     private SectionStatus status;

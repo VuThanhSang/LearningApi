@@ -70,5 +70,7 @@ public interface TestRepository extends MongoRepository<TestEntity, String> {
     List<TestEntity> findAllSateNotFinishedAndEndTimeExpired(String timestamp);
     @Query("{'teacherId': ?0,'status': {$ne: 'FINISHED'}, 'endTime': {$gt: ?1}}")
     List<TestEntity> findByTeacherIdAndEndTimeNotExpired(String teacherId, String timestamp);
+    List<TestEntity> findByLessonId(String lessonId);
 
+    void deleteByLessonId(String classroomId);
 }

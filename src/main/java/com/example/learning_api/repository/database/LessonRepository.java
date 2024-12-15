@@ -26,5 +26,10 @@ public interface LessonRepository extends MongoRepository<LessonEntity, String>{
             "{ '$group': { '_id': null, 'maxIndex': { '$max': '$index' } } }"
     })
     Integer findMaxIndexBySectionId(String sectionId);
+    // Lấy tất cả các bài học theo section và sắp xếp theo index
+    List<LessonEntity> findBySectionIdOrderByIndex(String sectionId);
+
+    // Lấy bài học cụ thể theo section và index
+    LessonEntity findBySectionIdAndIndex(String sectionId, Integer index);
 
 }

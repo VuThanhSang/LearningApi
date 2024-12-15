@@ -17,6 +17,8 @@ public class GetClassRoomDetailResponse {
         private String description;
         private String status;
         private int index;
+        private Boolean canAccess;
+        private Boolean isComplete;
         private String createdAt;
         private String updatedAt;
 //        private List<GetLessonDetailResponse> lessons;
