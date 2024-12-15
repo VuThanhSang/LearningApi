@@ -10,6 +10,7 @@ import com.example.learning_api.dto.request.faculty.ImportFacultyRequest;
 import com.example.learning_api.dto.response.classroom.*;
 import com.example.learning_api.dto.response.section.GetSectionsResponse;
 import com.example.learning_api.dto.response.student.StudentsResponse;
+import com.example.learning_api.entity.sql.database.StudentEntity;
 import com.example.learning_api.model.ResponseAPI;
 import com.example.learning_api.repository.database.StudentRepository;
 import com.example.learning_api.service.common.JwtService;
@@ -246,7 +247,16 @@ public class ClassRoomController {
         try{
             String accessToken = authorizationHeader.replace("Bearer ", "");
             String role = jwtService.extractRole(accessToken);
-            GetClassRoomDetailResponse data= classRoomService.getClassRoomDetail(classroomId,role);
+            String userId = jwtService.extractUserId(accessToken);
+            String id= "";
+            if (role.equals("USER")){
+                StudentEntity student = studentService.getStudentByUserId(userId);
+                id = student.getId();
+            }
+            else if (role.equals("TEACHER")){
+                id = teacherService.getTeacherByUserId(userId).getId();
+            }
+            GetClassRoomDetailResponse data= classRoomService.getClassRoomDetail(classroomId,role,id);
             ResponseAPI<GetClassRoomDetailResponse> res = ResponseAPI.<GetClassRoomDetailResponse>builder()
                     .timestamp(new Date())
                     .message("Get class room detail successfully")

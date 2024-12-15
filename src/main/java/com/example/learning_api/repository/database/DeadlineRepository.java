@@ -136,4 +136,5 @@ public interface DeadlineRepository extends MongoRepository<DeadlineEntity, Stri
 
     @Query("{'teacherId': ?0, 'status' : {$ne: 'FINISHED'}, 'endDate': {$gt: ?1}}")
     List<DeadlineEntity> findByTeacherIdAndEndDateNotExpired(String teacherId, String currentDate);
+    void deleteByLessonId(String lessonId);
 }

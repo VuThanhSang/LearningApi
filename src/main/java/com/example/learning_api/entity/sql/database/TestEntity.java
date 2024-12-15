@@ -22,6 +22,7 @@ public class TestEntity {
     private String description;
     private Integer duration;
     private String classroomId;
+    private String lessonId;
     private String teacherId;
     private String startTime;
     private String endTime;

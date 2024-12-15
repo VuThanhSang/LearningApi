@@ -19,7 +19,7 @@ public interface IClassRoomService {
     GetClassRoomsResponse getScheduleByDay(String studentId, String day);
     List<GetScheduleResponse> getScheduleByStudentId(String studentId);
     GetClassRoomDetailResponse getClassRoomByInvitationCode(String invitationCode);
-    GetClassRoomDetailResponse getClassRoomDetail(String classroomId,String role);
+    GetClassRoomDetailResponse getClassRoomDetail(String classroomId,String role,String userId);
     void importClassRoom(ImportClassRoomRequest body);
     GetClassRoomRecentResponse getRecentClassesByTeacherId(int page,int size, String userId,String role);
     void joinClassRoom(String classroomId, String studentId);

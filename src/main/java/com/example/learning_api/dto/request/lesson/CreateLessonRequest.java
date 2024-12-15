@@ -9,6 +9,7 @@ public class CreateLessonRequest {
     private String sectionId;
     @NotBlank
     private String name;
+    private String type;
     private String description;
     private String status;
 

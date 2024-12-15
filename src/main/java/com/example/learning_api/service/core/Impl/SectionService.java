@@ -48,8 +48,12 @@ public class SectionService implements ISectionService {
 
             SectionEntity sectionEntity = modelMapperService.mapClass(body, SectionEntity.class);
             CreateSectionResponse resData = new CreateSectionResponse();
-            Integer index = sectionRepository.findMaxIndexByClassRoomId(body.getClassRoomId());
-            sectionEntity.setIndex(index==null?0:index+1);
+            Integer index = sectionRepository.findTopByClassRoomIdOrderByIndexDesc(sectionEntity.getClassRoomId(), PageRequest.of(0, 1))
+                    .stream()
+                    .findFirst()
+                    .map(SectionEntity::getIndex)
+                    .orElse(-1) + 1; // Trả về 1 nếu không có section hoặc trả về index hiện tại + 1
+            sectionEntity.setIndex(index);
             sectionEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
             sectionEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             sectionRepository.save(sectionEntity);

@@ -52,6 +52,7 @@ public class ClassRoomService implements IClassRoomService {
     private final DeadlineSubmissionsRepository deadlineSubmissionsRepository;
     private final LessonRepository lessonRepository;
     private final NotificationService notificationService;
+    private final ProgressRepository progressRepository;
     @Override
     public CreateClassRoomResponse createClassRoom(CreateClassRoomRequest body) {
         try{
@@ -395,7 +396,7 @@ public class ClassRoomService implements IClassRoomService {
     }
 
     @Override
-    public GetClassRoomDetailResponse getClassRoomDetail(String classroomId,String role) {
+    public GetClassRoomDetailResponse getClassRoomDetail(String classroomId,String role,String userId) {
        try{
               ClassRoomEntity classRoomEntity = classRoomRepository.findById(classroomId)
                       .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
@@ -417,13 +418,15 @@ public class ClassRoomService implements IClassRoomService {
                     section.setStatus(sectionEntity.getStatus() != null ? sectionEntity.getStatus().toString() : null);
                     section.setDescription(sectionEntity.getDescription());
                     section.setIndex(sectionEntity.getIndex()!=null?sectionEntity.getIndex():0);
-//                    List<LessonEntity> lessons = lessonRepository.findBySectionId(sectionEntity.getId());
-//                    List<GetLessonDetailResponse> lessonDetails = new ArrayList<>();
-//                    for (LessonEntity lesson : lessons){
-//                        GetLessonDetailResponse lessonDetail = lessonRepository.getLessonWithResourcesAndMediaAndSubstances(lesson.getId());
-//                        lessonDetails.add(lessonDetail);
-//                    }
-//                    section.setLessons(lessonDetails);
+                    SectionEntity previousSection = sectionRepository.findByClassRoomIdAndIndex(classroomId, section.getIndex() - 1);
+                    if (section.getIndex()==0||role.equals("TEACHER")){
+                        section.setCanAccess(true);
+                    }else if (previousSection == null) {
+                        section.setCanAccess(false);
+                    }else{
+                        section.setCanAccess(progressRepository.existsByStudentIdAndClassroomIdAndSectionIdAndCompleted(userId, classroomId, previousSection.getId(), true));
+                    }
+                    section.setIsComplete(progressRepository.existsByStudentIdAndClassroomIdAndSectionIdAndCompleted(userId, classroomId, sectionEntity.getId(), true));
                     sections.add(section);
 
                 }
