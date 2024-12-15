@@ -19,12 +19,7 @@ public interface ITestService {
     GetTestDetailResponse getTestDetail(String id);
     GetTestDetailResponse getTestDetailForTeacher(String id,String teacherId);
     GetTestsResponse getTestsByClassroomId(int page, int size,String classroomId,String role);
-    GetTestInProgress getTestInProgress(int page,int size,String studentId);
-    GetTestInProgress getTestOnSpecificDayByStudentId(String studentId,String date,int page,int size);
     TestSubmitResponse submitTest( TestSubmitRequest body);
     List<TestResultResponse> getTestResult(String studentId, String testId);
     GetTestProgressResponse getProgress(String studentId, String testId);
-    List<TestEntity> getAllTest();
-    List<TestEntity> getAllTestExpired();
-
 }

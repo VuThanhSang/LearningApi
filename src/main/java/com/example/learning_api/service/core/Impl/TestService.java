@@ -81,11 +81,6 @@ public class TestService implements ITestService {
                 fileRepository.save(fileEntity);
             }
 
-            if (request.getEndTime() != null) {
-                long offsetInMillis = 3600 * 24 * 1000; // 24 giờ
-                testSchedulerService.scheduleTestReminder(testEntity, offsetInMillis, "USER");
-                testSchedulerService.scheduleTestReminder(testEntity,1000, "TEACHER");
-            }
 
             NotificationEntity notificationEntity = new NotificationEntity();
             notificationEntity.setNotificationSettingId("674473d53e126c2148ce1acf");
@@ -132,7 +127,6 @@ public class TestService implements ITestService {
 
     private TestEntity createTestEntity(CreateTestRequest request) {
         TestEntity testEntity = modelMapperService.mapClass(request, TestEntity.class);
-        testEntity.setEndTime(request.getEndTime());
         testEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
         testEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
         return testEntity;
@@ -200,12 +194,9 @@ public class TestService implements ITestService {
         }
         response.setName(testEntity.getName());
         response.setUpdatedAt(testEntity.getUpdatedAt());
-        response.setStartTime(testEntity.getStartTime());
-        response.setEndTime(testEntity.getEndTime());
         response.setClassroomId(testEntity.getClassroomId());
         response.setShowResultType(testEntity.getShowResultType().name());
         response.setStatus(testEntity.getStatus().name());
-        response.setAttemptLimit(testEntity.getAttemptLimit() != null ? testEntity.getAttemptLimit() : 1);
         return response;
     }
     @Override
@@ -255,24 +246,14 @@ public class TestService implements ITestService {
                 fileEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
                 fileRepository.save(fileEntity);
             }
-            if (body.getImage()!=null){
-                testEntity.setStartTime(body.getStartTime());
-            }
-            if (body.getStartTime()!=null){
-                testEntity.setStartTime(body.getStartTime());
-            }
-            if (body.getEndTime()!=null){
-                testEntity.setEndTime(body.getEndTime());
-            }
+
             if (body.getShowResultType()!=null){
                 testEntity.setShowResultType(TestShowResultType.valueOf(body.getShowResultType()));
             }
             if(body.getStatus()!=null){
                 testEntity.setStatus(TestStatus.valueOf(body.getStatus()));
             }
-            if (body.getAttemptLimit()!=null){
-                testEntity.setAttemptLimit(body.getAttemptLimit());
-            }
+
             if (body.getPassingGrade()!=null){
                 testEntity.setPassingGrade(body.getPassingGrade());
             }
@@ -329,12 +310,7 @@ public class TestService implements ITestService {
                         .stream()
                         .findFirst()
                         .orElse(null));
-                if (testEntity.getAttemptLimit()==null){
-                    testResponse.setAttemptLimit(1);
-                }
-                else{
-                    testResponse.setAttemptLimit(testEntity.getAttemptLimit());
-                }
+
                 testResponses.add(testResponse);
             }
             resData.setTests(testResponses);
@@ -566,15 +542,7 @@ public class TestService implements ITestService {
             response.setSource(fileEntity);
         }
         response.setTeacherId(testEntity.getTeacherId());
-        if (testEntity.getAttemptLimit()==null){
-            response.setAttemptLimit(1);
-        }
-        else{
 
-            response.setAttemptLimit(testEntity.getAttemptLimit());
-        }
-        response.setStartTime(Optional.ofNullable(testEntity.getStartTime()).map(Object::toString).orElse(null));
-        response.setEndTime(Optional.ofNullable(testEntity.getEndTime()).map(Object::toString).orElse(null));
         response.setShowResultType(testEntity.getShowResultType().toString());
         response.setClassroomId(testEntity.getClassroomId());
         return response;
@@ -635,12 +603,7 @@ public class TestService implements ITestService {
                         .stream()
                         .findFirst()
                         .orElse(null));
-                if (testEntity.getAttemptLimit()==null){
-                    testResponse.setAttemptLimit(1);
-                }
-                else{
-                    testResponse.setAttemptLimit(testEntity.getAttemptLimit());
-                }
+
                 testResponses.add(testResponse);
             }
             resData.setTests(testResponses);
@@ -653,61 +616,6 @@ public class TestService implements ITestService {
         }
     }
 
-    @Override
-    public GetTestInProgress getTestInProgress(int page, int size, String studentId) {
-        try {
-            Pageable pageable = PageRequest.of(page, size);
-            String currentTimestamp = String.valueOf(System.currentTimeMillis());
-            Slice<TestEntity> testEntities = testRepository.findTestInProgressByStudentId(studentId, currentTimestamp, pageable);
-            Long totalElements = testRepository.countTestInProgressByStudentId(studentId, currentTimestamp);
-
-            GetTestInProgress resData = new GetTestInProgress();
-            List<GetTestInProgress.TestResponse> testResponses = new ArrayList<>();
-            int count = 0;
-            for (TestEntity testEntity : testEntities) {
-                GetTestInProgress.TestResponse testResponse = modelMapperService.mapClass(testEntity, GetTestInProgress.TestResponse.class);
-                testResponse.setStatus(testEntity.getStatus().name());
-                if (testEntity.getAttemptLimit() == null) {
-                    testResponse.setAttemptLimit(1);
-                } else {
-                    testResponse.setAttemptLimit(testEntity.getAttemptLimit());
-                }
-                List<TestResultEntity> testResultEntities = testResultRepository.findByStudentIdAndTestId(studentId, testEntity.getId());
-                if (!testResultEntities.isEmpty()) {
-                    count++;
-                    continue;
-                }
-                testResponses.add(testResponse);
-            }
-            resData.setTests(testResponses);
-            resData.setTotalElements((totalElements != null ? totalElements : 0) - count);
-            resData.setTotalPage((int) Math.ceil((double) resData.getTotalElements() / size));
-            return resData;
-        } catch (Exception e) {
-            throw new IllegalArgumentException(e.getMessage());
-        }
-    }
-    @Override
-    public GetTestInProgress getTestOnSpecificDayByStudentId(String studentId, String date, int page, int size) {
-        try{
-            Pageable pageAble = PageRequest.of(page, size);
-            Slice<TestEntity> testEntities = testRepository.findTestsOnSpecificDateByStudentId(studentId, date, pageAble);
-            GetTestInProgress resData = new GetTestInProgress();
-            List<GetTestInProgress.TestResponse> testResponses = new ArrayList<>();
-            for (TestEntity testEntity : testEntities){
-                GetTestInProgress.TestResponse testResponse = modelMapperService.mapClass(testEntity, GetTestInProgress.TestResponse.class);
-                testResponse.setStatus(testEntity.getStatus().name());
-                testResponses.add(testResponse);
-            }
-            resData.setTests(testResponses);
-            resData.setTotalElements((long) testEntities.getNumberOfElements());
-            resData.setTotalPage(testEntities.getNumber());
-            return resData;
-        }
-        catch (Exception e){
-            throw new IllegalArgumentException(e.getMessage());
-        }
-    }
     @Override
     public List<TestResultResponse> getTestResult(String studentId, String testId) {
         try {
@@ -798,26 +706,8 @@ public class TestService implements ITestService {
         }
     }
 
-    @Override
-    public List<TestEntity> getAllTest() {
-        try {
-            String timestamp = String.valueOf(System.currentTimeMillis());
-            return testRepository.findAllStateNotFinishedAndEndTimeNotExpired(timestamp);
-        } catch (Exception e) {
-            throw new IllegalArgumentException(e.getMessage());
-        }
-    }
 
-    @Override
-    public List<TestEntity> getAllTestExpired() {
-        try{
-            String timestamp = String.valueOf(System.currentTimeMillis());
-            return testRepository.findAllSateNotFinishedAndEndTimeExpired(timestamp);
-        }
-        catch (Exception e){
-            throw new IllegalArgumentException(e.getMessage());
-        }
-    }
+
 
     private TestSubmitRequest convertToTestSubmitRequest(TestResultEntity testResult,String studentId) {
         List<StudentAnswersEntity> studentAnswersEntities = studentAnswersRepository.findByStudentIdAndTestResultId(studentId, testResult.getId());

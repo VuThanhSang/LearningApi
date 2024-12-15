@@ -20,8 +20,6 @@ public class GetTestsResponse {
         private String description;
         private int duration;
         private List<QuestionEntity> questions;
-        private String startTime;
-        private String endTime;
         private FileEntity source;
         private String classroomId;
         private String showResultType;
@@ -41,8 +39,6 @@ public class GetTestsResponse {
             testResponse.setTeacherId(testEntity.getTeacherId());
             testResponse.setCreatedAt(testEntity.getCreatedAt().toString());
             testResponse.setUpdatedAt(testEntity.getUpdatedAt().toString());
-            testResponse.setStartTime(testEntity.getStartTime().toString());
-            testResponse.setEndTime(testEntity.getEndTime().toString());
             testResponse.setClassroomId(testEntity.getClassroomId());
             testResponse.setShowResultType(testEntity.getShowResultType().toString());
 

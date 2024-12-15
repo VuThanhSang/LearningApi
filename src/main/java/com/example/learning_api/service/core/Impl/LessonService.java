@@ -94,6 +94,7 @@ public class LessonService implements ILessonService {
                 deadlineEntity.setLessonId(lessonEntity.getId());
                 deadlineEntity.setTitle(createLessonRequest.getName());
                 deadlineEntity.setDescription(createLessonRequest.getDescription());
+                deadlineEntity.setClassroomId(classRoomEntity.getId());
                 deadlineEntity.setStatus(DeadlineStatus.ONGOING);
                 deadlineEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
                 deadlineEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));

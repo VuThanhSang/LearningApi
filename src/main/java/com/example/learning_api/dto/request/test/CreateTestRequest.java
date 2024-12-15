@@ -21,11 +21,6 @@ public class CreateTestRequest {
     private String teacherId;
     @NotBlank
     private int duration;
-    @NotBlank
-    private String startTime;
-    @NotBlank
-    private String endTime;
-    @NotBlank
     private MultipartFile source;
     @NotBlank
     private String showResultType;

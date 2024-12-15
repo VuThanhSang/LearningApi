@@ -31,10 +31,7 @@ public class GetDeadlinesResponse {
         private List<FileEntity> files;
         private Boolean useScoringCriteria;
         private List<ScoringCriteriaEntity> scoringCriteria;
-        private String startDate;
-        private String endDate;
         private String createdAt;
-        private Boolean allowLateSubmission;
         private String updatedAt;
         private String classroomId;
         public static DeadlineResponse fromDeadlineEntity(DeadlineEntity deadlineEntity){
@@ -45,8 +42,6 @@ public class GetDeadlinesResponse {
                     .description(deadlineEntity.getDescription())
                     .type(deadlineEntity.getType())
                     .status(deadlineEntity.getStatus())
-                    .startDate(deadlineEntity.getStartDate())
-                    .endDate(deadlineEntity.getEndDate())
                     .createdAt(deadlineEntity.getCreatedAt())
                     .updatedAt(deadlineEntity.getUpdatedAt())
                     .classroomId(deadlineEntity.getClassroomId())

@@ -16,7 +16,7 @@ public class TestSchedulerService {
 
     public void scheduleTestReminder(TestEntity test, long offsetInMillis,String role) throws SchedulerException {
         // Tính toán thời gian trigger
-        long triggerTimeMillis = Long.parseLong(test.getEndTime()) - offsetInMillis;
+        long triggerTimeMillis = offsetInMillis;
         Date triggerTime = new Date(triggerTimeMillis);
 
         // Tạo JobDetail

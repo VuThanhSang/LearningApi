@@ -15,7 +15,7 @@ public class DeadlineSchedulerService {
 
     public void scheduleTestReminder(DeadlineEntity deadline, long offsetInMillis,String role) throws SchedulerException {
         // Calculate trigger time
-        long triggerTimeMillis = Long.parseLong(deadline.getEndDate()) - offsetInMillis;
+        long triggerTimeMillis = offsetInMillis;
         Date triggerTime = new Date(triggerTimeMillis);
 
         // Create JobDetail

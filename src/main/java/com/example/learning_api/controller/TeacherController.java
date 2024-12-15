@@ -131,46 +131,4 @@ public class TeacherController {
     }
 
 
-    @GetMapping(path = "/{teacherId}/upcoming-deadline")
-    public ResponseEntity<ResponseAPI<GetUpcomingDeadlineResponse>> getUpcomingDeadline(@PathVariable String teacherId) {
-        try{
-            GetUpcomingDeadlineResponse data = teacherService.getUpcomingDeadline(teacherId);
-            ResponseAPI<GetUpcomingDeadlineResponse> res = ResponseAPI.<GetUpcomingDeadlineResponse>builder()
-                    .timestamp(new Date())
-                    .data(data)
-                    .message("Get upcoming deadline successfully")
-                    .build();
-            return new ResponseEntity<>(res, StatusCode.OK);
-        }
-        catch (Exception e){
-            ResponseAPI<GetUpcomingDeadlineResponse> res = ResponseAPI.<GetUpcomingDeadlineResponse>builder()
-                    .timestamp(new Date())
-                    .message(e.getMessage())
-                    .build();
-            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
-        }
-
-    }
-
-    @GetMapping(path = "/{teacherId}/test-in-progress")
-    public ResponseEntity<ResponseAPI<GetTestInProgress>> getTestInProgress(@PathVariable String teacherId) {
-        try{
-            GetTestInProgress data=  teacherService.getTestInProgress(teacherId);
-            ResponseAPI<GetTestInProgress> res = ResponseAPI.<GetTestInProgress>builder()
-                    .timestamp(new Date())
-                    .data(data)
-                    .message("Get test in progress successfully")
-                    .build();
-            return new ResponseEntity<>(res, StatusCode.OK);
-        }
-        catch (Exception e){
-            ResponseAPI<GetTestInProgress> res = ResponseAPI.<GetTestInProgress>builder()
-                    .timestamp(new Date())
-                    .message(e.getMessage())
-                    .build();
-            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
-        }
-
-    }
-
 }

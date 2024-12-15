@@ -22,12 +22,9 @@ public class ClassroomDeadlineResponse {
         private String description;
         private String type;
         private String status;
-        private String startDate;
-        private String endDate;
         private List<FileEntity> files;
         private List<ScoringCriteriaEntity> scoringCriteria;
         private Boolean useScoringCriteria;
-        private Boolean allowLateSubmission;
         private String lessonName;
         private String lessonDescription;
         private String sectionName;

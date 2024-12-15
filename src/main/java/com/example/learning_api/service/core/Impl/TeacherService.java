@@ -162,53 +162,5 @@ public class TeacherService implements ITeacherService {
         }
     }
 
-    @Override
-    public GetUpcomingDeadlineResponse getUpcomingDeadline(String teacherId) {
-        try{
-            if (teacherId==null){
-                throw new IllegalArgumentException("TeacherId is required");
-            }
-            if (teacherRepository.findById(teacherId)==null){
-                throw new IllegalArgumentException("TeacherId is not found");
-            }
-            String currentTimestamp = String.valueOf(System.currentTimeMillis());
-            List<DeadlineEntity> deadlineEntities = deadlineRepository.findByTeacherIdAndEndDateNotExpired(teacherId, currentTimestamp);
-            GetUpcomingDeadlineResponse resData = new GetUpcomingDeadlineResponse();
-            List<UpcomingDeadlinesResponse> upcomingDeadlinesResponses = new ArrayList<>();
-            for (DeadlineEntity deadlineEntity : deadlineEntities){
-                UpcomingDeadlinesResponse upcomingDeadlinesResponse = modelMapperService.mapClass(deadlineEntity, UpcomingDeadlinesResponse.class);
-                upcomingDeadlinesResponses.add(upcomingDeadlinesResponse);
-            }
-            resData.setUpcomingDeadlines(upcomingDeadlinesResponses);
-            resData.setTotalElements((long) upcomingDeadlinesResponses.size());
-            resData.setTotalPages(upcomingDeadlinesResponses.isEmpty() ? 0 : 1);
-            return resData;
-        }
-        catch (Exception e){
-            throw new IllegalArgumentException(e.getMessage());
-        }
-    }
 
-    @Override
-    public GetTestInProgress getTestInProgress(String teacherId) {
-        try{
-            Pageable pageable = PageRequest.of(1, 99);
-            String currentTimestamp = String.valueOf(System.currentTimeMillis());
-            List<TestEntity> testEntities = testRepository.findByTeacherIdAndEndTimeNotExpired(teacherId, currentTimestamp);
-            GetTestInProgress resData = new GetTestInProgress();
-            List<GetTestInProgress.TestResponse> testResponses = new ArrayList<>();
-            for (TestEntity testEntity : testEntities){
-                GetTestInProgress.TestResponse testResponse = GetTestInProgress.TestResponse.fromTestEntity(testEntity);
-                testResponses.add(testResponse);
-            }
-            resData.setTests(testResponses);
-            resData.setTotalElements((long) testResponses.size());
-            resData.setTotalPage(testResponses.isEmpty() ? 0 : 1);
-            return resData;
-
-        }
-        catch (Exception e){
-            throw new IllegalArgumentException(e.getMessage());
-        }
-    }
 }

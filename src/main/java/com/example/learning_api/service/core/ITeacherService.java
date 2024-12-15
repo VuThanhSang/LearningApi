@@ -15,7 +15,4 @@ public interface ITeacherService {
     GetTeachersResponse getTeachers(int page, int size, String search);
     void addSubjectSpecialization(String teacherId, String majorId);
     TeacherEntity getTeacherByUserId(String teacherId);
-
-    GetUpcomingDeadlineResponse getUpcomingDeadline(String teacherId);
-    GetTestInProgress getTestInProgress(String teacherId);
 }

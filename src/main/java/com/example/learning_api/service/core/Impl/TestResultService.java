@@ -55,9 +55,7 @@ public class TestResultService implements ITestResultService {
             TestResultEntity testResultEntity = modelMapperService.mapClass(body, TestResultEntity.class);
             TestEntity testEntity = testRepository.findById(body.getTestId()).orElseThrow(() -> new IllegalArgumentException("Test does not exist"));
             int count = testResultRepository.countByStudentIdAndTestId(body.getStudentId(), body.getTestId());
-            if (testEntity.getAttemptLimit()==null){
-                testEntity.setAttemptLimit(1);
-            }
+
 
             TestResultEntity ongoingTest = testResultRepository.findFirstByStudentIdAndTestIdAndStateOrderByAttendedAtDesc(body.getStudentId(),body.getTestId(), TestState.ONGOING.name());
             if (ongoingTest != null){
@@ -65,9 +63,7 @@ public class TestResultService implements ITestResultService {
                     throw new IllegalArgumentException("You have an ongoing test");
                 }
             }
-            if (count >= testEntity.getAttemptLimit()) {
-                throw new IllegalArgumentException("You have reached the limit of attempts");
-            }
+
             testResultEntity.setState(TestState.ONGOING);
             testResultEntity.setAttendedAt(String.valueOf(System.currentTimeMillis()));
             testResultEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
@@ -436,7 +432,6 @@ public class TestResultService implements ITestResultService {
         response.setTotalAttempted(totalAttempted);
         response.setIsPassed(result.getIsPassed());
         response.setGrade(result.getGrade());
-        response.setAttemptLimit(test.getAttemptLimit());
         return response;
     }
 
