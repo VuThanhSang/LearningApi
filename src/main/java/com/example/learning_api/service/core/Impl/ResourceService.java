@@ -9,10 +9,15 @@ import com.example.learning_api.dto.request.resource.CreateResourceRequest;
 import com.example.learning_api.dto.request.resource.UpdateResourceRequest;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
 import com.example.learning_api.dto.response.lesson.GetResourceResponse;
+import com.example.learning_api.entity.sql.database.ClassRoomEntity;
+import com.example.learning_api.entity.sql.database.LessonEntity;
 import com.example.learning_api.entity.sql.database.ResourceEntity;
+import com.example.learning_api.entity.sql.database.SectionEntity;
 import com.example.learning_api.model.CustomException;
+import com.example.learning_api.repository.database.ClassRoomRepository;
 import com.example.learning_api.repository.database.LessonRepository;
 import com.example.learning_api.repository.database.ResourceRepository;
+import com.example.learning_api.repository.database.SectionRepository;
 import com.example.learning_api.service.common.CloudinaryService;
 import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.IResourceService;
@@ -38,6 +43,8 @@ public class ResourceService implements IResourceService {
     private final LessonRepository lessonRepository;
     private final CloudinaryService cloudinaryService;
     private final ResourceRepository resourceRepository;
+    private final SectionRepository sectionRepository;
+    private final ClassRoomRepository classRoomRepository;
     private final Cloudinary cloudinary;
     @Override
    public void createResource(CreateResourceRequest body) {
@@ -48,6 +55,7 @@ public class ResourceService implements IResourceService {
         if (lessonRepository.findById(body.getLessonId()).isEmpty()){
             throw new IllegalArgumentException("LessonId is not found");
         }
+        LessonEntity lessonEntity = lessonRepository.findById(body.getLessonId()).get();
         ResourceEntity resourceEntity = modelMapperService.mapClass(body, ResourceEntity.class);
         if (body.getFile() != null) {
             byte[] fileBytes = body.getFile().getBytes();
@@ -67,6 +75,11 @@ public class ResourceService implements IResourceService {
         resourceEntity.setCreatedAt(new Date());
         resourceEntity.setCreatedAt(new Date());
         resourceRepository.save(resourceEntity);
+        SectionEntity sectionEntity = sectionRepository.findById(lessonEntity.getSectionId()).get();
+        ClassRoomEntity classRoomEntity = classRoomRepository.findById(sectionEntity.getClassRoomId()).get();
+        classRoomEntity.setTotalResource(classRoomEntity.getTotalResource()+1);
+        classRoomRepository.save(classRoomEntity);
+
     }
     catch (Exception e){
         log.error(e.getMessage());
@@ -81,6 +94,11 @@ public class ResourceService implements IResourceService {
                 throw new IllegalArgumentException("ResourceId is not found");
             }
             resourceRepository.deleteById(resourceId);
+            LessonEntity lessonEntity = lessonRepository.findById(resourceId).get();
+            SectionEntity sectionEntity = sectionRepository.findById(lessonEntity.getSectionId()).get();
+            ClassRoomEntity classRoomEntity = classRoomRepository.findById(sectionEntity.getClassRoomId()).get();
+            classRoomEntity.setTotalResource(classRoomEntity.getTotalResource()+1);
+            classRoomRepository.save(classRoomEntity);
         }
         catch (Exception e){
             log.error(e.getMessage());

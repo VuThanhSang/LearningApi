@@ -23,7 +23,17 @@ public class GetClassRoomsResponse {
         private int enrollmentCapacity;
         private int currentEnrollment;
         private String status;
-        private int credit;
+        private Long duration;
+        private Integer totalVideo;
+        private Integer totalLesson;
+        private Integer totalStudent;
+        private Integer totalResource;
+        private Integer totalAssignment;
+        private Integer totalQuiz;
+        private Integer totalExam;
+        private Integer totalDocument;
+        private Integer price;
+        private List<String> categories;
         private String createdAt;
         private String updatedAt;
         public static ClassRoomResponse formClassRoomEntity(ClassRoomEntity classRoomEntity){

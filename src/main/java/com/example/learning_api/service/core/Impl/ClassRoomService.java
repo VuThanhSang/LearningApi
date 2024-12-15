@@ -60,8 +60,6 @@ public class ClassRoomService implements IClassRoomService {
             if (body.getName()==null){
                 throw new IllegalArgumentException("Name is required");
             }
-
-
             if (body.getTeacherId()==null){
                 throw new IllegalArgumentException("TeacherId is required");
             }
@@ -75,8 +73,6 @@ public class ClassRoomService implements IClassRoomService {
             classRoomEntity.setCurrentEnrollment(0);
             classRoomEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
             classRoomEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
-            List<ScheduleEntity> schedules = new ArrayList<>();
-
             CreateClassRoomResponse resData = new CreateClassRoomResponse();
             if (body.getImage()!=null){
                 byte[] originalImage = new byte[0];
@@ -97,6 +93,8 @@ public class ClassRoomService implements IClassRoomService {
             classRoomEntity.setTotalResource(0);
             classRoomEntity.setTotalStudent(0);
             classRoomEntity.setTotalLesson(0);
+            classRoomEntity.setTotalVideo(0);
+            classRoomEntity.setTotalDocument(0);
             classRoomRepository.save(classRoomEntity);
 
             classRoomEntity.setInviteCode(generateInviteCode(classRoomEntity.getId()));
@@ -109,9 +107,14 @@ public class ClassRoomService implements IClassRoomService {
             resData.setEnrollmentCapacity(classRoomEntity.getEnrollmentCapacity());
             resData.setCurrentEnrollment(classRoomEntity.getCurrentEnrollment());
             resData.setStatus(classRoomEntity.getStatus().toString());
+            resData.setTotalAssignment(classRoomEntity.getTotalAssignment());
+            resData.setTotalExam(classRoomEntity.getTotalExam());
+            resData.setTotalLesson(classRoomEntity.getTotalLesson());
+            resData.setTotalQuiz(classRoomEntity.getTotalQuiz());
+            resData.setTotalResource(classRoomEntity.getTotalResource());
+            resData.setTotalStudent(classRoomEntity.getTotalStudent());
             resData.setCreatedAt(classRoomEntity.getCreatedAt().toString());
             resData.setUpdatedAt(classRoomEntity.getUpdatedAt().toString());
-            resData.setSchedules(schedules);
             return resData;
         }
         catch (Exception e){
@@ -273,65 +276,7 @@ public class ClassRoomService implements IClassRoomService {
 
     }
 
-    @Override
-    public GetClassRoomsResponse getScheduleByDay(String studentId, String day) {
-        try{
 
-            List<ClassRoomEntity> classRooms = classRoomRepository.findStudentScheduleByDayAndStudentId(day,studentId);
-            int start = 0;
-            int end = Math.min(start + 10, classRooms.size());
-            List<ClassRoomEntity> pagedCourses = classRooms.subList(start, end);
-
-            List<GetClassRoomsResponse.ClassRoomResponse> resData = pagedCourses.stream()
-                    .map(classRoom -> modelMapperService.mapClass(classRoom,GetClassRoomsResponse.ClassRoomResponse.class))
-                    .collect(Collectors.toList());
-            GetClassRoomsResponse res = new GetClassRoomsResponse();
-            res.setClassRooms(resData);
-            res.setTotalPage((int) Math.ceil((double) classRooms.size() / 10));
-            res.setTotalElements((long) classRooms.size());
-            return res;
-
-        }
-        catch (Exception e){
-            throw new IllegalArgumentException(e.getMessage());
-        }
-    }
-    @Override
-    public List<GetScheduleResponse> getScheduleByStudentId(String studentId) {
-        try {
-            if (studentRepository.findById(studentId).isEmpty()) {
-                throw new IllegalArgumentException("StudentId is not found");
-            }
-            AggregationResults<GetScheduleResponse> results = studentEnrollmentsRepository.getWeeklySchedule(studentId);
-            List<GetScheduleResponse> resData = results.getMappedResults();
-
-            // Create a default schedule with all days of the week
-            List<GetScheduleResponse> defaultSchedule = Arrays.asList(
-                    new GetScheduleResponse("Monday", new ArrayList<>()),
-                        new GetScheduleResponse("Tuesday", new ArrayList<>()),
-                    new GetScheduleResponse("Wednesday", new ArrayList<>()),
-                    new GetScheduleResponse("Thursday", new ArrayList<>()),
-                    new GetScheduleResponse("Friday", new ArrayList<>()),
-                    new GetScheduleResponse("Saturday", new ArrayList<>()),
-                    new GetScheduleResponse("Sunday", new ArrayList<>())
-            );
-
-            // Replace the default schedule with the actual data where available
-            for (GetScheduleResponse schedule : defaultSchedule) {
-                GetScheduleResponse foundSchedule = resData.stream()
-                        .filter(s -> s.getDayOfWeek().equals(schedule.getDayOfWeek()))
-                        .findFirst()
-                        .orElse(null);
-                if (foundSchedule != null) {
-                    schedule.setSessions(foundSchedule.getSessions());
-                }
-            }
-
-            return defaultSchedule;
-        } catch (Exception e) {
-            throw new IllegalArgumentException(e.getMessage());
-        }
-    }
 
     @Override
     public GetClassRoomDetailResponse getClassRoomByInvitationCode(String invitationCode) {
@@ -395,17 +340,18 @@ public class ClassRoomService implements IClassRoomService {
 
                 GetClassRoomDetailResponse resData = new GetClassRoomDetailResponse();
                 Pageable pageAble = PageRequest.of(0, 15);
-                resData.setId(classRoomEntity.getId());
-                resData.setName(classRoomEntity.getName());
-                resData.setDescription(classRoomEntity.getDescription());
-                resData.setImage(classRoomEntity.getImage());
-                resData.setEnrollmentCapacity(classRoomEntity.getEnrollmentCapacity());
-                resData.setCurrentEnrollment(classRoomEntity.getCurrentEnrollment());
-                resData.setInviteCode(classRoomEntity.getInviteCode());
-                resData.setStatus(classRoomEntity.getStatus());
-                resData.setTeacherId(classRoomEntity.getTeacherId());
-                resData.setCreatedAt(classRoomEntity.getCreatedAt());
-                resData.setUpdatedAt(classRoomEntity.getUpdatedAt());
+                resData = modelMapperService.mapClass(classRoomEntity, GetClassRoomDetailResponse.class);
+//                resData.setId(classRoomEntity.getId());
+//                resData.setName(classRoomEntity.getName());
+//                resData.setDescription(classRoomEntity.getDescription());
+//                resData.setImage(classRoomEntity.getImage());
+//                resData.setEnrollmentCapacity(classRoomEntity.getEnrollmentCapacity());
+//                resData.setCurrentEnrollment(classRoomEntity.getCurrentEnrollment());
+//                resData.setInviteCode(classRoomEntity.getInviteCode());
+//                resData.setStatus(classRoomEntity.getStatus());
+//                resData.setTeacherId(classRoomEntity.getTeacherId());
+//                resData.setCreatedAt(classRoomEntity.getCreatedAt());
+//                resData.setUpdatedAt(classRoomEntity.getUpdatedAt());
                 StudentEnrollmentsEntity studentEnrollmentsEntity = studentEnrollmentsRepository.findByStudentIdAndClassroomId(userId, classroomId);
                 resData.setEnrolled(studentEnrollmentsEntity != null);
                 Page<SectionEntity> sectionEntities = sectionRepository.findByClassRoomId(classroomId,pageAble,status);

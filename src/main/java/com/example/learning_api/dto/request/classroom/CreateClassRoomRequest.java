@@ -18,17 +18,10 @@ public class CreateClassRoomRequest {
     private String description;
     private MultipartFile image;
     @NotBlank
-    private String courseId;
-    @NotBlank
     private String teacherId;
-    @NotBlank
-    private String termId;
-    @NotBlank
-    private String facultyId;
     private ClassRoomStatus status;
     private Integer enrollmentCapacity;
-    private Integer credits;
+    private Integer price;
+    private List<String> categories;
 
-
-    private List<ClassSessionRequest> sessions;
 }

@@ -197,51 +197,6 @@ public class ClassRoomController {
     }
 
 
-    @GetMapping(path = "/schedule-day/{studentId}")
-    @PreAuthorize("hasAnyAuthority('USER')")
-    public ResponseEntity<ResponseAPI<GetClassRoomsResponse>> getScheduleByDay(@PathVariable String studentId,
-                                                                              @RequestParam(name="day",required = false,defaultValue = "") String day) {
-        try{
-            GetClassRoomsResponse data= classRoomService.getScheduleByDay(studentId,day);
-            ResponseAPI<GetClassRoomsResponse> res = ResponseAPI.<GetClassRoomsResponse>builder()
-                    .timestamp(new Date())
-                    .message("Get schedule by day successfully")
-                    .data(data)
-                    .build();
-            return new ResponseEntity<>(res, StatusCode.OK);
-        }
-        catch (Exception e){
-            ResponseAPI<GetClassRoomsResponse> res = ResponseAPI.<GetClassRoomsResponse>builder()
-                    .timestamp(new Date())
-                    .message(e.getMessage())
-                    .build();
-            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
-        }
-
-    }
-
-    @GetMapping(path = "/schedule-week/{studentId}")
-    @PreAuthorize("hasAnyAuthority('USER')")
-    public ResponseEntity<ResponseAPI<List<GetScheduleResponse>>> getScheduleByStudentId(@PathVariable String studentId) {
-        try{
-            List<GetScheduleResponse> data= classRoomService.getScheduleByStudentId(studentId);
-            ResponseAPI<List<GetScheduleResponse>> res = ResponseAPI.<List<GetScheduleResponse>>builder()
-                    .timestamp(new Date())
-                    .message("Get schedule by studentId successfully")
-                    .data(data)
-                    .build();
-            return new ResponseEntity<>(res, StatusCode.OK);
-        }
-        catch (Exception e){
-            ResponseAPI<List<GetScheduleResponse>> res = ResponseAPI.<List<GetScheduleResponse>>builder()
-                    .timestamp(new Date())
-                    .message(e.getMessage())
-                    .build();
-            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
-        }
-
-    }
-
     @GetMapping(path = "/detail/{classroomId}")
     public ResponseEntity<ResponseAPI<GetClassRoomDetailResponse>> getClassRoomDetail(@PathVariable String classroomId,@RequestHeader(name = "Authorization") String authorizationHeader) {
         try{

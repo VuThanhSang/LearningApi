@@ -13,15 +13,18 @@ public class CreateClassRoomResponse {
     private String name;
     private String description;
     private String image;
-    private String courseId;
     private String teacherId;
-    private String termId;
-    private String facultyId;
     private Integer enrollmentCapacity;
     private Integer currentEnrollment;
-    private Integer credits;
+    private Integer price;
+    private Integer totalLesson;
+    private Integer totalStudent;
+    private Integer totalResource;
+    private Integer totalAssignment;
+    private Integer totalQuiz;
+    private Integer totalExam;
+    private List<String> categories;
     private String status;
     private String createdAt;
     private String updatedAt;
-    private List<ScheduleEntity> schedules;
 }

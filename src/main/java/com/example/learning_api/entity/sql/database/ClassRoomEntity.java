@@ -25,12 +25,14 @@ public class ClassRoomEntity {
     private String inviteCode;
     private ClassRoomStatus status;
     private Long duration;
+    private Integer totalVideo;
     private Integer totalLesson;
     private Integer totalStudent;
     private Integer totalResource;
     private Integer totalAssignment;
     private Integer totalQuiz;
     private Integer totalExam;
+    private Integer totalDocument;
     private Integer price;
     private List<String> categories;
     private Boolean isPublic;

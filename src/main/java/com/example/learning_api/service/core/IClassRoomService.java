@@ -16,8 +16,6 @@ public interface IClassRoomService {
     GetClassRoomsResponse getClassRooms(int page,int size, String search, String studentId,String role,String status);
     GetClassRoomsResponse getClassRoomsByTeacherId(int page,int size, String teacherId);
     GetSectionsResponse getSectionsByClassroomId(int page, int size, String search,String role);
-    GetClassRoomsResponse getScheduleByDay(String studentId, String day);
-    List<GetScheduleResponse> getScheduleByStudentId(String studentId);
     GetClassRoomDetailResponse getClassRoomByInvitationCode(String invitationCode);
     GetClassRoomDetailResponse getClassRoomDetail(String classroomId,String role,String userId);
     void importClassRoom(ImportClassRoomRequest body);
