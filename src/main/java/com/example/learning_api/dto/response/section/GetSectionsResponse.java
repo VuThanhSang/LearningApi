@@ -1,7 +1,7 @@
 package com.example.learning_api.dto.response.section;
 
-import com.example.learning_api.entity.sql.database.LessonEntity;
-import com.example.learning_api.entity.sql.database.SectionEntity;
+import com.example.learning_api.dto.response.lesson.GetLessonDetailResponse;
+import com.example.learning_api.entity.sql.database.*;
 import lombok.Data;
 
 import java.util.List;
@@ -19,7 +19,9 @@ public class GetSectionsResponse {
         private String classRoomId;
         private String status;
         private int index;
-        private List<LessonEntity> lessons;
+        private List<LessonResponse> lessons;
+        private boolean canAccess;
+        private boolean isComplete;
         private String createdAt;
         private String updatedAt;
         public static SectionResponse formSectionEntity(SectionEntity sectionEntity){
@@ -34,5 +36,20 @@ public class GetSectionsResponse {
             sectionResponse.setIndex(sectionEntity.getIndex());
             return sectionResponse;
         }
+    }
+
+    @Data
+    public static class LessonResponse{
+        private String id;
+        private String sectionId;
+        private String name;
+        private String description;
+        private int index;
+        private String status;
+        private Boolean isComplete;
+        private String type;
+        private Boolean canAccess;
+        private String createdAt;
+        private String updatedAt;
     }
 }

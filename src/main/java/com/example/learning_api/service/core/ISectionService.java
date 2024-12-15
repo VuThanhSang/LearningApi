@@ -11,5 +11,5 @@ public interface ISectionService {
     void updateSection(UpdateSectionRequest body);
     void deleteSection(DeleteSectionRequest id);
     GetSectionsResponse getSections(int page, int size, String search, String role);
-    GetSectionsResponse getSectionsByClassRoomId(String classRoomId, int page, int size,String role);
+    GetSectionsResponse getSectionsByClassRoomId(String classRoomId, int page, int size,String role,String userId);
 }
