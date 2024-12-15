@@ -72,7 +72,6 @@ public class ClassRoomService implements IClassRoomService {
                 throw new IllegalArgumentException("EnrollmentCapacity is required");
             }
             ClassRoomEntity classRoomEntity = modelMapperService.mapClass(body, ClassRoomEntity.class);
-            classRoomEntity.setFacultyId(body.getFacultyId());
             classRoomEntity.setCurrentEnrollment(0);
             classRoomEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
             classRoomEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
@@ -91,22 +90,15 @@ public class ClassRoomService implements IClassRoomService {
                 );
                 classRoomEntity.setImage(imageUploaded.getUrl());
             }
-
+            classRoomEntity.setDuration(0L);
+            classRoomEntity.setTotalExam(0);
+            classRoomEntity.setTotalQuiz(0);
+            classRoomEntity.setTotalAssignment(0);
+            classRoomEntity.setTotalResource(0);
+            classRoomEntity.setTotalStudent(0);
+            classRoomEntity.setTotalLesson(0);
             classRoomRepository.save(classRoomEntity);
-//            if (body.getSessions()!=null){
-//                for (ClassSessionRequest session : body.getSessions()){
-//                    ScheduleEntity schedule = new ScheduleEntity();
-//                    schedule.setClassroomId(classRoomEntity.getId());
-//                    schedule.setDayOfWeek(session.getDayOfWeek());
-//                    schedule.setStartTime(session.getStartTime());
-//                    schedule.setEndTime(session.getEndTime());
-//                    scheduleRepository.save(schedule);
-//                }
-//
-//            }
-//            else{
-//                throw new IllegalArgumentException("Sessions is required");
-//            }
+
             classRoomEntity.setInviteCode(generateInviteCode(classRoomEntity.getId()));
             classRoomRepository.save(classRoomEntity);
             resData.setId(classRoomEntity.getId());
@@ -114,11 +106,8 @@ public class ClassRoomService implements IClassRoomService {
             resData.setDescription(classRoomEntity.getDescription());
             resData.setImage(classRoomEntity.getImage());
             resData.setTeacherId(classRoomEntity.getTeacherId());
-            resData.setTermId(classRoomEntity.getTermId());
-            resData.setFacultyId(classRoomEntity.getFacultyId());
             resData.setEnrollmentCapacity(classRoomEntity.getEnrollmentCapacity());
             resData.setCurrentEnrollment(classRoomEntity.getCurrentEnrollment());
-            resData.setCredits(classRoomEntity.getCredits());
             resData.setStatus(classRoomEntity.getStatus().toString());
             resData.setCreatedAt(classRoomEntity.getCreatedAt().toString());
             resData.setUpdatedAt(classRoomEntity.getUpdatedAt().toString());
@@ -167,24 +156,12 @@ public class ClassRoomService implements IClassRoomService {
                 }
                 classroom.setTeacherId(body.getTeacherId());
             }
-            if (body.getTermId()!=null){
-                if (termRepository.findById(body.getTermId()).isEmpty()){
-                    throw new IllegalArgumentException("TermId is not found");
-                }
-                classroom.setTermId(body.getTermId());
-            }
-            if (body.getFacultyId()!=null){
-                if (facultyRepository.findById(body.getFacultyId()).isEmpty()){
-                    throw new IllegalArgumentException("FacultyId is not found");
-                }
-                classroom.setFacultyId(body.getFacultyId());
-            }
+
+
             if (body.getEnrollmentCapacity()!=null){
                 classroom.setEnrollmentCapacity(body.getEnrollmentCapacity());
             }
-            if (body.getCredits()!=null){
-                classroom.setCredits(body.getCredits());
-            }
+
             if (body.getStatus()!=null){
                 classroom.setStatus(body.getStatus());
             }
@@ -375,7 +352,6 @@ public class ClassRoomService implements IClassRoomService {
             resData.setCurrentEnrollment(classRoomEntity.getCurrentEnrollment());
             resData.setInviteCode(classRoomEntity.getInviteCode());
             resData.setStatus(classRoomEntity.getStatus());
-            resData.setCredits(classRoomEntity.getCredits());
             resData.setTeacherId(classRoomEntity.getTeacherId());
             resData.setCreatedAt(classRoomEntity.getCreatedAt());
             resData.setUpdatedAt(classRoomEntity.getUpdatedAt());
@@ -427,7 +403,6 @@ public class ClassRoomService implements IClassRoomService {
                 resData.setCurrentEnrollment(classRoomEntity.getCurrentEnrollment());
                 resData.setInviteCode(classRoomEntity.getInviteCode());
                 resData.setStatus(classRoomEntity.getStatus());
-                resData.setCredits(classRoomEntity.getCredits());
                 resData.setTeacherId(classRoomEntity.getTeacherId());
                 resData.setCreatedAt(classRoomEntity.getCreatedAt());
                 resData.setUpdatedAt(classRoomEntity.getUpdatedAt());
@@ -481,7 +456,6 @@ public class ClassRoomService implements IClassRoomService {
                 if (termRepository.findById(row.get(3)).isEmpty()){
                     throw new IllegalArgumentException("TermId is not found");
                 }
-                classRoomEntity.setTermId(row.get(3));
                 classRoomEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
                 classRoomEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
                 classRoomRepository.save(classRoomEntity);

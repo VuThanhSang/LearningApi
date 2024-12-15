@@ -38,7 +38,6 @@ public class GetClassRoomsResponse {
             classRoomResponse.setEnrollmentCapacity(classRoomEntity.getEnrollmentCapacity());
             classRoomResponse.setCurrentEnrollment(classRoomEntity.getCurrentEnrollment());
             classRoomResponse.setStatus(classRoomEntity.getStatus().name());
-            classRoomResponse.setCredit(classRoomEntity.getCredits());
             return classRoomResponse;
         }
     }

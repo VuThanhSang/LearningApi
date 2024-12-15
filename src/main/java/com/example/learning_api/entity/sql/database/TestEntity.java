@@ -29,6 +29,7 @@ public class TestEntity {
     private TestType type;
     private TestShowResultType showResultType;
     private TestStatus status;
+    private Double passingGrade;
     private Integer attemptLimit;
     private String createdAt;
     private String updatedAt;

@@ -20,4 +20,5 @@ public class UpdateTestRequest {
     private String showResultType;
     private String status;
     private Integer attemptLimit;
+    private Double passingGrade;
 }

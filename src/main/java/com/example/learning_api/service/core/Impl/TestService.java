@@ -3,6 +3,7 @@ package com.example.learning_api.service.core.Impl;
 import com.example.learning_api.constant.CloudinaryConstant;
 import com.example.learning_api.constant.ErrorConstant;
 import com.example.learning_api.dto.common.QuestionAnswersDTO;
+import com.example.learning_api.dto.request.progress.ProgressCompleteRequest;
 import com.example.learning_api.dto.request.test.CreateTestRequest;
 import com.example.learning_api.dto.request.test.ImportTestRequest;
 import com.example.learning_api.dto.request.test.TestSubmitRequest;
@@ -62,12 +63,15 @@ public class TestService implements ITestService {
     private final StudentRepository studentRepository;
     private final NotificationRepository notificationRepository;
     private final NotificationReceiveRepository notificationReceiveRepository;
+    private final ProgressService progressService;
     @Override
     public CreateTestResponse createTest(CreateTestRequest request) {
         try {
             validateCreateTestRequest(request);
             TestEntity testEntity = createTestEntity(request);
-
+            if (testEntity.getPassingGrade()==null){
+                testEntity.setPassingGrade(5.0);
+            }
             // Lưu thông tin test vào database
             testRepository.save(testEntity);
 
@@ -268,6 +272,9 @@ public class TestService implements ITestService {
             }
             if (body.getAttemptLimit()!=null){
                 testEntity.setAttemptLimit(body.getAttemptLimit());
+            }
+            if (body.getPassingGrade()!=null){
+                testEntity.setPassingGrade(body.getPassingGrade());
             }
 
             testRepository.save(testEntity);
@@ -1252,12 +1259,17 @@ public class TestService implements ITestService {
     }
 
     private void updateTestResult(TestResultEntity testResult, int totalCorrectAnswers, int totalQuestions) {
+        TestEntity testEntity = testRepository.findById(testResult.getTestId())
+                .orElseThrow(() -> new IllegalArgumentException("Test not found"));
         testResult.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
         testResult.setFinishedAt(String.valueOf(System.currentTimeMillis()));
         double grade = calculateGrade(totalCorrectAnswers, totalQuestions);
         testResult.setState(TestState.FINISHED);
         testResult.setGrade(grade);
-        testResult.setIsPassed(grade >= 5);
+        Double passingGrade = testEntity.getPassingGrade();
+        if (passingGrade ==null)
+            passingGrade = 5.0;
+        testResult.setIsPassed(grade >= passingGrade);
         testResultRepository.save(testResult);
     }
 
@@ -1271,6 +1283,8 @@ public class TestService implements ITestService {
             List<TestSubmitResponse.QuestionResponse> questionResponses,
             int totalCorrectAnswers,
             int totalQuestions) {
+        TestEntity testEntity = testRepository.findById(testResult.getTestId())
+                .orElseThrow(() -> new IllegalArgumentException("Test not found"));
         TestSubmitResponse response = new TestSubmitResponse();
         response.setTestType("test");
         response.setStudentId(testResult.getStudentId());
@@ -1281,8 +1295,18 @@ public class TestService implements ITestService {
         response.setFinishedAt(testResult.getFinishedAt());
         response.setAttendedAt(testResult.getAttendedAt());
         response.setGrade(testResult.getGrade());
-        response.setPassed(testResult.getGrade() >= 4);
+        Double passingGrade = testEntity.getPassingGrade();
+        if (passingGrade ==null)
+            passingGrade = 5.0;
+        response.setPassed(testResult.getGrade() >= passingGrade);
         response.setId(testResult.getId());
+        if (response.isPassed()&&testEntity.getLessonId()!=null){
+            ProgressCompleteRequest progressCompleteRequest = new ProgressCompleteRequest();
+            progressCompleteRequest.setLessonId(testEntity.getLessonId());
+            progressCompleteRequest.setStudentId(testResult.getStudentId());
+            progressCompleteRequest.setClassroomId(testEntity.getClassroomId());
+            progressService.markLessonAsCompleted(progressCompleteRequest);
+        }
         return response;
     }
 

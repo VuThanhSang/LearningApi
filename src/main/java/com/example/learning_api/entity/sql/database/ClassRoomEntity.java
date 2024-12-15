@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
-
+import lombok.Builder;
 import java.util.Date;
 import java.util.List;
 
@@ -20,15 +20,23 @@ public class ClassRoomEntity {
     private String name;
     private String description;
     private String image;
-    private String facultyId;
     private Integer enrollmentCapacity;
     private Integer currentEnrollment;
     private String inviteCode;
     private ClassRoomStatus status;
-    private Integer credits;
-    private String termId;
+    private Long duration;
+    private Integer totalLesson;
+    private Integer totalStudent;
+    private Integer totalResource;
+    private Integer totalAssignment;
+    private Integer totalQuiz;
+    private Integer totalExam;
+    private Integer price;
+    private List<String> categories;
+    private Boolean isPublic;
     private String teacherId;
     private String createdAt;
     private String updatedAt;
+
 
 }
