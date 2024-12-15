@@ -431,6 +431,8 @@ public class ClassRoomService implements IClassRoomService {
                 resData.setTeacherId(classRoomEntity.getTeacherId());
                 resData.setCreatedAt(classRoomEntity.getCreatedAt());
                 resData.setUpdatedAt(classRoomEntity.getUpdatedAt());
+                StudentEnrollmentsEntity studentEnrollmentsEntity = studentEnrollmentsRepository.findByStudentIdAndClassroomId(userId, classroomId);
+                resData.setEnrolled(studentEnrollmentsEntity != null);
                 Page<SectionEntity> sectionEntities = sectionRepository.findByClassRoomId(classroomId,pageAble,status);
                 List<GetClassRoomDetailResponse.Section> sections = new ArrayList<>();
                 for (SectionEntity sectionEntity : sectionEntities){
