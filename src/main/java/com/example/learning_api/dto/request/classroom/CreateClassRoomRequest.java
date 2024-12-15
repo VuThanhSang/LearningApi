@@ -22,6 +22,7 @@ public class CreateClassRoomRequest {
     private ClassRoomStatus status;
     private Integer enrollmentCapacity;
     private Integer price;
+    private Integer duration;
     private List<String> categories;
 
 }

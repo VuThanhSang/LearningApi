@@ -124,9 +124,9 @@ public class LessonService implements ILessonService {
                 lessonEntity.setStatus(SectionStatus.valueOf(updateLessonRequest.getStatus()));
             if (updateLessonRequest.getIndex()!=null)
                 lessonEntity.setIndex(updateLessonRequest.getIndex());
-           if (updateLessonRequest.getType()!=null){
                SectionEntity sectionEntity = sectionRepository.findById(lessonEntity.getSectionId()).get();
                ClassRoomEntity classRoomEntity = classRoomRepository.findById(sectionEntity.getClassRoomId()).get();
+           if (updateLessonRequest.getType()!=null){
                if (lessonEntity.getType().equals(LessonType.MEDIA)){
                     mediaRepository.deleteByLessonId(lessonEntity.getId());
                     classRoomEntity.setTotalVideo(classRoomEntity.getTotalVideo()-1);
@@ -205,6 +205,7 @@ public class LessonService implements ILessonService {
 
             lessonEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             lessonRepository.save(lessonEntity);
+            classRoomRepository.save(classRoomEntity);
         }
         catch (Exception e){
             log.error(e.getMessage());

@@ -249,6 +249,14 @@ public class TestService implements ITestService {
 
             if (body.getShowResultType()!=null){
                 testEntity.setShowResultType(TestShowResultType.valueOf(body.getShowResultType()));
+                ClassRoomEntity classRoomEntity = classRoomRepository.findById(testEntity.getClassroomId()).orElse(null);
+                if (classRoomEntity != null) {
+                    if (testEntity.getShowResultType().equals(TestShowResultType.SHOW_RESULT_IMMEDIATELY)) {
+                        classRoomEntity.setTotalQuiz(classRoomEntity.getTotalQuiz() + 1);
+                    } else if (testEntity.getShowResultType().equals(TestShowResultType.SHOW_RESULT_AFTER_TEST)) {
+                        classRoomEntity.setTotalQuiz(classRoomEntity.getTotalQuiz() + 1);
+                    }
+                }
             }
             if(body.getStatus()!=null){
                 testEntity.setStatus(TestStatus.valueOf(body.getStatus()));

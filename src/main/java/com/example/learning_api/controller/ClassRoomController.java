@@ -115,6 +115,7 @@ public class ClassRoomController {
                                                             @RequestParam(name="page",required = false,defaultValue = "1") int page,
                                                             @RequestParam(name="size",required = false,defaultValue = "10") int size,
                                 @RequestParam(name="status",required = false,defaultValue = "") String status,
+                                @RequestParam(name="category",required = false,defaultValue = "") String category,
                                 @RequestHeader(name = "Authorization") String authorizationHeader) {
         try{
             String token = authorizationHeader.replace("Bearer ", "");
@@ -133,7 +134,7 @@ public class ClassRoomController {
             if (status.equals("")){
                 status =null;
             }
-            GetClassRoomsResponse resData = classRoomService.getClassRooms( page-1, size,search,callId,role,status);
+            GetClassRoomsResponse resData = classRoomService.getClassRooms( page-1, size,search,callId,role,status,category);
             ResponseAPI<GetClassRoomsResponse> res = ResponseAPI.<GetClassRoomsResponse>builder()
                     .timestamp(new Date())
                     .message("Get class room successfully")
@@ -149,6 +150,49 @@ public class ClassRoomController {
             return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
         }
 
+    }
+
+    @GetMapping(path = "/home")
+    public ResponseEntity<ResponseAPI<GetClassRoomsResponse>> getClassRooms(
+            @RequestParam(name="search",required = false,defaultValue = "") String search,
+            @RequestParam(name="page",required = false,defaultValue = "1") int page,
+            @RequestParam(name="size",required = false,defaultValue = "10") int size,
+            @RequestParam(name="status",required = false,defaultValue = "") String status,
+            @RequestParam(name="category",required = false,defaultValue = "") String category,
+            @RequestHeader(name = "Authorization") String authorizationHeader) {
+        try{
+            String token = authorizationHeader.replace("Bearer ", "");
+            String userId = jwtService.extractUserId(token);
+            String role = jwtService.extractRole(token);
+            String callId = "";
+            if (role.equals("USER")){
+                callId = studentService.getStudentByUserId(userId).getId();
+            }
+            else if (role.equals("TEACHER")){
+                callId = teacherService.getTeacherByUserId(userId).getId();
+            }
+            else{
+                callId = "";
+            }
+            if (status.equals("")){
+                status =null;
+            }
+            GetClassRoomsResponse resData = classRoomService.getUnregisteredClassRooms( page-1, size,search,callId,status,category);
+            ResponseAPI<GetClassRoomsResponse> res = ResponseAPI.<GetClassRoomsResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get class room successfully")
+                    .data(resData)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetClassRoomsResponse> res = ResponseAPI.<GetClassRoomsResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+
+        }
     }
 
     @DeleteMapping(path = "/{classroomId}")

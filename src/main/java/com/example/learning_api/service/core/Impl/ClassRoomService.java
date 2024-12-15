@@ -21,9 +21,7 @@ import com.example.learning_api.utils.StringUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.Document;
 import org.springframework.data.domain.*;
-import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -168,6 +166,15 @@ public class ClassRoomService implements IClassRoomService {
             if (body.getStatus()!=null){
                 classroom.setStatus(body.getStatus());
             }
+            if (body.getCategories()!=null){
+                classroom.setCategories(body.getCategories());
+            }
+            if (body.getPrice()!=null){
+                classroom.setPrice(body.getPrice());
+            }
+            if (body.getDuration()!=null){
+                classroom.setDuration(body.getDuration().longValue());
+            }
             classroom.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             classRoomRepository.save(classroom);
         }
@@ -191,43 +198,116 @@ public class ClassRoomService implements IClassRoomService {
     }
 
     @Override
-    public GetClassRoomsResponse getClassRooms(int page, int size, String search,String studentId,String role,String status) {
-        try{
-            Pageable pageAble = PageRequest.of(page, size);
+    public GetClassRoomsResponse getClassRooms(int page, int size, String search, String studentId, String role, String status, String category) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
             Page<ClassRoomEntity> classRooms;
-            if (role.equals("USER")){
-                List<String> classRoomIds = studentEnrollmentsRepository.findByStudentId(studentId).stream()
-                        .map(StudentEnrollmentsEntity::getClassroomId)
-                        .collect(Collectors.toList());
-                if (status != null )
-                    classRooms = classRoomRepository.findByIdInAndNameContainingAndStatus(classRoomIds,search,  status,pageAble);
-                else
-                    classRooms = classRoomRepository.findByIdInAndNameContaining(classRoomIds,search, pageAble);
+
+            // Xác định điều kiện chung
+            boolean isUser = "USER".equalsIgnoreCase(role);
+            List<String> classRoomIds = isUser ?
+                    studentEnrollmentsRepository.findByStudentId(studentId).stream()
+                            .map(StudentEnrollmentsEntity::getClassroomId)
+                            .collect(Collectors.toList()) : null;
+
+            // Xây dựng truy vấn động dựa trên điều kiện
+            if (isUser) {
+                classRooms = fetchClassRoomsForUser(classRoomIds, search, status, category, pageable);
+            } else {
+                classRooms = fetchClassRoomsForTeacher(studentId, search, status, category, pageable);
             }
-            else{
-                if (status != null)
-                    classRooms = classRoomRepository.findByTeacherIdAndNameContainingAndStatus(studentId,search, status, pageAble);
-                else
-                    classRooms = classRoomRepository.findByTeacherIdAndNameContaining(studentId,search, pageAble);
-            }
-            List<GetClassRoomsResponse.ClassRoomResponse> resData = new ArrayList<>();
-            for (ClassRoomEntity classRoom : classRooms){
-                log.info("classRoom: {}", classRoom);
+
+            // Map dữ liệu sang DTO
+            List<GetClassRoomsResponse.ClassRoomResponse> resData = classRooms.stream().map(classRoom -> {
                 GetClassRoomsResponse.ClassRoomResponse classRoomResponse = modelMapperService.mapClass(classRoom, GetClassRoomsResponse.ClassRoomResponse.class);
                 int count = studentEnrollmentsRepository.countByClassroomId(classRoom.getId());
                 classRoomResponse.setCurrentEnrollment(count);
-                resData.add(classRoomResponse);
-            }
-            GetClassRoomsResponse res = new GetClassRoomsResponse();
-            res.setClassRooms(resData);
-            res.setTotalPage(classRooms.getTotalPages());
-            res.setTotalElements(classRooms.getTotalElements());
-            return res;
-        }
-        catch (Exception e){
+                return classRoomResponse;
+            }).collect(Collectors.toList());
+
+            // Đóng gói kết quả
+            return new GetClassRoomsResponse(resData, classRooms.getTotalPages(), classRooms.getTotalElements());
+        } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }
+    }
 
+    private Page<ClassRoomEntity> fetchClassRoomsForUser(List<String> classRoomIds, String search, String status, String category, Pageable pageable) {
+        if (status != null) {
+            if (category != null && !category.isEmpty()) {
+                return classRoomRepository.findByCategoryAndNameContainingAndStatus(classRoomIds, category, search, status, pageable);
+            } else {
+                return classRoomRepository.findByIdInAndNameContainingAndStatus(classRoomIds, search, status, pageable);
+            }
+        } else {
+            if (category != null && !category.isEmpty()) {
+                return classRoomRepository.findByCategoryAndNameContaining(classRoomIds, category, search, pageable);
+            } else {
+                return classRoomRepository.findByIdInAndNameContaining(classRoomIds, search, pageable);
+            }
+        }
+    }
+
+    private Page<ClassRoomEntity> fetchClassRoomsForTeacher(String teacherId, String search, String status, String category, Pageable pageable) {
+        if (status != null) {
+            if (category != null && !category.isEmpty()) {
+                return classRoomRepository.findByTeacherIDCategoryAndNameContainingAndStatus(teacherId, category, search, status, pageable);
+            } else {
+                return classRoomRepository.findByTeacherIdAndNameContainingAndStatus(teacherId, search, status, pageable);
+            }
+        } else {
+            if (category != null && !category.isEmpty()) {
+                return classRoomRepository.findByTeacherIDCategoryAndNameContaining(teacherId, category, search, pageable);
+            } else {
+                return classRoomRepository.findByTeacherIdAndNameContaining(teacherId, search, pageable);
+            }
+        }
+    }
+
+
+
+    @Override
+    public GetClassRoomsResponse getUnregisteredClassRooms(int page, int size, String search, String studentId, String status, String category) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+
+            // Lấy danh sách lớp học mà sinh viên đã đăng ký
+            List<String> registeredClassRoomIds = studentEnrollmentsRepository.findByStudentId(studentId).stream()
+                    .map(StudentEnrollmentsEntity::getClassroomId)
+                    .collect(Collectors.toList());
+
+            // Tìm lớp học chưa đăng ký
+            Page<ClassRoomEntity> unregisteredClassRooms = fetchUnregisteredClassRooms(registeredClassRoomIds, search, status, category, pageable);
+
+            // Map dữ liệu sang DTO
+            List<GetClassRoomsResponse.ClassRoomResponse> resData = unregisteredClassRooms.stream().map(classRoom -> {
+                GetClassRoomsResponse.ClassRoomResponse classRoomResponse = modelMapperService.mapClass(classRoom, GetClassRoomsResponse.ClassRoomResponse.class);
+                int count = studentEnrollmentsRepository.countByClassroomId(classRoom.getId());
+                classRoomResponse.setCurrentEnrollment(count);
+                return classRoomResponse;
+            }).collect(Collectors.toList());
+
+            // Đóng gói kết quả
+            return new GetClassRoomsResponse(resData, unregisteredClassRooms.getTotalPages(), unregisteredClassRooms.getTotalElements());
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    private Page<ClassRoomEntity> fetchUnregisteredClassRooms(List<String> registeredClassRoomIds, String search, String status, String category, Pageable pageable) {
+        if (status != null) {
+            if (category != null && !category.isEmpty()) {
+                return classRoomRepository.findByCategoryAndNameContainingAndStatusNotIn(registeredClassRoomIds, category, search, status, pageable);
+            } else {
+                return classRoomRepository.findByIdNotInAndNameContainingAndStatus(registeredClassRoomIds, search, status, pageable);
+            }
+        } else {
+            if (category != null && !category.isEmpty()) {
+                return classRoomRepository.findByCategoryAndNameContainingAndIdNotIn(category, search, registeredClassRoomIds, pageable);
+            } else {
+                return classRoomRepository.findByIdNotInAndNameContaining(registeredClassRoomIds, search, pageable);
+            }
+        }
     }
 
     @Override

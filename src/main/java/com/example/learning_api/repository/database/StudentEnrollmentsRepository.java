@@ -32,19 +32,7 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
     @Query("{'studentId': ?0}")
     List<StudentEnrollmentsEntity> findByStudentId(String studentId);
 
-    @Aggregation(pipeline = {
-            "{$addFields: {_classroomId: {$toObjectId: '$classroomId'}}}",
-            "{$match: {studentId: '?0'}}",
-            "{$lookup: {from: 'classrooms', localField: '_classroomId', foreignField: '_id', as: 'classroom'}}",
-            "{$unwind: '$classroom'}",
-            "{$addFields: {'classroom.classroomId': {$toString: '$classroom._id'}}}",
-            "{$lookup: {from: 'schedules', localField: 'classroom.classroomId', foreignField: 'classroomId', as: 'schedules'}}",
-            "{$unwind: '$schedules'}",
-            "{$group: {_id: {dayOfWeek: '$schedules.dayOfWeek'}, sessions: {$push: {startTime: '$schedules.startTime', endTime: '$schedules.endTime', className: '$classroom.name', classroomId: '$classroom.classroomId'}}}}",
-            "{$project: {dayOfWeek: '$_id.dayOfWeek', sessions: 1, _id: 0}}",
-            "{$sort: {dayOfWeek: 1}}"
-    })
-    AggregationResults<GetScheduleResponse> getWeeklySchedule(String studentId);
+
     @Aggregation(pipeline = {
             "{$addFields: {_classroomId: {$toObjectId: '$classroomId'}}}",
             "{$match: {studentId: '?0'}}",
@@ -193,7 +181,6 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
     );
 
     StudentEnrollmentsEntity findByStudentIdAndClassroomId(String studentId, String classroomId);
-    List<StudentEnrollmentsEntity> findByClassroomIdAndStatus(String classroomId, StudentEnrollmentStatus status);
     @Aggregation(pipeline = {
             "{$addFields: { createdAtLong: { $toLong: '$createdAt' } }}",
             "{$match: { createdAtLong: { $exists: true, $ne: null } }}",

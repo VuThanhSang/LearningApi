@@ -13,8 +13,11 @@ public interface IClassRoomService {
     CreateClassRoomResponse createClassRoom(CreateClassRoomRequest body);
     void updateClassRoom(UpdateClassRoomRequest body);
     void deleteClassRoom(String classroomId);
-    GetClassRoomsResponse getClassRooms(int page,int size, String search, String studentId,String role,String status);
-    GetClassRoomsResponse getClassRoomsByTeacherId(int page,int size, String teacherId);
+    GetClassRoomsResponse getClassRooms(int page, int size, String search, String studentId, String role, String status, String category);
+
+    GetClassRoomsResponse getUnregisteredClassRooms(int page, int size, String search, String studentId, String status, String category);
+
+    GetClassRoomsResponse getClassRoomsByTeacherId(int page, int size, String teacherId);
     GetSectionsResponse getSectionsByClassroomId(int page, int size, String search,String role);
     GetClassRoomDetailResponse getClassRoomByInvitationCode(String invitationCode);
     GetClassRoomDetailResponse getClassRoomDetail(String classroomId,String role,String userId);

@@ -85,4 +85,26 @@ public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, St
 
     @Query("{ 'teacherId' : ?0, 'status': { $ne: 'BLOCKED' } }")
     Page<ClassRoomEntity> findByTeacherId(String teacherId, Pageable pageable);
+    @Query("{  '_id' : { $in: ?0 }, 'categories' : { $in: [?0] }, 'name' : { $regex: ?1, $options: 'i' }, 'status': { $ne: 'BLOCKED' } }")
+    Page<ClassRoomEntity> findByCategoryAndNameContaining(List<String> classroomIds, String category, String search, Pageable pageable);
+
+    @Query("{ '_id' : { $in: ?0 }, 'categories' : { $in: [?0] }, 'name' : { $regex: ?1, $options: 'i' }, $and: [ { 'status': ?2 }, { 'status': { $ne: 'BLOCKED' } } ] }")
+    Page<ClassRoomEntity> findByCategoryAndNameContainingAndStatus(List<String> classroomIds,String category, String search, String status, Pageable pageable);
+
+    @Query("{ 'teacherId' : ?0, 'categories' : { $in: [?1] }, 'name' : { $regex: ?2, $options: 'i' }, 'status': { $ne: 'BLOCKED' } }")
+    Page<ClassRoomEntity> findByTeacherIDCategoryAndNameContainingAndStatus(String teacherId, String category, String search, String status, Pageable pageable);
+
+    @Query("{ 'teacherId' : ?0, 'categories' : { $in: [?1] }, 'name' : { $regex: ?2, $options: 'i' }, 'status': { $ne: 'BLOCKED' } }")
+    Page<ClassRoomEntity> findByTeacherIDCategoryAndNameContaining(String teacherId, String category, String search, Pageable pageable);
+    @Query("{ '_id': { $nin: ?0 }, 'name': { $regex: ?1, $options: 'i' }, 'status': { $ne: 'BLOCKED' } }")
+    Page<ClassRoomEntity> findByIdNotInAndNameContaining(List<String> excludedIds, String name, Pageable pageable);
+
+    @Query("{ '_id': { $nin: ?0 }, 'name': { $regex: ?1, $options: 'i' }, 'status': ?2 }")
+    Page<ClassRoomEntity> findByIdNotInAndNameContainingAndStatus(List<String> excludedIds, String name, String status, Pageable pageable);
+
+    @Query("{ 'categories': { $in: [?0] }, 'name': { $regex: ?1, $options: 'i' }, '_id': { $nin: ?2 } }")
+    Page<ClassRoomEntity> findByCategoryAndNameContainingAndIdNotIn(String category, String name, List<String> excludedIds, Pageable pageable);
+
+    @Query("{ 'categories': { $in: [?0] }, 'name': { $regex: ?1, $options: 'i' }, 'status': { $nin: [?2] } }")
+    Page<ClassRoomEntity> findByCategoryAndNameContainingAndStatusNotIn(List<String> excludedIds, String category, String name, String status, Pageable pageable);
 }
