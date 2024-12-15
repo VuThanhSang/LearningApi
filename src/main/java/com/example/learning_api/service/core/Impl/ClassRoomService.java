@@ -200,6 +200,10 @@ public class ClassRoomService implements IClassRoomService {
     @Override
     public GetClassRoomsResponse getClassRooms(int page, int size, String search, String studentId, String role, String status, String category) {
         try {
+            // Remove leading comma if present
+            if (search != null && search.startsWith(",")) {
+                search = search.substring(1);
+            }
             Pageable pageable = PageRequest.of(page, size);
             Page<ClassRoomEntity> classRooms;
 
@@ -269,6 +273,10 @@ public class ClassRoomService implements IClassRoomService {
     @Override
     public GetClassRoomsResponse getUnregisteredClassRooms(int page, int size, String search, String studentId, String status, String category) {
         try {
+            // Remove leading comma if present
+            if (search != null && search.startsWith(",")) {
+                search = search.substring(1);
+            }
             Pageable pageable = PageRequest.of(page, size);
 
             // Lấy danh sách lớp học mà sinh viên đã đăng ký
