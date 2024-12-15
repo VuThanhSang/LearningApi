@@ -21,6 +21,7 @@ public class GetClassRoomDetailResponse {
     private String teacherId;
     private String createdAt;
     private String updatedAt;
+    private boolean isEnrolled;
     private List<Section> sections;
     @Data
     public static class Section {

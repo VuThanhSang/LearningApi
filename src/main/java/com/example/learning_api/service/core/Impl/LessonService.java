@@ -80,14 +80,6 @@ public class LessonService implements ILessonService {
                 testEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
                 testEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
                 testRepository.save(testEntity);
-            }else if (createLessonRequest.getType().equals(LessonType.RESOURCE.toString())) {
-                ResourceEntity resourceEntity = new ResourceEntity();
-                resourceEntity.setLessonId(lessonEntity.getId());
-                resourceEntity.setName(createLessonRequest.getName());
-                resourceEntity.setDescription(createLessonRequest.getDescription());
-                resourceEntity.setCreatedAt(new Date());
-                resourceEntity.setUpdatedAt(new Date());
-                resourceRepository.save(resourceEntity);
             }
             else if (createLessonRequest.getType().equals(LessonType.SUBSTANCE.toString())) {
                 SubstanceEntity substanceEntity = new SubstanceEntity();
@@ -131,8 +123,6 @@ public class LessonService implements ILessonService {
                     mediaRepository.deleteByLessonId(lessonEntity.getId());
                }else if (lessonEntity.getType().equals(LessonType.TEST)){
                      testRepository.deleteByLessonId(lessonEntity.getId());
-               }else if (lessonEntity.getType().equals(LessonType.RESOURCE)) {
-                     resourceRepository.deleteByLessonId(lessonEntity.getId());
                }
                else if (lessonEntity.getType().equals(LessonType.SUBSTANCE)) {
                         substanceRepository.deleteByLessonId(lessonEntity.getId());
@@ -244,6 +234,10 @@ public class LessonService implements ILessonService {
             List<GetLessonDetailResponse> getLessonDetailResponses = new ArrayList<>();
             for (LessonEntity lessonEntity: lessonEntities){
                 GetLessonDetailResponse getLessonDetailResponse = lessonRepository.getLessonWithResourcesAndMediaAndSubstances(lessonEntity.getId());
+                if (getLessonDetailResponse.getType().equals(LessonType.TEST.toString())){
+                    List<TestEntity> testEntities = testRepository.findByLessonId(lessonEntity.getId());
+                    getLessonDetailResponse.setTests(testEntities);
+                }
                 LessonEntity previousLesson = lessonRepository.findBySectionIdAndIndex(sectionId,lessonEntity.getIndex()-1);
                 Optional<SectionEntity> sectionEntity = sectionRepository.findById(sectionId);
                 if (lessonEntity.getIndex()==0||role.equals("TEACHER")){
