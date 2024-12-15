@@ -14,8 +14,6 @@ public class GetTestDetailResponse {
     private FileEntity source;
     private String id;
     private int duration;
-    private String startTime;
-    private String endTime;
     private String classroomId;
     private int attemptLimit;
     private String teacherId;

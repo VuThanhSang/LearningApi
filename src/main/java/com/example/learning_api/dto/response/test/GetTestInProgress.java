@@ -36,8 +36,6 @@ public class GetTestInProgress {
             testResponse.setTeacherId(testEntity.getTeacherId());
             testResponse.setCreatedAt(testEntity.getCreatedAt().toString());
             testResponse.setUpdatedAt(testEntity.getUpdatedAt().toString());
-            testResponse.setStartTime(testEntity.getStartTime().toString());
-            testResponse.setEndTime(testEntity.getEndTime().toString());
             testResponse.setClassroomId(testEntity.getClassroomId());
             testResponse.setShowResultType(testEntity.getShowResultType().toString());
             return testResponse;

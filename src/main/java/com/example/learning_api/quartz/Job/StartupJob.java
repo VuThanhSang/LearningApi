@@ -31,38 +31,8 @@ public class StartupJob implements Job {
     @Override
     public void execute(JobExecutionContext context) {
         try{
-            List<TestEntity> testNotExpired = testService.getAllTest();
-            List<DeadlineEntity> deadlineNotExpired = deadlineService.getAll();
-            List<DeadlineEntity> deadlineExpired = deadlineService.getAllExpiredDeadlines();
-            List<TestEntity> testExpired = testService.getAllTestExpired();
-            for (TestEntity testEntity : testNotExpired) {
-                if (testEntity.getEndTime() != null) {
-                long offsetInMillis = 3600 * 24 * 1000; // 24 giờ
-                    testSchedulerService.scheduleTestReminder(testEntity, offsetInMillis,"USER");
-                    testSchedulerService.scheduleTestReminder(testEntity, 1000,"TEACHER");
-                }
-            }
-            for (DeadlineEntity deadlineEntity : deadlineNotExpired) {
-                if (deadlineEntity.getEndDate() != null) {
-                    long offsetInMillis = 3600 * 24 * 1000; // 24 giờ
-                    deadlineSchedulerService.scheduleTestReminder(deadlineEntity, offsetInMillis,"USER");
-                    deadlineSchedulerService.scheduleTestReminder(deadlineEntity, 1000,"TEACHER");
 
-                }
-            }
-            for (DeadlineEntity deadlineEntity : deadlineExpired) {
-                UpdateDeadlineRequest updateDeadlineRequest = new UpdateDeadlineRequest();
-                updateDeadlineRequest.setId(deadlineEntity.getId());
-                updateDeadlineRequest.setStatus(DeadlineStatus.FINISHED.name());
-                deadlineService.updateDeadline(updateDeadlineRequest);
-            }
-            for (TestEntity testEntity : testExpired) {
-                UpdateTestRequest updateTestRequest= UpdateTestRequest.builder().status(TestStatus.FINISHED.name()).build();
-                updateTestRequest.setId(testEntity.getId());
-                updateTestRequest.setDuration(testEntity.getDuration());
-                updateTestRequest.setStatus(TestStatus.FINISHED.name());
-                testService.updateTest(updateTestRequest);
-            }
+
             logger.info("The startup job is executed.");
             System.out.println("Hello World 2");
         }

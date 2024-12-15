@@ -19,7 +19,4 @@ public class CreateDeadlineRequest {
     @NotBlank
     private DeadlineType type;
     private List<MultipartFile> files;
-    private String startDate;
-    private String endDate;
-    private Boolean allowLateSubmission;
 }

@@ -18,9 +18,6 @@ public class UpdateDeadlineRequest {
     private String description;
     private String status;
     private List<MultipartFile> files;
-    private String startDate;
-    private String endDate;
     private String type;
-    private Boolean allowLateSubmission;
 
 }

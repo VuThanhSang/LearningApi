@@ -22,10 +22,7 @@ public class DeadlineEntity {
     private String description;
     private DeadlineType type;
     private DeadlineStatus status;
-    private String startDate;
     private Boolean useScoringCriteria;
-    private Boolean allowLateSubmission;
-    private String endDate;
     private String createdAt;
     private String updatedAt;
 

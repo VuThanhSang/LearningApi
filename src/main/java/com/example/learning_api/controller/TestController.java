@@ -184,56 +184,7 @@ public class TestController {
         }
     }
 
-    @GetMapping(path = "/in-progress/{studentId}")
-    @PreAuthorize("hasAnyAuthority('USER')")
-    public ResponseEntity<ResponseAPI<GetTestInProgress>> getTestsInProgress (
-            @PathVariable String studentId,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "") String search
-    ){
-        try{
-            GetTestInProgress resData = testService.getTestInProgress( page-1, size,studentId );
-            ResponseAPI<GetTestInProgress> res = ResponseAPI.<GetTestInProgress>builder()
-                    .timestamp(new Date())
-                    .message("Get tests in progress successfully")
-                    .data(resData)
-                    .build();
-            return new ResponseEntity<>(res, StatusCode.OK);
-        }
-        catch (Exception e){
-            ResponseAPI<GetTestInProgress> res = ResponseAPI.<GetTestInProgress>builder()
-                    .timestamp(new Date())
-                    .message(e.getMessage())
-                    .build();
-            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
-        }
-    }
-    @GetMapping(path = "/on-specific-day/{studentId}")
-    @PreAuthorize("hasAnyAuthority('USER')")
-    public ResponseEntity<ResponseAPI<GetTestInProgress>> getTestsOnSpecificDayByStudentId (
-            @PathVariable String studentId,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "") String date
-    ){
-        try{
-            GetTestInProgress resData = testService.getTestOnSpecificDayByStudentId(studentId, date, page-1, size);
-            ResponseAPI<GetTestInProgress> res = ResponseAPI.<GetTestInProgress>builder()
-                    .timestamp(new Date())
-                    .message("Get tests on specific day successfully")
-                    .data(resData)
-                    .build();
-            return new ResponseEntity<>(res, StatusCode.OK);
-        }
-        catch (Exception e){
-            ResponseAPI<GetTestInProgress> res = ResponseAPI.<GetTestInProgress>builder()
-                    .timestamp(new Date())
-                    .message(e.getMessage())
-                    .build();
-            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
-        }
-    }
+
     @PostMapping(path = "/start")
     @PreAuthorize("hasAnyAuthority('USER')")
     public ResponseEntity<ResponseAPI<StartTestResponse>> startTest(@RequestBody @Valid CreateTestResultRequest body) {

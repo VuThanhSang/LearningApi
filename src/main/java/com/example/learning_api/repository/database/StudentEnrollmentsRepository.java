@@ -144,9 +144,7 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
                     "] }, " +
                     "{ $expr: { $eq: [?2, ''] } } " +
                     "] }, " +
-                    "{ $or: [ { 'deadlines.startDate': { $gte: ?3 } }, { $expr: { $eq: [?3, ''] } } ] }, " +
-                    "{ $or: [ { 'deadlines.endDate': { $lte: ?4 } }, { $expr: { $eq: [?4, ''] } } ] }, " +
-                    "{ $or: [ { 'deadlines.classroomId': ?5 }, { $expr: { $eq: [?5, ''] } } ] } " +
+                    "{ $or: [ { 'deadlines.classroomId': ?3 }, { $expr: { $eq: [?3, ''] } } ] } " +
                     "] } }",
             "{ $project: { " +
                     "_id: '$deadlines._id', " +
@@ -156,17 +154,15 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
                     "status: '$deadlines.status', " +
                     "startDate: '$deadlines.startDate', " +
                     "endDate: '$deadlines.endDate', " +
-                    "classroomId: '$deadlines.classroomId' " +
+                    "classroomId: '$deadlines.classroomId', " +
                     "allowLateSubmission: '$deadlines.allowLateSubmission' " +
                     "} }",
-            "{ $sort: ?6 }"  // Dynamic sort stage
+            "{ $sort: ?4 }"  // Dynamic sort stage
     })
     Slice<GetDeadlinesResponse.DeadlineResponse> getStudentDeadlines(
             String studentId,
             String status,
             String title,
-            String startDate,
-            String endDate,
             String classroomId,
             Document sort,  // MongoDB Document representing sort order
             Pageable pageable
@@ -185,9 +181,7 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
                     "] }, " +
                     "{ $expr: { $eq: [?2, ''] } } " +
                     "] }, " +
-                    "{ $or: [ { 'deadlines.startDate': { $gte: ?3 } }, { $expr: { $eq: [?3, ''] } } ] }, " +
-                    "{ $or: [ { 'deadlines.endDate': { $lte: ?4 } }, { $expr: { $eq: [?4, ''] } } ] }, " +
-                    "{ $or: [ { 'deadlines.classroomId': ?5 }, { $expr: { $eq: [?5, ''] } } ] } " +
+                    "{ $or: [ { 'deadlines.classroomId': ?3 }, { $expr: { $eq: [?3, ''] } } ] } " +
                     "] } }",
             "{ $count: 'total' }"
     })
@@ -195,8 +189,6 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
             String studentId,
             String status,
             String title,
-            String startDate,
-            String endDate,
             String classroomId
     );
 

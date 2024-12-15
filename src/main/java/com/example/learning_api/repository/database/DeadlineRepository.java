@@ -15,29 +15,6 @@ public interface DeadlineRepository extends MongoRepository<DeadlineEntity, Stri
     Page<DeadlineEntity> findAllByLessonId(String lessonId, Pageable pageable);
     @Query("{'lessonId': ?0, 'status': {$ne: 'NOT_PUBLISHED'}}")
     Page<DeadlineEntity> findAllByLessonIdForStudent(String lessonId,Pageable pageable);
-    @Query("{'teacherId': ?0, " +
-            "$and: [" +
-            "   {'title': {$regex: ?1, $options: 'i'}}," +
-            "   {'status': {$ne: 'NOT_PUBLISHED'}}," +
-            "   {$or: [" +
-            "       {$expr: {$eq: [?2, null]}}, " +
-            "       {'status': ?2}" +
-            "   ]}," +
-            "   {$or: [" +
-            "       {$expr: {$eq: [?3, null]}}, " +
-            "       {'startDate': {$gte: ?3}}" +
-            "   ]}," +
-            "   {$or: [" +
-            "       {$expr: {$eq: [?4, null]}}, " +
-            "       {'endDate': {$lte: ?4}}" +
-            "   ]}" +
-            "]}")
-    Page<DeadlineEntity> findByTeacherIdWithFilters(String teacherId,
-                                                    String search,
-                                                    String status,
-                                                    String startDate,
-                                                    String endDate,
-                                                    Pageable pageable);
 
     @Query("{'teacherId': ?0, " +
             "$and: [" +
@@ -45,51 +22,13 @@ public interface DeadlineRepository extends MongoRepository<DeadlineEntity, Stri
             "   {$or: [" +
             "       {$expr: {$eq: [?2, null]}}, " +
             "       {'status': ?2}" +
-            "   ]}," +
-            "   {$or: [" +
-            "       {$expr: {$eq: [?3, null]}}, " +
-            "       {'startDate': {$gte: ?3}}" +
-            "   ]}," +
-            "   {$or: [" +
-            "       {$expr: {$eq: [?4, null]}}, " +
-            "       {'endDate': {$lte: ?4}}" +
             "   ]}" +
             "]}")
     Page<DeadlineEntity> findByTeacherIdWithFiltersForTeacher(String teacherId,
                                                               String search,
                                                               String status,
-                                                              String startDate,
-                                                              String endDate,
                                                               Pageable pageable);
 
-    @Query("{'classroomId': {$in: db.student_enrollments.find({'studentId': ?0}).map(e => e.classroomId)}, " +
-            "$and: [" +
-            "   {'title': {$regex: ?1, $options: 'i'}}," +
-            "   {'status': {$ne: 'NOT_PUBLISHED'}}," +
-            "   {$or: [" +
-            "       {$expr: {$eq: [?2, null]}}, " +
-            "       {'status': ?2}" +
-            "   ]}," +
-            "   {$or: [" +
-            "       {$expr: {$eq: [?3, null]}}, " +
-            "       {'startDate': {$gte: ?3}}" +
-            "   ]}," +
-            "   {$or: [" +
-            "       {$expr: {$eq: [?4, null]}}, " +
-            "       {'endDate': {$lte: ?4}}" +
-            "   ]}," +
-            "   {$or: [" +
-            "       {$expr: {$eq: [?5, null]}}, " +
-            "       {'classroomId': ?5}" +
-            "   ]}" +
-            "]}")
-    Page<DeadlineEntity> findByStudentIdWithFilters(String studentId,
-                                                    String search,
-                                                    String status,
-                                                    String startDate,
-                                                    String endDate,
-                                                    String classroomId,
-                                                    Pageable pageable);
 
     @Aggregation(pipeline = {
             "{ $match: { classroomId: ?0, status: { $ne: 'NOT_PUBLISHED' } } }",
@@ -129,12 +68,5 @@ public interface DeadlineRepository extends MongoRepository<DeadlineEntity, Stri
     })
     Long countDeadlinesForClassroom(String classroomId);
 
-    @Query("{'status': {$nin: ['NOT_PUBLISHED', 'FINISHED']}, 'endDate': {$gt: ?0}}")
-    List<DeadlineEntity> findAllNotFinishedAndEndDateNotExpired(String currentDate);
-    @Query("{'status': {$ne: 'FINISHED'}, 'endDate': {$lt: ?0}}")
-    List<DeadlineEntity> findAllNotFinishedAndEndDateExpired(String currentDate);
-
-    @Query("{'teacherId': ?0, 'status' : {$ne: 'FINISHED'}, 'endDate': {$gt: ?1}}")
-    List<DeadlineEntity> findByTeacherIdAndEndDateNotExpired(String teacherId, String currentDate);
     void deleteByLessonId(String lessonId);
 }

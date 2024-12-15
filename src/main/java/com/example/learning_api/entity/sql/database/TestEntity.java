@@ -24,13 +24,10 @@ public class TestEntity {
     private String classroomId;
     private String lessonId;
     private String teacherId;
-    private String startTime;
-    private String endTime;
     private TestType type;
     private TestShowResultType showResultType;
     private TestStatus status;
     private Double passingGrade;
-    private Integer attemptLimit;
     private String createdAt;
     private String updatedAt;
 }

@@ -122,18 +122,6 @@ public class  DeadlineSubmissionsService implements IDeadlineSubmissionsService 
             }
 
             DeadlineSubmissionsEntity deadlineSubmissionsEntity = modelMapperService.mapClass(body, DeadlineSubmissionsEntity.class);
-            long endDate = Long.parseLong(deadlineEntity.getEndDate());
-            long currentTime = System.currentTimeMillis();
-
-
-            if (currentTime > endDate) {
-                if (deadlineEntity.getAllowLateSubmission() == null || !deadlineEntity.getAllowLateSubmission()) {
-                    throw new IllegalArgumentException("Deadline is over");
-                }
-                deadlineSubmissionsEntity.setIsLate(true);
-            } else {
-                deadlineSubmissionsEntity.setIsLate(false);
-            }
 
             deadlineSubmissionsEntity.setGrade("0");
             deadlineSubmissionsEntity.setStatus(DeadlineSubmissionStatus.SUBMITTED);
@@ -163,19 +151,7 @@ public class  DeadlineSubmissionsService implements IDeadlineSubmissionsService 
             if (body.getStatus() != null) {
                 deadlineSubmissionsEntity.setStatus(DeadlineSubmissionStatus.valueOf(body.getStatus()));
             }
-            DeadlineEntity deadlineEntity = deadlineRepository.findById(deadlineSubmissionsEntity.getDeadlineId()).orElse(null);
-            long endDate = Long.parseLong(deadlineEntity.getEndDate());
-            long currentTime = System.currentTimeMillis();
 
-
-            if (currentTime > endDate) {
-                if (deadlineEntity.getAllowLateSubmission() == null || !deadlineEntity.getAllowLateSubmission()) {
-                    throw new IllegalArgumentException("Deadline is over");
-                }
-                deadlineSubmissionsEntity.setIsLate(true);
-            } else {
-                deadlineSubmissionsEntity.setIsLate(false);
-            }
             processFiles(body.getFiles(), body.getTitle(), deadlineSubmissionsEntity);
             deadlineSubmissionsEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             deadlineSubmissionsRepository.save(deadlineSubmissionsEntity);
