@@ -68,6 +68,8 @@ public class LessonService implements ILessonService {
                 mediaEntity.setDescription(createLessonRequest.getDescription());
                 mediaEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
                 mediaEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+                if (classRoomEntity.getTotalVideo()==null)
+                    classRoomEntity.setTotalVideo(0);
                 classRoomEntity.setTotalVideo(classRoomEntity.getTotalVideo()+1);
                 mediaRepository.save(mediaEntity);
             }else if (createLessonRequest.getType().equals(LessonType.TEST.toString())){
@@ -88,6 +90,8 @@ public class LessonService implements ILessonService {
                 substanceEntity.setName(createLessonRequest.getName());
                 substanceEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
                 substanceEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+                if (classRoomEntity.getTotalDocument()==null)
+                    classRoomEntity.setTotalDocument(0);
                 classRoomEntity.setTotalDocument(classRoomEntity.getTotalDocument()+1);
                 substanceRepository.save(substanceEntity);
             }
@@ -100,6 +104,8 @@ public class LessonService implements ILessonService {
                 deadlineEntity.setStatus(DeadlineStatus.ONGOING);
                 deadlineEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
                 deadlineEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+                if (classRoomEntity.getTotalAssignment()==null)
+                    classRoomEntity.setTotalAssignment(0);
                 classRoomEntity.setTotalAssignment(classRoomEntity.getTotalAssignment()+1);
                 deadlineRepository.save(deadlineEntity);
             }
@@ -132,6 +138,10 @@ public class LessonService implements ILessonService {
                     classRoomEntity.setTotalVideo(classRoomEntity.getTotalVideo()-1);
                }else if (lessonEntity.getType().equals(LessonType.TEST)){
                    TestEntity testEntity = testRepository.findByLessonId(lessonEntity.getId()).get(0);
+                   if (classRoomEntity.getTotalQuiz()==null)
+                          classRoomEntity.setTotalQuiz(1);
+                   if (classRoomEntity.getTotalExam()==null)
+                          classRoomEntity.setTotalExam(1);
                    if (testEntity.getShowResultType().equals(TestShowResultType.SHOW_RESULT_IMMEDIATELY)) {
                        classRoomEntity.setTotalQuiz(classRoomEntity.getTotalQuiz()-1);
                    }else if (testEntity.getShowResultType().equals(TestShowResultType.SHOW_RESULT_AFTER_TEST)) {
@@ -140,10 +150,14 @@ public class LessonService implements ILessonService {
                      testRepository.deleteByLessonId(lessonEntity.getId());
                }
                else if (lessonEntity.getType().equals(LessonType.SUBSTANCE)) {
+                        if (classRoomEntity.getTotalDocument()==null)
+                            classRoomEntity.setTotalDocument(1);
                         substanceRepository.deleteByLessonId(lessonEntity.getId());
                         classRoomEntity.setTotalDocument(classRoomEntity.getTotalDocument()-1);
                }
                else if (lessonEntity.getType().equals(LessonType.DEADLINE)) {
+                        if (classRoomEntity.getTotalAssignment()==null)
+                            classRoomEntity.setTotalAssignment(1);
                      deadlineRepository.deleteByLessonId(lessonEntity.getId());
                         classRoomEntity.setTotalAssignment(classRoomEntity.getTotalAssignment()-1);
                }
@@ -156,6 +170,8 @@ public class LessonService implements ILessonService {
                    mediaEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
                    mediaEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
                    mediaRepository.save(mediaEntity);
+                   if (classRoomEntity.getTotalVideo()==null)
+                       classRoomEntity.setTotalVideo(0);
                    classRoomEntity.setTotalVideo(classRoomEntity.getTotalVideo()+1);
 
                }else if (lessonEntity.getType().equals(LessonType.TEST)){
@@ -169,6 +185,10 @@ public class LessonService implements ILessonService {
                    testEntity.setStatus(TestStatus.ONGOING);
                    testEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
                    testEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+                   if (classRoomEntity.getTotalQuiz()==null)
+                       classRoomEntity.setTotalQuiz(0);
+                   if (classRoomEntity.getTotalExam()==null)
+                       classRoomEntity.setTotalExam(0);
                    testRepository.save(testEntity);
 
                }else if (lessonEntity.getType().equals(LessonType.RESOURCE)) {
@@ -179,6 +199,8 @@ public class LessonService implements ILessonService {
                    resourceEntity.setCreatedAt(new Date());
                    resourceEntity.setUpdatedAt(new Date());
                    resourceRepository.save(resourceEntity);
+                   if (classRoomEntity.getTotalResource()==null)
+                       classRoomEntity.setTotalResource(0);
                    classRoomEntity.setTotalResource(classRoomEntity.getTotalResource()+1);
                }
                else if (lessonEntity.getType().equals(LessonType.SUBSTANCE)) {
@@ -188,6 +210,8 @@ public class LessonService implements ILessonService {
                    substanceEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
                    substanceEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
                    substanceRepository.save(substanceEntity);
+                   if (classRoomEntity.getTotalDocument()==null)
+                       classRoomEntity.setTotalDocument(0);
                    classRoomEntity.setTotalDocument(classRoomEntity.getTotalDocument()+1);
                }
                else if (lessonEntity.getType().equals(LessonType.DEADLINE)) {
@@ -199,6 +223,8 @@ public class LessonService implements ILessonService {
                    deadlineEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
                    deadlineEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
                    deadlineRepository.save(deadlineEntity);
+                   if (classRoomEntity.getTotalAssignment()==null)
+                       classRoomEntity.setTotalAssignment(0);
                    classRoomEntity.setTotalAssignment(classRoomEntity.getTotalAssignment()+1);
                }
            }
