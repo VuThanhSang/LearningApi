@@ -20,7 +20,6 @@ public class ClassRoomEntity {
     private String name;
     private String description;
     private String image;
-    private Integer enrollmentCapacity;
     private Integer currentEnrollment;
     private String inviteCode;
     private ClassRoomStatus status;

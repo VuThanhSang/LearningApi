@@ -112,4 +112,29 @@ public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, St
 
     @Query("{ 'categoryId': ?0, 'name': { $regex: ?1, $options: 'i' }, 'status': { $nin: [?2] } }")
     Page<ClassRoomEntity> findByCategoryAndNameContainingAndStatusNotIn(List<String> excludedIds, String categoryId, String name, String status, Pageable pageable);
+
+
+
+    @Query("{ '_id': { $nin: ?0 }, 'name': { $regex: ?1, $options: 'i' }, 'status': { $ne: 'BLOCKED' } }")
+    @Aggregation(pipeline = {
+            "{ $match: { '_id': { $nin: ?0 }, 'status': { $ne: 'BLOCKED' }, 'name': { $regex: ?1, $options: 'i' } } }",
+            "{ $sort: { 'createdAt': -1 } }",
+            "{ $skip: ?#{#pageable.offset} }",
+            "{ $limit: ?#{#pageable.pageSize} }"
+    })
+    List<ClassRoomEntity> findNewClassrooms(List<String> excludedIds, String search, Pageable pageable);
+
+
+    @Aggregation(pipeline = {
+            "{ $match: { '_id': { $nin: ?0 }, 'status': { $ne: 'BLOCKED' } } }",
+            "{ $sort: { 'currentEnrollment': -1 } }"
+    })
+    List<ClassRoomEntity> findPopularClassrooms(List<String> excludedIds, String search, String status);
+
+    @Aggregation(pipeline = {
+            "{ $match: { '_id': { $nin: ?0 }, 'status': { $ne: 'BLOCKED' }, 'name': { $regex: ?1, $options: 'i' } } }",
+            "{ $sample: { size: ?2 } }" // Lấy ngẫu nhiên một số lượng nhất định
+    })
+    List<ClassRoomEntity> findRandomClassrooms(List<String> excludedIds, String search, int sampleSize);
+
 }
