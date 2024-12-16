@@ -32,4 +32,6 @@ public interface IClassRoomService {
     GetDetailStudentInClassResponse getDetailStudentInClass(String classroomId, String studentId);
     GetClassRoomForAdminResponse getClassRoomsForAdmin( String search);
     void changeStatusClassRoom(String classroomId, String status);
+    GetClassRoomRankinResponse getClassRoomRanking(String classroomId,int page,int size,Integer rating);
+
 }

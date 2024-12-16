@@ -44,9 +44,11 @@ public class GetClassRoomsResponse {
         private Integer totalExam;
         private Integer totalDocument;
         private Integer price;
-        private List<String> categories;
+        private String categoryId;
         private String createdAt;
         private String updatedAt;
+        private Double rating;
+        private Integer totalRating;
         public static ClassRoomResponse formClassRoomEntity(ClassRoomEntity classRoomEntity){
             ClassRoomResponse classRoomResponse = new ClassRoomResponse();
             classRoomResponse.setId(classRoomEntity.getId());

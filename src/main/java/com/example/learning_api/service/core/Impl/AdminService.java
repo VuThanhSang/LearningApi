@@ -1,13 +1,8 @@
 package com.example.learning_api.service.core.Impl;
 
 import com.example.learning_api.dto.common.StudentSubmissionCountDto;
-import com.example.learning_api.dto.common.TotalTestOfDayDto;
 import com.example.learning_api.dto.request.admin.ChangeRoleRequest;
 import com.example.learning_api.dto.response.admin.*;
-import com.example.learning_api.dto.response.classroom.GetClassRoomsResponse;
-import com.example.learning_api.dto.response.classroom.TotalClassroomOfDayDto;
-import com.example.learning_api.dto.response.student.GetStudentsResponse;
-import com.example.learning_api.dto.response.teacher.GetTeachersResponse;
 import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.ForumStatus;
 import com.example.learning_api.enums.RoleEnum;
@@ -25,7 +20,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -44,6 +38,7 @@ public class AdminService implements IAdminService {
     private final StudentEnrollmentsRepository studentEnrollmentsRepository;
     private final ForumRepository forumRepository;
     private final NotificationRepository notificationRepository;
+    private final CategoryRepository categoryRepository;
     @Override
     public void changeRole(ChangeRoleRequest body) {
         try {
@@ -308,6 +303,60 @@ public class AdminService implements IAdminService {
             resData.setClassRooms(classRoomEntities);
 
             return resData;
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void createCategory(CategoryEntity category) {
+        try {
+            CategoryEntity categoryEntity = new CategoryEntity();
+            categoryEntity.setName(category.getName());
+            categoryEntity.setDescription(category.getDescription());
+            categoryEntity.setTotalClassRoom(0);
+            categoryEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+            categoryEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+            categoryRepository.save(categoryEntity);
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void updateCategory(String id, CategoryEntity name) {
+        try {
+            CategoryEntity categoryEntity = categoryRepository.findById(id).orElse(null);
+            if (categoryEntity == null) {
+                throw new IllegalArgumentException("Category not found");
+            }
+            if (name.getName() != null)
+                categoryEntity.setName(name.getName());
+            if (name.getDescription() != null)
+                categoryEntity.setDescription(name.getDescription());
+
+            categoryEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+            categoryRepository.save(categoryEntity);
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+
+    }
+
+
+    @Override
+    public void deleteCategory(String id) {
+        try {
+            categoryRepository.deleteById(id);
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public List<CategoryEntity> getCategories(String name) {
+        try {
+            return categoryRepository.findAllSortByTotalClassRoomDescAndNameContaining(name);
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }

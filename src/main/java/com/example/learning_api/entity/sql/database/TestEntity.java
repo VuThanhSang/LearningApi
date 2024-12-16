@@ -30,4 +30,6 @@ public class TestEntity {
     private Double passingGrade;
     private String createdAt;
     private String updatedAt;
+
+    private List<FileEntity> sources;
 }

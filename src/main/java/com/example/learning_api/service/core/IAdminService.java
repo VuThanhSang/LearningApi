@@ -8,6 +8,9 @@ import com.example.learning_api.dto.response.admin.GetUsersResponse;
 import com.example.learning_api.dto.response.classroom.GetClassRoomsResponse;
 import com.example.learning_api.dto.response.student.GetStudentsResponse;
 import com.example.learning_api.dto.response.teacher.GetTeachersResponse;
+import com.example.learning_api.entity.sql.database.CategoryEntity;
+
+import java.util.List;
 
 public interface IAdminService {
     void changeRole(ChangeRoleRequest body);
@@ -22,4 +25,11 @@ public interface IAdminService {
     GetUsersResponse getStudents(String search, int page, int size, String sort, String order, String status);
     GetClassRoomsAdminResponse getClassRooms(String search, int page, int size, String sort, String order, String status);
     GetUserDetailResponse getUserDetail(String userId);
+
+
+    void createCategory(CategoryEntity name);
+    void updateCategory(String id, CategoryEntity name);
+    void deleteCategory(String id);
+
+    List<CategoryEntity> getCategories(String name);
 }
