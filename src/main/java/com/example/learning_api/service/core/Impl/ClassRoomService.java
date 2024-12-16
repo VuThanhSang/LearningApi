@@ -283,13 +283,21 @@ public class ClassRoomService implements IClassRoomService {
 
 
     @Override
-    public GetClassRoomsResponse getUnregisteredClassRooms(int page, int size, String search, String studentId, String status, String category,String tag) {
+    public GetClassRoomsResponse getUnregisteredClassRooms(int page, int size, String search, String studentId, String status, String category, String tag, String order) {
         try {
             // Remove leading comma if present
             if (search != null && search.startsWith(",")) {
                 search = search.substring(1);
             }
-            Pageable pageable = PageRequest.of(page, size);
+            Sort sort = Sort.unsorted();
+            if (tag.equals("price") && order!=null){
+                if ("asc".equalsIgnoreCase(order)) {
+                    sort = Sort.by(Sort.Order.asc("price"));
+                } else {
+                    sort = Sort.by(Sort.Order.desc("price"));
+                }
+            }
+            Pageable pageable = PageRequest.of(page, size,sort);
 
             // Lấy danh sách lớp học mà sinh viên đã đăng ký
             List<String> registeredClassRoomIds = studentEnrollmentsRepository.findByStudentId(studentId).stream()
@@ -297,7 +305,9 @@ public class ClassRoomService implements IClassRoomService {
                     .collect(Collectors.toList());
 
             // Tìm lớp học chưa đăng ký
-            Page<ClassRoomEntity> unregisteredClassRooms = fetchUnregisteredClassRooms(registeredClassRoomIds, search, status, category,tag, pageable);
+            Page<ClassRoomEntity> unregisteredClassRooms = fetchUnregisteredClassRooms(
+                    registeredClassRoomIds, search, status, category, tag, pageable, order
+            );
 
             // Map dữ liệu sang DTO
             List<GetClassRoomsResponse.ClassRoomResponse> resData = unregisteredClassRooms.stream().map(classRoom -> {
@@ -327,31 +337,56 @@ public class ClassRoomService implements IClassRoomService {
             String status,
             String category,
             String tag,
-            Pageable pageable
+            Pageable pageable,
+            String order
     ) {
+        // Xử lý tag
         if (tag != null && !tag.isEmpty()) {
-            int pageSize = pageable.getPageSize();
-            int pageNumber = pageable.getPageNumber();
-            int skip = (int) pageable.getOffset();
-
+            if (category != null && !category.isEmpty()) {
+                if ("popular".equalsIgnoreCase(tag)) {
+                    List<ClassRoomEntity> popularClassrooms = classRoomRepository.findPopularClassroomsByCategory(
+                            registeredClassRoomIds, category, search, status);
+                    return createPageFromList(popularClassrooms, pageable);
+                } else if ("new".equalsIgnoreCase(tag)) {
+                    List<ClassRoomEntity> newClassrooms = classRoomRepository.findNewClassroomsByCategory(
+                            registeredClassRoomIds, category, search, pageable);
+                    return createPageFromList(newClassrooms, pageable);
+                }else if("price".equalsIgnoreCase(tag)){
+                    boolean ascending = "asc".equalsIgnoreCase(order);
+                    List<ClassRoomEntity> priceSortedClassrooms = classRoomRepository.findByCategoryAndSortByPrice(
+                            category, registeredClassRoomIds, search, pageable, ascending
+                    );
+                    return createPageFromList(priceSortedClassrooms, pageable);
+                }else {
+                    int sampleSize = pageable.getPageSize() * (pageable.getPageNumber() + 1);
+                    List<ClassRoomEntity> randomClassrooms = classRoomRepository.findRandomClassroomsByCategory(
+                            registeredClassRoomIds, category, search, sampleSize);
+                    return createPageFromList(randomClassrooms, pageable);
+                }
+            }
             if ("popular".equalsIgnoreCase(tag)) {
-                // Fetch popular classrooms
                 List<ClassRoomEntity> popularClassrooms = classRoomRepository.findPopularClassrooms(registeredClassRoomIds, search, status);
                 return createPageFromList(popularClassrooms, pageable);
             } else if ("new".equalsIgnoreCase(tag)) {
-                // Fetch new classrooms
                 List<ClassRoomEntity> newClassrooms = classRoomRepository.findNewClassrooms(registeredClassRoomIds, search, pageable);
                 return createPageFromList(newClassrooms, pageable);
+            } else if ("price".equalsIgnoreCase(tag)) {
+                // Fetch classrooms sorted by price
+                List<ClassRoomEntity> priceSortedClassrooms = classRoomRepository.findByAndSortByPrice(
+                        registeredClassRoomIds, search, pageable
+                );
+                return createPageFromList(priceSortedClassrooms, pageable);
+
             } else {
-                // Fetch random classrooms
-                int sampleSize = pageSize * (pageNumber + 1); // Tăng sample size để phù hợp với skip và limit
+                int sampleSize = pageable.getPageSize() * (pageable.getPageNumber() + 1);
                 List<ClassRoomEntity> randomClassrooms = classRoomRepository.findRandomClassrooms(
                         registeredClassRoomIds, search, sampleSize);
                 return createPageFromList(randomClassrooms, pageable);
             }
         }
+
+        // Xử lý kết hợp tag với category
         if (category != null && !category.isEmpty()) {
-            // Filter by category
             if (status != null) {
                 return classRoomRepository.findByCategoryAndNameContainingAndStatusNotIn(
                         registeredClassRoomIds, category, search, status, pageable
@@ -362,7 +397,6 @@ public class ClassRoomService implements IClassRoomService {
                 );
             }
         } else {
-            // Default behavior (no tag or category)
             if (status != null) {
                 return classRoomRepository.findByIdNotInAndNameContainingAndStatus(
                         registeredClassRoomIds, search, status, pageable
@@ -374,6 +408,7 @@ public class ClassRoomService implements IClassRoomService {
             }
         }
     }
+
     private Page<ClassRoomEntity> createPageFromList(List<ClassRoomEntity> data, Pageable pageable) {
         int start = (int) pageable.getOffset();
         int end = Math.min(start + pageable.getPageSize(), data.size());

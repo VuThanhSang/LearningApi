@@ -78,3 +78,16 @@ server:
 google:
   api:
     key: ${GOOGLE_API_KEY}
+payment:
+  vnPay:
+    url: ${PAY_URL}
+    tmnCode: ${TMN_CODE}
+    secretKey: ${SECRET_KEY}
+    returnUrl: ${RETURN_URL}
+    version: ${VERSION}
+    command: ${COMMAND}
+    orderType: ${ORDER_TYPE}
+
+client:
+  url:
+    payment-status: "http://localhost:3000/student/success-payment"

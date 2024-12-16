@@ -160,6 +160,7 @@ public class ClassRoomController {
             @RequestParam(name="status",required = false,defaultValue = "") String status,
             @RequestParam(name="category",required = false,defaultValue = "") String category,
             @RequestParam(name="tag",required = false,defaultValue = "") String tag,
+            @RequestParam(name="order",required = false,defaultValue = "") String order,
             @RequestHeader(name = "Authorization") String authorizationHeader) {
         try{
             String token = authorizationHeader.replace("Bearer ", "");
@@ -178,7 +179,7 @@ public class ClassRoomController {
             if (status.equals("")){
                 status =null;
             }
-            GetClassRoomsResponse resData = classRoomService.getUnregisteredClassRooms( page-1, size,search,callId,status,category,tag);
+            GetClassRoomsResponse resData = classRoomService.getUnregisteredClassRooms( page-1, size,search,callId,status,category,tag,order);
             ResponseAPI<GetClassRoomsResponse> res = ResponseAPI.<GetClassRoomsResponse>builder()
                     .timestamp(new Date())
                     .message("Get class room successfully")
@@ -542,7 +543,6 @@ public class ClassRoomController {
 
 
     @GetMapping(path = "/{classroomId}/student/{studentId}")
-    @PreAuthorize("hasAnyAuthority('TEACHER')")
     public ResponseEntity<ResponseAPI<GetDetailStudentInClassResponse>> removeStudentFromClass(@PathVariable String classroomId,
                                                                       @PathVariable String studentId) {
         try {

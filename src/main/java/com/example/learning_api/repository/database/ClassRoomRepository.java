@@ -88,7 +88,7 @@ public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, St
 
     @Query("{ 'teacherId' : ?0, 'status': { $ne: 'BLOCKED' } }")
     Page<ClassRoomEntity> findByTeacherId(String teacherId, Pageable pageable);
-
+    List<ClassRoomEntity> findByTeacherId(String teacherId);
     @Query("{ '_id' : { $in: ?0 }, 'categoryId' : ?1, 'name' : { $regex: ?2, $options: 'i' }, 'status': { $ne: 'BLOCKED' } }")
     Page<ClassRoomEntity> findByCategoryAndNameContaining(List<String> classroomIds, String categoryId, String search, Pageable pageable);
 
@@ -136,5 +136,37 @@ public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, St
             "{ $sample: { size: ?2 } }" // Lấy ngẫu nhiên một số lượng nhất định
     })
     List<ClassRoomEntity> findRandomClassrooms(List<String> excludedIds, String search, int sampleSize);
+    @Aggregation(pipeline = {
+            "{ $match: { '_id': { $nin: ?0 }, 'categoryId': ?1, 'status': { $ne: 'BLOCKED' }, 'name': { $regex: ?2, $options: 'i' } } }",
+            "{ $sort: { 'currentEnrollment': -1 } }"
+    })
+    List<ClassRoomEntity> findPopularClassroomsByCategory(List<String> excludedIds, String categoryId, String search, String status);
+
+    @Aggregation(pipeline = {
+            "{ $match: { '_id': { $nin: ?0 }, 'categoryId': ?1, 'status': { $ne: 'BLOCKED' }, 'name': { $regex: ?2, $options: 'i' } } }",
+            "{ $sort: { 'createdAt': -1 } }",
+            "{ $skip: ?#{#pageable.offset} }",
+            "{ $limit: ?#{#pageable.pageSize} }"
+    })
+    List<ClassRoomEntity> findNewClassroomsByCategory(List<String> excludedIds, String categoryId, String search, Pageable pageable);
+
+    @Aggregation(pipeline = {
+            "{ $match: { '_id': { $nin: ?0 }, 'categoryId': ?1, 'status': { $ne: 'BLOCKED' }, 'name': { $regex: ?2, $options: 'i' } } }",
+            "{ $sample: { size: ?3 } }"
+    })
+    List<ClassRoomEntity> findRandomClassroomsByCategory(List<String> excludedIds, String categoryId, String search, int sampleSize);
+    @Aggregation(pipeline = {
+            "{ $match: { category: ?0, name: { $regex: ?1, $options: 'i' }, classroomId: { $nin: ?2 } } }",
+            "{ $sort: { price: ?4 } }",
+            "{ $skip: ?3 }",  // ?3 is for offset
+            "{ $limit: ?5 }"   // ?5 is for page size
+    })
+    public List<ClassRoomEntity> findByCategoryAndSortByPrice(
+            String category, List<String> registeredClassRoomIds, String search, Pageable pageable, boolean ascending);
+
+    @Aggregation(pipeline = {
+            "{ $match: { '_id': { $nin: ?0 }, 'status': { $ne: 'BLOCKED' }, 'name': { $regex: ?1, $options: 'i' } } }",
+    })
+    List<ClassRoomEntity> findByAndSortByPrice(List<String> registeredClassRoomIds, String search, Pageable pageable);
 
 }
