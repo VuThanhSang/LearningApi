@@ -27,8 +27,9 @@ public interface TestRepository extends MongoRepository<TestEntity, String> {
     @Query("{'classroomId': ?0}")
     List<TestEntity> findAllByClassroomId(String classroomId);
 
+    @Query("{'lessonId': ?0, 'showResultType': ?1}")
+    List<TestEntity> findByLessonIdAndShowResultType(String lessonId, String showResultType);
 
-    List<TestEntity> findByLessonId(String lessonId);
+    void deleteByLessonId(String classroomId, String showResultType);
 
-    void deleteByLessonId(String classroomId);
 }

@@ -57,6 +57,7 @@ public class SectionService implements ISectionService {
                     .findFirst()
                     .map(SectionEntity::getIndex)
                     .orElse(-1) + 1; // Trả về 1 nếu không có section hoặc trả về index hiện tại + 1
+
             sectionEntity.setIndex(index);
             sectionEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
             sectionEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));

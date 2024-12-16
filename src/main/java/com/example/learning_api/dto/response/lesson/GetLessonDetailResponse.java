@@ -17,7 +17,8 @@ public class GetLessonDetailResponse {
     private List<MediaEntity> media;
     private List<SubstanceEntity> substances;
     private List<DeadlineEntity> deadlines;
-    private List<TestEntity> tests;
+    private List<TestEntity> quizzes ;
+    private List<TestEntity> exams;
     private Boolean isComplete;
     private String type;
     private Boolean canAccess;
