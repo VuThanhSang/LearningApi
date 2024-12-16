@@ -10,6 +10,7 @@ import com.example.learning_api.dto.response.question.GetQuestionsResponse;
 import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.FileOwnerType;
 import com.example.learning_api.enums.QuestionType;
+import com.example.learning_api.enums.TestShowResultType;
 import com.example.learning_api.model.CustomException;
 import com.example.learning_api.repository.database.AnswerRepository;
 import com.example.learning_api.repository.database.FileRepository;
@@ -45,6 +46,7 @@ public class QuestionService implements IQuestionService {
     private final CloudinaryService cloudinaryService;
     private final AnswerRepository answerRepository;
     private final FileRepository fileRepository;
+    private final TestService testService;
     public void progressSources(List<MultipartFile> sources, String content, FileEntity fileEntity, QuestionEntity questionEntity){
         if (sources == null) {
             return;
@@ -215,5 +217,27 @@ public class QuestionService implements IQuestionService {
         catch (Exception e){
             throw new IllegalArgumentException(e.getMessage());
         }
+    }
+
+    @Override
+    public List<GetQuestionsResponse.QuestionResponse> getQuestionsByTestId(String testId, String role) {
+        TestEntity testEntity = testRepository.findById(testId)
+                .orElseThrow(() -> new IllegalArgumentException("Test not found"));
+        List<GetQuestionsResponse.QuestionResponse> questionResponses = testService.getQuestionResponses(testId);
+        String showType = testEntity.getShowResultType().toString();
+        if (role.equals("TEACHER"))
+            showType = TestShowResultType.SHOW_RESULT_IMMEDIATELY.name();
+        if (testEntity.getShowResultType() == null || !showType.equals(TestShowResultType.SHOW_RESULT_IMMEDIATELY.name())) {
+            for (GetQuestionsResponse.QuestionResponse questionResponse : questionResponses) {
+                questionResponse.setSources(fileRepository.findByOwnerIdAndOwnerType(questionResponse.getId(), FileOwnerType.QUESTION.name())
+                );
+                List<GetQuestionsResponse.AnswerResponse> answerResponses = questionResponse.getAnswers();
+                for (GetQuestionsResponse.AnswerResponse answerResponse : answerResponses) {
+                    answerResponse.setSource(fileRepository.findByOwnerIdAndOwnerType(answerResponse.getId(), FileOwnerType.ANSWER.name()).stream().findFirst().orElse(null));
+                }
+                questionResponse.setAnswers(answerResponses);
+            }
+        }
+        return questionResponses;
     }
 }

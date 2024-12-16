@@ -5,9 +5,12 @@ import com.example.learning_api.enums.DeadlineType;
 import jakarta.persistence.Id;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.io.File;
 import java.util.Date;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -25,5 +28,6 @@ public class DeadlineEntity {
     private Boolean useScoringCriteria;
     private String createdAt;
     private String updatedAt;
-
+    @DBRef
+    private List<FileEntity> files;
 }

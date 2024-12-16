@@ -249,14 +249,7 @@ public class TestService implements ITestService {
 
             if (body.getShowResultType()!=null){
                 testEntity.setShowResultType(TestShowResultType.valueOf(body.getShowResultType()));
-                ClassRoomEntity classRoomEntity = classRoomRepository.findById(testEntity.getClassroomId()).orElse(null);
-                if (classRoomEntity != null) {
-                    if (testEntity.getShowResultType().equals(TestShowResultType.SHOW_RESULT_IMMEDIATELY)) {
-                        classRoomEntity.setTotalQuiz(classRoomEntity.getTotalQuiz() + 1);
-                    } else if (testEntity.getShowResultType().equals(TestShowResultType.SHOW_RESULT_AFTER_TEST)) {
-                        classRoomEntity.setTotalQuiz(classRoomEntity.getTotalQuiz() + 1);
-                    }
-                }
+
             }
             if(body.getStatus()!=null){
                 testEntity.setStatus(TestStatus.valueOf(body.getStatus()));
@@ -543,7 +536,7 @@ public class TestService implements ITestService {
         response.setId(testEntity.getId());
         response.setName(testEntity.getName());
         response.setDescription(testEntity.getDescription());
-        response.setDuration(testEntity.getDuration());
+        response.setDuration(testEntity.getDuration()!=null?testEntity.getDuration():0);
         if (fileEntity == null) {
             response.setSource(null);
         } else {
@@ -556,17 +549,16 @@ public class TestService implements ITestService {
         return response;
     }
 
-    private List<GetQuestionsResponse.QuestionResponse> getQuestionResponses(String testId) {
+    public List<GetQuestionsResponse.QuestionResponse> getQuestionResponses(String testId) {
         List<QuestionEntity> questionEntities = questionRepository.findByTestId(testId, Sort.by(Sort.Direction.ASC, "index"));
-        return questionEntities.stream()
+        return questionEntities.parallelStream()
                 .map(this::mapQuestionEntityToResponse)
                 .collect(Collectors.toList());
     }
 
     private GetQuestionsResponse.QuestionResponse mapQuestionEntityToResponse(QuestionEntity questionEntity) {
         GetQuestionsResponse.QuestionResponse questionResponse = modelMapperService.mapClass(questionEntity, GetQuestionsResponse.QuestionResponse.class);
-        questionResponse.setSources(fileRepository.findByOwnerIdAndOwnerType(questionEntity.getId(), FileOwnerType.QUESTION.name())
-                );
+        questionResponse.setSources(fileRepository.findByOwnerIdAndOwnerType(questionEntity.getId(), FileOwnerType.QUESTION.name()));
 
         List<GetQuestionsResponse.AnswerResponse> answerResponses = getAnswerResponses(questionEntity);
         questionResponse.setAnswers(answerResponses);
@@ -574,9 +566,8 @@ public class TestService implements ITestService {
     }
 
     private List<GetQuestionsResponse.AnswerResponse> getAnswerResponses(QuestionEntity question) {
-
         List<AnswerEntity> answerEntities = answerRepository.findByQuestionId(question.getId());
-        return answerEntities.stream()
+        return answerEntities.parallelStream()
                 .map(this::mapAnswerEntityToResponse)
                 .collect(Collectors.toList());
     }
@@ -584,11 +575,10 @@ public class TestService implements ITestService {
     private GetQuestionsResponse.AnswerResponse mapAnswerEntityToResponse(AnswerEntity answerEntity) {
         GetQuestionsResponse.AnswerResponse answerResponse = modelMapperService.mapClass(answerEntity, GetQuestionsResponse.AnswerResponse.class);
         answerResponse.setIsCorrect(answerEntity.getIsCorrect());
-        if (answerEntity.getId()!=null)
+        if (answerEntity.getId() != null)
             answerResponse.setSource(fileRepository.findByOwnerIdAndOwnerType(answerEntity.getId(), FileOwnerType.ANSWER.name()).stream().findFirst().orElse(null));
         return answerResponse;
     }
-
 
     @Override
     public GetTestsResponse getTestsByClassroomId(int page, int size, String classroomId, String role) {
@@ -694,7 +684,11 @@ public class TestService implements ITestService {
                 return resData;
             }
             TestEntity testEntity = testRepository.findById(testId).orElseThrow(() -> new IllegalArgumentException("Test does not exist"));
-            if (System.currentTimeMillis() - Long.parseLong(testResultEntity.getAttendedAt()) > testEntity.getDuration()  * 1000) {
+            Integer duration = testEntity.getDuration();
+            if (duration==null){
+                duration=999999999;
+            }
+            if (System.currentTimeMillis() - Long.parseLong(testResultEntity.getAttendedAt()) > duration  * 1000) {
                 TestSubmitRequest data= convertToTestSubmitRequest(testResultEntity,studentId);
                 submitTest(data);
                 GetTestProgressResponse resData = new GetTestProgressResponse();
@@ -1206,6 +1200,14 @@ public class TestService implements ITestService {
             progressService.markLessonAsCompleted(progressCompleteRequest);
         }
         return response;
+    }
+
+
+    void deleteTestByLessonId(String lessonId,String showResultType) {
+        List<TestEntity> testEntities = testRepository.findByLessonIdAndShowResultType(lessonId,showResultType);
+        for (TestEntity testEntity : testEntities) {
+            deleteTest(testEntity.getId());
+        }
     }
 
 }
