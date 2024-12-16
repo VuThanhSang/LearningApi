@@ -1,5 +1,6 @@
 package com.example.learning_api.module.vnpay;
 
+import com.example.learning_api.dto.response.cart.PaymentsResponse;
 import com.example.learning_api.entity.sql.database.ClassRoomEntity;
 import com.example.learning_api.entity.sql.database.StudentEnrollmentsEntity;
 import com.example.learning_api.entity.sql.database.StudentEntity;
@@ -74,5 +75,29 @@ public class PaymentService {
                 .message("success")
                 .paymentUrl(paymentUrl).build();
     }
+
+
+    public PaymentsResponse getPaymentStatus(String transactionRef) {
+        List<TransactionEntity> transactionEntities = paymentRepository.findByTransactionRef(transactionRef);
+        long amountPaid = 0;
+        for (TransactionEntity transactionEntity : transactionEntities) {
+            amountPaid += transactionEntity.getAmount();
+        }
+        List<ClassRoomEntity> classRooms = new ArrayList<>();
+        for (TransactionEntity transactionEntity : transactionEntities) {
+            ClassRoomEntity classRoomEntity = classRoomRepository.findById(transactionEntity.getClassroomId()).orElse(null);
+            if (classRoomEntity != null) {
+                classRooms.add(classRoomEntity);
+            }
+        }
+        PaymentsResponse paymentsResponse = new PaymentsResponse();
+        paymentsResponse.setAmountPaid(amountPaid);
+        paymentsResponse.setClassRooms(classRooms);
+        paymentsResponse.setPaymentMethod("VNPay");
+        paymentsResponse.setTransactionRef(transactionRef);
+        paymentsResponse.setDate(new Date().toString());
+        return paymentsResponse;
+    }
+
 
 }
