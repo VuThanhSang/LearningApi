@@ -516,7 +516,6 @@ public class ClassRoomController {
 
 
     @GetMapping(path = "/{classroomId}/students")
-    @PreAuthorize("hasAnyAuthority('TEACHER')")
     public ResponseEntity<ResponseAPI<GetStudentInClassResponse>> getStudentsByClassroomId(@PathVariable String classroomId,
                                                                                      @RequestParam(name="page",required = false,defaultValue = "1") int page,
                                                                                      @RequestParam(name="size",required = false,defaultValue = "10") int size,

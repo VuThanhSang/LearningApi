@@ -2,11 +2,15 @@ package com.example.learning_api.service.core.Impl;
 
 import com.example.learning_api.dto.request.student.CreateStudentRequest;
 import com.example.learning_api.dto.request.student.UpdateStudentRequest;
+import com.example.learning_api.dto.response.cart.GetPaymentForStudent;
 import com.example.learning_api.dto.response.student.CreateStudentResponse;
 import com.example.learning_api.dto.response.student.GetStudentsResponse;
 import com.example.learning_api.entity.sql.database.StudentEntity;
+import com.example.learning_api.entity.sql.database.TransactionEntity;
 import com.example.learning_api.entity.sql.database.UserEntity;
+import com.example.learning_api.repository.database.ClassRoomRepository;
 import com.example.learning_api.repository.database.StudentRepository;
+import com.example.learning_api.repository.database.TransactionRepository;
 import com.example.learning_api.repository.database.UserRepository;
 import com.example.learning_api.service.common.ModelMapperService;
 import com.example.learning_api.service.core.IStudentService;
@@ -28,6 +32,8 @@ public class StudentService implements IStudentService {
     private final ModelMapperService modelMapperService;
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
+    private final ClassRoomRepository classRoomRepository;
+    private final TransactionRepository transactionRepository;
 
     @Override
     public CreateStudentResponse createStudent(CreateStudentRequest body) {
@@ -121,6 +127,34 @@ public class StudentService implements IStudentService {
     public StudentEntity getStudentByUserId(String userId) {
         try{
             return studentRepository.findByUserId(userId);
+        }
+        catch (Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public GetPaymentForStudent getPaymentForStudent(String userId, int page, int size) {
+        try {
+            StudentEntity studentEntity = studentRepository.findByUserId(userId);
+            if (studentEntity == null) {
+                throw new IllegalArgumentException("Student not found");
+            }
+            Pageable pageable = PageRequest.of(page, size);
+            Page<TransactionEntity> transactionEntities = transactionRepository.findByUserId(userId, pageable);
+            List<GetPaymentForStudent.Transaction> transactions = new ArrayList<>();
+            for (TransactionEntity transactionEntity : transactionEntities) {
+                GetPaymentForStudent.Transaction transaction = modelMapperService.mapClass(transactionEntity, GetPaymentForStudent.Transaction.class);
+                transaction.setClassroom(classRoomRepository.findById(transactionEntity.getClassroomId()).get());
+                transactions.add(transaction);
+            }
+            GetPaymentForStudent resData = new GetPaymentForStudent();
+            resData.setTotalPrice(transactionEntities.stream().mapToLong(TransactionEntity::getAmount).sum());
+            resData.setTotalClassroom(transactionEntities.stream().map(TransactionEntity::getClassroomId).distinct().count());
+            resData.setTotalElement(transactionEntities.getTotalElements());
+            resData.setTotalPage(transactionEntities.getTotalPages());
+            resData.setTransactions(transactions);
+            return resData;
         }
         catch (Exception e){
             throw new IllegalArgumentException(e.getMessage());

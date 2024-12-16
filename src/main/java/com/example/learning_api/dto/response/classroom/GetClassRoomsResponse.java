@@ -2,6 +2,7 @@ package com.example.learning_api.dto.response.classroom;
 
 
 import com.example.learning_api.entity.sql.database.ClassRoomEntity;
+import com.example.learning_api.entity.sql.database.UserEntity;
 import com.example.learning_api.enums.ClassRoomStatus;
 import lombok.Data;
 
@@ -48,6 +49,7 @@ public class GetClassRoomsResponse {
         private String updatedAt;
         private Double rating;
         private Integer totalRating;
+        private UserEntity user;
         public static ClassRoomResponse formClassRoomEntity(ClassRoomEntity classRoomEntity){
             ClassRoomResponse classRoomResponse = new ClassRoomResponse();
             classRoomResponse.setId(classRoomEntity.getId());

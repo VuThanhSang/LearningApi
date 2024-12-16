@@ -5,6 +5,7 @@ import com.example.learning_api.dto.response.admin.GetAdminDashboardResponse;
 import com.example.learning_api.dto.response.admin.GetClassRoomsAdminResponse;
 import com.example.learning_api.dto.response.admin.GetUserDetailResponse;
 import com.example.learning_api.dto.response.admin.GetUsersResponse;
+import com.example.learning_api.dto.response.cart.GetPaymentForTeacher;
 import com.example.learning_api.dto.response.classroom.GetClassRoomsResponse;
 import com.example.learning_api.dto.response.student.GetStudentsResponse;
 import com.example.learning_api.dto.response.teacher.GetTeachersResponse;
@@ -32,4 +33,7 @@ public interface IAdminService {
     void deleteCategory(String id);
 
     List<CategoryEntity> getCategories(String name);
+
+
+    GetPaymentForTeacher getPaymentForAdmin( int page, int size, String sort, String order, String status );
 }

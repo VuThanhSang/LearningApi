@@ -3,6 +3,7 @@ package com.example.learning_api.service.core.Impl;
 import com.example.learning_api.dto.request.deadline.GetUpcomingDeadlineResponse;
 import com.example.learning_api.dto.request.teacher.CreateTeacherRequest;
 import com.example.learning_api.dto.request.teacher.UpdateTeacherRequest;
+import com.example.learning_api.dto.response.cart.GetPaymentForTeacher;
 import com.example.learning_api.dto.response.deadline.UpcomingDeadlinesResponse;
 import com.example.learning_api.dto.response.teacher.CreateTeacherResponse;
 import com.example.learning_api.dto.response.teacher.GetTeachersResponse;
@@ -38,6 +39,7 @@ public class TeacherService implements ITeacherService {
     private final ClassRoomRepository classroomRepository;
     private final ReviewRepository reviewRepository;
     private final TransactionRepository transactionRepository;
+    private final StudentRepository studentRepository;
     @Override
     public CreateTeacherResponse createTeacher(CreateTeacherRequest body) {
         try{
@@ -225,6 +227,44 @@ public class TeacherService implements ITeacherService {
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }
+    }
+
+    @Override
+    public GetPaymentForTeacher getPaymentForTeacher(String teacherId, int page, int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            List<ClassRoomEntity> classRoomEntities = classroomRepository.findByTeacherId(teacherId);
+            List<String> classroomIds = new ArrayList<>();
+            for (ClassRoomEntity classRoomEntity : classRoomEntities) {
+                classroomIds.add(classRoomEntity.getId());
+            }
+            Page<TransactionEntity> transactionEntities = transactionRepository.findByClassroomIdIn(classroomIds, pageable);
+            GetPaymentForTeacher resData = new GetPaymentForTeacher();
+            List<GetPaymentForTeacher.Transaction> transactions = new ArrayList<>();
+            for (TransactionEntity transactionEntity : transactionEntities) {
+                GetPaymentForTeacher.Transaction transaction = modelMapperService.mapClass(transactionEntity, GetPaymentForTeacher.Transaction.class);
+                UserEntity userEntity = userRepository.findById(transactionEntity.getUserId())
+                        .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                StudentEntity studentEntity = studentRepository.findByUserId(userEntity.getId());
+                studentEntity.setUser(null);
+                userEntity.setStudent(studentEntity);
+                transaction.setUser(userEntity);
+                ClassRoomEntity classRoomEntity = classroomRepository.findById(transactionEntity.getClassroomId())
+                        .orElseThrow(() -> new IllegalArgumentException("Classroom not found"));
+                transaction.setClassroom(classRoomEntity);
+                transactions.add(transaction);
+            }
+            resData.setTransactions(transactions);
+            resData.setTotalClassroom(transactionEntities.getTotalElements());
+            resData.setTotalElement((long) transactionEntities.getTotalPages());
+            resData.setTotalPage(transactionEntities.getTotalPages());
+            resData.setTotalPrice(transactionEntities.stream().mapToLong(TransactionEntity::getAmount).sum());
+            return resData;
+        }
+        catch (Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
+
     }
 
 

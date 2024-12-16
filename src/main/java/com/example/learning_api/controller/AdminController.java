@@ -6,6 +6,7 @@ import com.example.learning_api.dto.response.admin.GetAdminDashboardResponse;
 import com.example.learning_api.dto.response.admin.GetClassRoomsAdminResponse;
 import com.example.learning_api.dto.response.admin.GetUserDetailResponse;
 import com.example.learning_api.dto.response.admin.GetUsersResponse;
+import com.example.learning_api.dto.response.cart.GetPaymentForTeacher;
 import com.example.learning_api.dto.response.classroom.GetClassRoomForAdminResponse;
 import com.example.learning_api.dto.response.forum.GetForumsResponse;
 import com.example.learning_api.entity.sql.database.CategoryEntity;
@@ -313,6 +314,30 @@ public class AdminController {
         }
     }
 
+    @GetMapping(path = "/transaction")
+    public ResponseEntity<ResponseAPI<GetPaymentForTeacher>> getPaymentForAdmin(@RequestParam(value = "page", defaultValue = "1") int page,
+                                                                                @RequestParam(value = "size", defaultValue = "10") int size,
+                                                                                @RequestParam(value = "sort", defaultValue = "createdAt") String sort,
+                                                                                @RequestParam(value = "order", defaultValue = "desc") String order,
+                                                                                @RequestParam(value = "status", defaultValue = "") String status) {
+        try{
+            GetPaymentForTeacher data = adminService.getPaymentForAdmin(page-1, size, sort, order, status);
+            ResponseAPI<GetPaymentForTeacher> res = ResponseAPI.<GetPaymentForTeacher>builder()
+                    .timestamp(new Date())
+                    .data(data)
+                    .message("Get payment for admin successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetPaymentForTeacher> res = ResponseAPI.<GetPaymentForTeacher>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
 
     @PostMapping(path = "/category")
     public ResponseEntity<ResponseAPI<String>> createCategory(@RequestBody @Valid CategoryEntity body) {
@@ -370,4 +395,5 @@ public class AdminController {
             return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
         }
     }
+
 }

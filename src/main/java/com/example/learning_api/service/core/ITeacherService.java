@@ -3,6 +3,7 @@ package com.example.learning_api.service.core;
 import com.example.learning_api.dto.request.deadline.GetUpcomingDeadlineResponse;
 import com.example.learning_api.dto.request.teacher.CreateTeacherRequest;
 import com.example.learning_api.dto.request.teacher.UpdateTeacherRequest;
+import com.example.learning_api.dto.response.cart.GetPaymentForTeacher;
 import com.example.learning_api.dto.response.teacher.CreateTeacherResponse;
 import com.example.learning_api.dto.response.teacher.GetTeachersResponse;
 import com.example.learning_api.dto.response.teacher.TeacherDashboardResponse;
@@ -17,5 +18,5 @@ public interface ITeacherService {
     void addSubjectSpecialization(String teacherId, String majorId);
     TeacherEntity getTeacherByUserId(String teacherId);
     TeacherDashboardResponse getTeacherDashboard(String teacherId);
-
+    GetPaymentForTeacher getPaymentForTeacher(String teacherId, int page, int size);
 }
