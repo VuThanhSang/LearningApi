@@ -6,6 +6,7 @@ import com.example.learning_api.dto.request.teacher.UpdateTeacherRequest;
 import com.example.learning_api.dto.response.deadline.UpcomingDeadlinesResponse;
 import com.example.learning_api.dto.response.teacher.CreateTeacherResponse;
 import com.example.learning_api.dto.response.teacher.GetTeachersResponse;
+import com.example.learning_api.dto.response.teacher.TeacherDashboardResponse;
 import com.example.learning_api.dto.response.test.GetTestInProgress;
 import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.TeacherStatus;
@@ -33,6 +34,10 @@ public class TeacherService implements ITeacherService {
     private final MajorsRepository majorsRepository;
     private final DeadlineRepository deadlineRepository;
     private final TestRepository testRepository;
+    private final StudentEnrollmentsRepository studentEnrollmentsRepository;
+    private final ClassRoomRepository classroomRepository;
+    private final ReviewRepository reviewRepository;
+    private final TransactionRepository transactionRepository;
     @Override
     public CreateTeacherResponse createTeacher(CreateTeacherRequest body) {
         try{
@@ -158,6 +163,66 @@ public class TeacherService implements ITeacherService {
             return teacherRepository.findByUserId(teacherId);
         }
         catch (Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+    @Override
+    public TeacherDashboardResponse getTeacherDashboard(String teacherId) {
+        try {
+            TeacherDashboardResponse resData = new TeacherDashboardResponse();
+            List<ClassRoomEntity> classRoomEntities = classroomRepository.findByTeacherId(teacherId);
+            resData.setTotalClasses(classRoomEntities.size());
+            List<String> classroomIds = new ArrayList<>();
+            for (ClassRoomEntity classRoomEntity : classRoomEntities) {
+                classroomIds.add(classRoomEntity.getId());
+            }
+            List<StudentEnrollmentsEntity> studentEnrollmentsEntities = studentEnrollmentsRepository.findByClassroomIdIn(classroomIds);
+            resData.setTotalStudents(studentEnrollmentsEntities.size());
+            List<TransactionEntity> transactionEntities = transactionRepository.findByClassroomIdIn(classroomIds);
+            int totalRevenue = 0;
+            for (TransactionEntity transactionEntity : transactionEntities) {
+                totalRevenue += transactionEntity.getAmount();
+            }
+            resData.setTotalRevenue(totalRevenue);
+            List<ReviewEntity> reviewEntities = reviewRepository.findByClassroomIdIn(classroomIds);
+            int totalRating = 0;
+            for (ReviewEntity reviewEntity : reviewEntities) {
+                totalRating += reviewEntity.getRating();
+            }
+            resData.setAverageRating((double) totalRating / reviewEntities.size());
+            List<TeacherDashboardResponse.RecentSales> recentSales = new ArrayList<>();
+            List<TeacherDashboardResponse.Review> reviews = new ArrayList<>();
+            for (TransactionEntity transactionEntity : transactionEntities) {
+                TeacherDashboardResponse.RecentSales recentSale = new TeacherDashboardResponse.RecentSales();
+                UserEntity userEntity = userRepository.findById(transactionEntity.getUserId())
+                        .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                ClassRoomEntity classRoomEntity = classroomRepository.findById(transactionEntity.getClassroomId())
+                        .orElseThrow(() -> new IllegalArgumentException("Classroom not found"));
+                recentSale.setStudentName(userEntity.getFullname());
+                recentSale.setStudentAvatar(userEntity.getAvatar());
+                recentSale.setClassName(classRoomEntity.getName());
+                recentSale.setClassroomId(transactionEntity.getClassroomId());
+                recentSale.setPrice(Math.toIntExact(transactionEntity.getAmount()));
+                recentSales.add(recentSale);
+            }
+            for (ReviewEntity reviewEntity : reviewEntities) {
+                UserEntity userEntity = userRepository.findById(reviewEntity.getUserId())
+                        .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                ClassRoomEntity classRoomEntity = classroomRepository.findById(reviewEntity.getClassroomId())
+                        .orElseThrow(() -> new IllegalArgumentException("Classroom not found"));
+                TeacherDashboardResponse.Review review = new TeacherDashboardResponse.Review();
+                review.setStudentName(userEntity.getFullname());
+                review.setStudentAvatar(userEntity.getAvatar());
+                review.setClassName(classRoomEntity.getName());
+                review.setClassroomId(reviewEntity.getClassroomId());
+                review.setRating(reviewEntity.getRating());
+                review.setComment(reviewEntity.getContent());
+                reviews.add(review);
+            }
+            resData.setRecentSales(recentSales.size() > 5 ? recentSales.subList(0, 5) : recentSales);
+            resData.setReviews(reviews.size() > 5 ? reviews.subList(0, 5) : reviews);
+            return resData;
+        } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }
     }

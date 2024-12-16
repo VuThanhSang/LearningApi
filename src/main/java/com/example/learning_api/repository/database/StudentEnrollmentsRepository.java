@@ -32,6 +32,7 @@ public interface StudentEnrollmentsRepository extends MongoRepository<StudentEnr
     @Query("{'studentId': ?0}")
     List<StudentEnrollmentsEntity> findByStudentId(String studentId);
 
+    List<StudentEnrollmentsEntity> findByClassroomIdIn(List<String> classroomIds);
 
     @Aggregation(pipeline = {
             "{$addFields: {_classroomId: {$toObjectId: '$classroomId'}}}",

@@ -6,8 +6,10 @@ import com.example.learning_api.dto.request.teacher.CreateTeacherRequest;
 import com.example.learning_api.dto.request.teacher.UpdateTeacherRequest;
 import com.example.learning_api.dto.response.teacher.CreateTeacherResponse;
 import com.example.learning_api.dto.response.teacher.GetTeachersResponse;
+import com.example.learning_api.dto.response.teacher.TeacherDashboardResponse;
 import com.example.learning_api.dto.response.test.GetTestInProgress;
 import com.example.learning_api.model.ResponseAPI;
+import com.example.learning_api.service.common.JwtService;
 import com.example.learning_api.service.core.ITeacherService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +27,7 @@ import static com.example.learning_api.constant.RouterConstant.*;
 @Slf4j
 public class TeacherController {
     private final ITeacherService teacherService;
-
+    private final JwtService jwtService;
     @PostMapping(path = "")
     public ResponseEntity<ResponseAPI<CreateTeacherResponse>> createTeacher(@RequestBody @Valid CreateTeacherRequest body) {
         try{
@@ -130,5 +132,29 @@ public class TeacherController {
 
     }
 
+
+    @GetMapping(path = "/dashboard")
+    public ResponseEntity<ResponseAPI<TeacherDashboardResponse>> getTeacherDashboard(@RequestHeader("Authorization") String authorization) {
+        try{
+            String token = authorization.substring(7);
+            String userId = jwtService.extractUserId(token);
+            String teacherId = teacherService.getTeacherByUserId(userId).getId();
+            TeacherDashboardResponse getTestInProgress =  teacherService.getTeacherDashboard(teacherId);
+            ResponseAPI<TeacherDashboardResponse> res = ResponseAPI.<TeacherDashboardResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get teacher dashboard successfully")
+                    .data(getTestInProgress)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<TeacherDashboardResponse> res = ResponseAPI.<TeacherDashboardResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
 
 }

@@ -11,4 +11,5 @@ public interface ReviewRepository extends MongoRepository<ReviewEntity, String> 
     Page<ReviewEntity> findByClassroomIdAndRating(String classroomId, Integer rating, Pageable pageable);
     Page<ReviewEntity> findByClassroomId(String classroomId, Pageable pageable);
     List<ReviewEntity> findByClassroomId(String classroomId);
+    List<ReviewEntity> findByClassroomIdIn(List<String> classroomIds);
 }
