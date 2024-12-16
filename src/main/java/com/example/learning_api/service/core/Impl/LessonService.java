@@ -378,6 +378,12 @@ public class LessonService implements ILessonService {
                 }
                 List<TestEntity> quiz = testRepository.findByLessonIdAndShowResultType(lessonEntity.getId(), TestShowResultType.SHOW_RESULT_IMMEDIATELY.toString());
                 List<TestEntity> exam = testRepository.findByLessonIdAndShowResultType(lessonEntity.getId(), TestShowResultType.SHOW_RESULT_AFTER_TEST.toString());
+                for (TestEntity testEntity : quiz){
+                    testEntity.setSources(fileRepository.findByOwnerIdAndOwnerType(testEntity.getId(),FileOwnerType.TEST.name()));
+                }
+                for (TestEntity testEntity : exam){
+                    testEntity.setSources(fileRepository.findByOwnerIdAndOwnerType(testEntity.getId(),FileOwnerType.TEST.name()));
+                }
                 getLessonDetailResponse.setQuizzes(quiz);
                 getLessonDetailResponse.setExams(exam);
 

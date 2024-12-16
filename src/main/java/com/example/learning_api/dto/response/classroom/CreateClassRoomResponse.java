@@ -23,7 +23,7 @@ public class CreateClassRoomResponse {
     private Integer totalAssignment;
     private Integer totalQuiz;
     private Integer totalExam;
-    private List<String> categories;
+    private String categoryId;
     private String status;
     private String createdAt;
     private String updatedAt;

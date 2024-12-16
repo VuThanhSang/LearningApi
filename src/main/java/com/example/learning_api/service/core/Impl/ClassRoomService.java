@@ -51,6 +51,9 @@ public class ClassRoomService implements IClassRoomService {
     private final LessonRepository lessonRepository;
     private final NotificationService notificationService;
     private final ProgressRepository progressRepository;
+    private final ReviewRepository reviewRepository;
+    private final UserRepository userRepository;
+    private final CategoryRepository categoryRepository;
     @Override
     public CreateClassRoomResponse createClassRoom(CreateClassRoomRequest body) {
         try{
@@ -64,11 +67,11 @@ public class ClassRoomService implements IClassRoomService {
             if (teacherRepository.findById(body.getTeacherId()).isEmpty()){
                 throw new IllegalArgumentException("TeacherId is not found");
             }
-            if (body.getEnrollmentCapacity()==null){
-                throw new IllegalArgumentException("EnrollmentCapacity is required");
-            }
+
+
             ClassRoomEntity classRoomEntity = modelMapperService.mapClass(body, ClassRoomEntity.class);
             classRoomEntity.setCurrentEnrollment(0);
+            classRoomEntity.setCategoryId(body.getCategoryId());
             classRoomEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
             classRoomEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             CreateClassRoomResponse resData = new CreateClassRoomResponse();
@@ -113,6 +116,12 @@ public class ClassRoomService implements IClassRoomService {
             resData.setTotalStudent(classRoomEntity.getTotalStudent());
             resData.setCreatedAt(classRoomEntity.getCreatedAt().toString());
             resData.setUpdatedAt(classRoomEntity.getUpdatedAt().toString());
+            if (body.getCategoryId()!=null){
+                CategoryEntity categoryEntity = categoryRepository.findById(body.getCategoryId())
+                        .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
+                categoryEntity.setTotalClassRoom(categoryEntity.getTotalClassRoom()+1);
+                categoryRepository.save(categoryEntity);
+            }
             return resData;
         }
         catch (Exception e){
@@ -166,9 +175,7 @@ public class ClassRoomService implements IClassRoomService {
             if (body.getStatus()!=null){
                 classroom.setStatus(body.getStatus());
             }
-            if (body.getCategories()!=null){
-                classroom.setCategories(body.getCategories());
-            }
+
             if (body.getPrice()!=null){
                 classroom.setPrice(body.getPrice());
             }
@@ -226,6 +233,14 @@ public class ClassRoomService implements IClassRoomService {
                 GetClassRoomsResponse.ClassRoomResponse classRoomResponse = modelMapperService.mapClass(classRoom, GetClassRoomsResponse.ClassRoomResponse.class);
                 int count = studentEnrollmentsRepository.countByClassroomId(classRoom.getId());
                 classRoomResponse.setCurrentEnrollment(count);
+                classRoomResponse.setCategoryId(classRoom.getCategoryId());
+                List<ReviewEntity> allReviews = reviewRepository.findByClassroomId(classRoomResponse.getId());
+                double averageRating = allReviews.stream()
+                        .mapToDouble(ReviewEntity::getRating)
+                        .average()
+                        .orElse(0.0);
+                classRoomResponse.setRating(averageRating);
+                classRoomResponse.setTotalRating(allReviews.size());
                 return classRoomResponse;
             }).collect(Collectors.toList());
 
@@ -292,6 +307,14 @@ public class ClassRoomService implements IClassRoomService {
                 GetClassRoomsResponse.ClassRoomResponse classRoomResponse = modelMapperService.mapClass(classRoom, GetClassRoomsResponse.ClassRoomResponse.class);
                 int count = studentEnrollmentsRepository.countByClassroomId(classRoom.getId());
                 classRoomResponse.setCurrentEnrollment(count);
+                classRoomResponse.setCategoryId(classRoom.getCategoryId());
+                List<ReviewEntity> allReviews = reviewRepository.findByClassroomId(classRoomResponse.getId());
+                double averageRating = allReviews.stream()
+                        .mapToDouble(ReviewEntity::getRating)
+                        .average()
+                        .orElse(0.0);
+                classRoomResponse.setRating(averageRating);
+                classRoomResponse.setTotalRating(allReviews.size());
                 return classRoomResponse;
             }).collect(Collectors.toList());
 
@@ -896,5 +919,60 @@ public class ClassRoomService implements IClassRoomService {
         catch (Exception e){
             throw new IllegalArgumentException(e.getMessage());
         }
+    }
+
+    @Override
+    public GetClassRoomRankinResponse getClassRoomRanking(String classroomId, int page, int size, Integer rating) {
+        try {
+
+            Pageable pageable = PageRequest.of(page, size);
+            Page<ReviewEntity> reviewPage;
+
+            if (rating != null) {
+                reviewPage = reviewRepository.findByClassroomIdAndRating(classroomId, rating, pageable);
+            } else {
+                reviewPage = reviewRepository.findByClassroomId(classroomId, pageable);
+            }
+
+            List<GetClassRoomRankinResponse.Review> reviews = reviewPage.getContent().stream()
+                    .map(this::mapReviewEntityToResponse)
+                    .collect(Collectors.toList());
+
+            long totalReviews = reviewPage.getTotalElements();
+            List<ReviewEntity> allReviews = reviewRepository.findByClassroomId(classroomId);
+            double averageRating = allReviews.stream()
+                    .mapToDouble(ReviewEntity::getRating)
+                    .average()
+                    .orElse(0.0);
+            GetClassRoomRankinResponse response = new GetClassRoomRankinResponse();
+            response.setTotalElement(totalReviews);
+            response.setTotalPage(reviewPage.getTotalPages());
+            response.setAverageRating(averageRating);
+            response.setTotalReview((int) totalReviews);
+            response.setData(reviews);
+
+            return response;
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    private GetClassRoomRankinResponse.Review mapReviewEntityToResponse(ReviewEntity reviewEntity) {
+        GetClassRoomRankinResponse.Review review = new GetClassRoomRankinResponse.Review();
+        review.setId(reviewEntity.getId());
+        review.setTitle(reviewEntity.getTitle());
+        review.setComment(reviewEntity.getContent());
+        review.setRating(reviewEntity.getRating());
+        review.setAuthorId(reviewEntity.getUserId());
+        review.setClassroomId(reviewEntity.getClassroomId());
+        review.setCreatedAt(reviewEntity.getCreatedAt());
+        review.setUpdatedAt(reviewEntity.getUpdatedAt());
+        // Assuming you have a method to fetch user details
+        UserEntity user = userRepository.findById(reviewEntity.getUserId()).orElse(null);
+        if (user != null) {
+            review.setAuthorName(user.getFullname());
+            review.setAuthorAvatar(user.getAvatar());
+        }
+        return review;
     }
 }

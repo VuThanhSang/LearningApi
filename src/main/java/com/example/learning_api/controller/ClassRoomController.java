@@ -560,6 +560,26 @@ public class ClassRoomController {
         }
     }
 
-
+    @GetMapping(path = "/ranking/{classroomId}")
+    public ResponseEntity<ResponseAPI<GetClassRoomRankinResponse>> getClassRoomRanking(@PathVariable String classroomId,
+                                                                                       @RequestParam(name="page",required = false,defaultValue = "1") int page,
+                                                                                       @RequestParam(name="size",required = false,defaultValue = "10") int size,
+                                                                                       @RequestParam(name="rating",required = false) Integer rating) {
+        try {
+            GetClassRoomRankinResponse data = classRoomService.getClassRoomRanking(classroomId, page - 1, size, rating);
+            ResponseAPI<GetClassRoomRankinResponse> res = ResponseAPI.<GetClassRoomRankinResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get class room ranking successfully")
+                    .data(data)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        } catch (Exception e) {
+            ResponseAPI<GetClassRoomRankinResponse> res = ResponseAPI.<GetClassRoomRankinResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
 
 }

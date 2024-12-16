@@ -9,4 +9,6 @@ import java.util.List;
 public interface CategoryRepository extends MongoRepository<CategoryEntity, String> {
     @Query("{ 'name' : { $regex: ?0, $options: 'i' } }")
     List<CategoryEntity> findAllSortByTotalClassRoomDescAndNameContaining(String name);
+
+
 }

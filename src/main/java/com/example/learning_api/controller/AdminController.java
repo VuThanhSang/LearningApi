@@ -8,6 +8,7 @@ import com.example.learning_api.dto.response.admin.GetUserDetailResponse;
 import com.example.learning_api.dto.response.admin.GetUsersResponse;
 import com.example.learning_api.dto.response.classroom.GetClassRoomForAdminResponse;
 import com.example.learning_api.dto.response.forum.GetForumsResponse;
+import com.example.learning_api.entity.sql.database.CategoryEntity;
 import com.example.learning_api.model.ResponseAPI;
 import com.example.learning_api.service.core.IAdminService;
 import com.example.learning_api.service.core.IClassRoomService;
@@ -305,6 +306,64 @@ public class AdminController {
         }
         catch (Exception e){
             ResponseAPI<GetUserDetailResponse> res = ResponseAPI.<GetUserDetailResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
+
+    @PostMapping(path = "/category")
+    public ResponseEntity<ResponseAPI<String>> createCategory(@RequestBody @Valid CategoryEntity body) {
+        try{
+            adminService.createCategory(body);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message("Create category successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
+    @PatchMapping(path = "/category/{id}")
+    public ResponseEntity<ResponseAPI<String>> updateCategory(@PathVariable String id, @RequestBody @Valid CategoryEntity body) {
+        try{
+            adminService.updateCategory(id, body);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message("Update category successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
+    @DeleteMapping(path = "/category/{id}")
+    public ResponseEntity<ResponseAPI<String>> deleteCategory(@PathVariable String id) {
+        try{
+            adminService.deleteCategory(id);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message("Delete category successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();

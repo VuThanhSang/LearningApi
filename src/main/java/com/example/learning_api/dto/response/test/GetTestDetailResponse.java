@@ -19,5 +19,6 @@ public class GetTestDetailResponse {
     private String teacherId;
     private String showResultType;
     private String status;
+    private List<FileEntity> files;
     private List<GetQuestionsResponse.QuestionResponse> questions;
 }

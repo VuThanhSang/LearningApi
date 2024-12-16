@@ -34,7 +34,7 @@ public class ClassRoomEntity {
     private Integer totalExam;
     private Integer totalDocument;
     private Integer price;
-    private List<String> categories;
+    private String categoryId;
     private Boolean isPublic;
     private String teacherId;
     private String createdAt;
