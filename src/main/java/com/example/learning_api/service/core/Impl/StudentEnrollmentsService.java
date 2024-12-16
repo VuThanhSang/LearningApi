@@ -49,9 +49,6 @@ public class StudentEnrollmentsService implements IStudentEnrollmentsService {
             if (classRoomEntity == null) {
                 throw new IllegalArgumentException("ClassroomId is not found");
             }
-            if (classRoomEntity.getEnrollmentCapacity() <= classRoomEntity.getCurrentEnrollment()) {
-                throw new IllegalArgumentException("Classroom is full");
-            }
 
             StudentEnrollmentsEntity studentEnrollmentsEntity = new StudentEnrollmentsEntity();
             studentEnrollmentsEntity.setStudentId(body.getStudentId());

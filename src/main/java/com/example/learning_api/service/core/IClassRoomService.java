@@ -15,7 +15,7 @@ public interface IClassRoomService {
     void deleteClassRoom(String classroomId);
     GetClassRoomsResponse getClassRooms(int page, int size, String search, String studentId, String role, String status, String category);
 
-    GetClassRoomsResponse getUnregisteredClassRooms(int page, int size, String search, String studentId, String status, String category);
+    GetClassRoomsResponse getUnregisteredClassRooms(int page, int size, String search, String studentId, String status, String category,String tag);
 
     GetClassRoomsResponse getClassRoomsByTeacherId(int page, int size, String teacherId);
     GetSectionsResponse getSectionsByClassroomId(int page, int size, String search,String role);

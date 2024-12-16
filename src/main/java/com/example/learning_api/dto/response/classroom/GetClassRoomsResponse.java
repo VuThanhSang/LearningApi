@@ -31,7 +31,6 @@ public class GetClassRoomsResponse {
         private String teacherId;
         private String courseId;
         private String image;
-        private int enrollmentCapacity;
         private int currentEnrollment;
         private String status;
         private Long duration;
@@ -58,7 +57,6 @@ public class GetClassRoomsResponse {
             classRoomResponse.setUpdatedAt(classRoomEntity.getUpdatedAt().toString());
             classRoomResponse.setTeacherId(classRoomEntity.getTeacherId());
             classRoomResponse.setImage(classRoomEntity.getImage());
-            classRoomResponse.setEnrollmentCapacity(classRoomEntity.getEnrollmentCapacity());
             classRoomResponse.setCurrentEnrollment(classRoomEntity.getCurrentEnrollment());
             classRoomResponse.setStatus(classRoomEntity.getStatus().name());
             return classRoomResponse;

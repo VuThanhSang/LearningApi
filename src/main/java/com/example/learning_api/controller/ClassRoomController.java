@@ -159,6 +159,7 @@ public class ClassRoomController {
             @RequestParam(name="size",required = false,defaultValue = "10") int size,
             @RequestParam(name="status",required = false,defaultValue = "") String status,
             @RequestParam(name="category",required = false,defaultValue = "") String category,
+            @RequestParam(name="tag",required = false,defaultValue = "") String tag,
             @RequestHeader(name = "Authorization") String authorizationHeader) {
         try{
             String token = authorizationHeader.replace("Bearer ", "");
@@ -177,7 +178,7 @@ public class ClassRoomController {
             if (status.equals("")){
                 status =null;
             }
-            GetClassRoomsResponse resData = classRoomService.getUnregisteredClassRooms( page-1, size,search,callId,status,category);
+            GetClassRoomsResponse resData = classRoomService.getUnregisteredClassRooms( page-1, size,search,callId,status,category,tag);
             ResponseAPI<GetClassRoomsResponse> res = ResponseAPI.<GetClassRoomsResponse>builder()
                     .timestamp(new Date())
                     .message("Get class room successfully")
@@ -560,7 +561,7 @@ public class ClassRoomController {
         }
     }
 
-    @GetMapping(path = "/ranking/{classroomId}")
+    @GetMapping(path = "/{classroomId}/ranking")
     public ResponseEntity<ResponseAPI<GetClassRoomRankinResponse>> getClassRoomRanking(@PathVariable String classroomId,
                                                                                        @RequestParam(name="page",required = false,defaultValue = "1") int page,
                                                                                        @RequestParam(name="size",required = false,defaultValue = "10") int size,

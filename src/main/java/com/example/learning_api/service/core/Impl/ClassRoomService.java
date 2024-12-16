@@ -105,7 +105,6 @@ public class ClassRoomService implements IClassRoomService {
             resData.setDescription(classRoomEntity.getDescription());
             resData.setImage(classRoomEntity.getImage());
             resData.setTeacherId(classRoomEntity.getTeacherId());
-            resData.setEnrollmentCapacity(classRoomEntity.getEnrollmentCapacity());
             resData.setCurrentEnrollment(classRoomEntity.getCurrentEnrollment());
             resData.setStatus(classRoomEntity.getStatus().toString());
             resData.setTotalAssignment(classRoomEntity.getTotalAssignment());
@@ -168,9 +167,7 @@ public class ClassRoomService implements IClassRoomService {
             }
 
 
-            if (body.getEnrollmentCapacity()!=null){
-                classroom.setEnrollmentCapacity(body.getEnrollmentCapacity());
-            }
+
 
             if (body.getStatus()!=null){
                 classroom.setStatus(body.getStatus());
@@ -286,7 +283,7 @@ public class ClassRoomService implements IClassRoomService {
 
 
     @Override
-    public GetClassRoomsResponse getUnregisteredClassRooms(int page, int size, String search, String studentId, String status, String category) {
+    public GetClassRoomsResponse getUnregisteredClassRooms(int page, int size, String search, String studentId, String status, String category,String tag) {
         try {
             // Remove leading comma if present
             if (search != null && search.startsWith(",")) {
@@ -300,7 +297,7 @@ public class ClassRoomService implements IClassRoomService {
                     .collect(Collectors.toList());
 
             // Tìm lớp học chưa đăng ký
-            Page<ClassRoomEntity> unregisteredClassRooms = fetchUnregisteredClassRooms(registeredClassRoomIds, search, status, category, pageable);
+            Page<ClassRoomEntity> unregisteredClassRooms = fetchUnregisteredClassRooms(registeredClassRoomIds, search, status, category,tag, pageable);
 
             // Map dữ liệu sang DTO
             List<GetClassRoomsResponse.ClassRoomResponse> resData = unregisteredClassRooms.stream().map(classRoom -> {
@@ -324,21 +321,64 @@ public class ClassRoomService implements IClassRoomService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
+    private Page<ClassRoomEntity> fetchUnregisteredClassRooms(
+            List<String> registeredClassRoomIds,
+            String search,
+            String status,
+            String category,
+            String tag,
+            Pageable pageable
+    ) {
+        if (tag != null && !tag.isEmpty()) {
+            int pageSize = pageable.getPageSize();
+            int pageNumber = pageable.getPageNumber();
+            int skip = (int) pageable.getOffset();
 
-    private Page<ClassRoomEntity> fetchUnregisteredClassRooms(List<String> registeredClassRoomIds, String search, String status, String category, Pageable pageable) {
-        if (status != null) {
-            if (category != null && !category.isEmpty()) {
-                return classRoomRepository.findByCategoryAndNameContainingAndStatusNotIn(registeredClassRoomIds, category, search, status, pageable);
+            if ("popular".equalsIgnoreCase(tag)) {
+                // Fetch popular classrooms
+                List<ClassRoomEntity> popularClassrooms = classRoomRepository.findPopularClassrooms(registeredClassRoomIds, search, status);
+                return createPageFromList(popularClassrooms, pageable);
+            } else if ("new".equalsIgnoreCase(tag)) {
+                // Fetch new classrooms
+                List<ClassRoomEntity> newClassrooms = classRoomRepository.findNewClassrooms(registeredClassRoomIds, search, pageable);
+                return createPageFromList(newClassrooms, pageable);
             } else {
-                return classRoomRepository.findByIdNotInAndNameContainingAndStatus(registeredClassRoomIds, search, status, pageable);
-            }
-        } else {
-            if (category != null && !category.isEmpty()) {
-                return classRoomRepository.findByCategoryAndNameContainingAndIdNotIn(category, search, registeredClassRoomIds, pageable);
-            } else {
-                return classRoomRepository.findByIdNotInAndNameContaining(registeredClassRoomIds, search, pageable);
+                // Fetch random classrooms
+                int sampleSize = pageSize * (pageNumber + 1); // Tăng sample size để phù hợp với skip và limit
+                List<ClassRoomEntity> randomClassrooms = classRoomRepository.findRandomClassrooms(
+                        registeredClassRoomIds, search, sampleSize);
+                return createPageFromList(randomClassrooms, pageable);
             }
         }
+        if (category != null && !category.isEmpty()) {
+            // Filter by category
+            if (status != null) {
+                return classRoomRepository.findByCategoryAndNameContainingAndStatusNotIn(
+                        registeredClassRoomIds, category, search, status, pageable
+                );
+            } else {
+                return classRoomRepository.findByCategoryAndNameContainingAndIdNotIn(
+                        category, search, registeredClassRoomIds, pageable
+                );
+            }
+        } else {
+            // Default behavior (no tag or category)
+            if (status != null) {
+                return classRoomRepository.findByIdNotInAndNameContainingAndStatus(
+                        registeredClassRoomIds, search, status, pageable
+                );
+            } else {
+                return classRoomRepository.findByIdNotInAndNameContaining(
+                        registeredClassRoomIds, search, pageable
+                );
+            }
+        }
+    }
+    private Page<ClassRoomEntity> createPageFromList(List<ClassRoomEntity> data, Pageable pageable) {
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), data.size());
+        List<ClassRoomEntity> subList = data.subList(start, end);
+        return new PageImpl<>(subList, pageable, data.size());
     }
 
     @Override
@@ -404,7 +444,6 @@ public class ClassRoomService implements IClassRoomService {
             resData.setName(classRoomEntity.getName());
             resData.setDescription(classRoomEntity.getDescription());
             resData.setImage(classRoomEntity.getImage());
-            resData.setEnrollmentCapacity(classRoomEntity.getEnrollmentCapacity());
             resData.setCurrentEnrollment(classRoomEntity.getCurrentEnrollment());
             resData.setInviteCode(classRoomEntity.getInviteCode());
             resData.setStatus(classRoomEntity.getStatus());
@@ -645,11 +684,7 @@ public class ClassRoomService implements IClassRoomService {
             ClassRoomEntity classRoom = classRoomRepository.findById(classroomId
 
             ).orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
-            if (classRoom.getEnrollmentCapacity()>=classRoom.getCurrentEnrollment() + 1 ){
-                studentEnrollmentsRepository.save(student);
-                classRoom.setCurrentEnrollment(classRoom.getCurrentEnrollment() + 1);
-                classRoomRepository.save(classRoom);
-            }
+
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }
@@ -726,13 +761,7 @@ public class ClassRoomService implements IClassRoomService {
                     newData.setEnrolledAt(String.valueOf(System.currentTimeMillis()));
                     newData.setCreatedAt(String.valueOf(System.currentTimeMillis()));
                     newData.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
-                    if (classRoom.getEnrollmentCapacity()>=classRoom.getCurrentEnrollment() + 1)
-                    {
-                        classRoom.setCurrentEnrollment(classRoom.getCurrentEnrollment() + 1);
-                        classRoomRepository.save(classRoom);
-                        studentEnrollmentsRepository.save(newData);
 
-                    }
                     success.add(row.get(0));
                 }
             }else{
@@ -755,13 +784,7 @@ public class ClassRoomService implements IClassRoomService {
                     newData.setEnrolledAt(String.valueOf(System.currentTimeMillis()));
                     newData.setCreatedAt(String.valueOf(System.currentTimeMillis()));
                     newData.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
-                    if (classRoom.getEnrollmentCapacity()>=classRoom.getCurrentEnrollment() + 1)
-                    {
-                        classRoom.setCurrentEnrollment(classRoom.getCurrentEnrollment() + 1);
-                        classRoomRepository.save(classRoom);
-                        studentEnrollmentsRepository.save(newData);
 
-                    }
                     success.add(email);
                 }
             }
