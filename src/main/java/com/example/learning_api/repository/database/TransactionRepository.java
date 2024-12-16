@@ -1,6 +1,8 @@
 package com.example.learning_api.repository.database;
 
 import com.example.learning_api.entity.sql.database.TransactionEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
@@ -17,4 +19,8 @@ public interface TransactionRepository extends MongoRepository<TransactionEntity
     TransactionEntity findByUserIdAndClassroomIdAndStatus(String userId, String classroomId, String status);
 
     List<TransactionEntity> findByClassroomIdIn(List<String> classroomIds);
+    Page<TransactionEntity> findByClassroomIdIn(List<String> classroomIds, Pageable pageable);
+    Page<TransactionEntity> findByUserId(String userId, Pageable pageable);
+
+    Page<TransactionEntity> findAllByStatus(String status, Pageable pageable);
 }

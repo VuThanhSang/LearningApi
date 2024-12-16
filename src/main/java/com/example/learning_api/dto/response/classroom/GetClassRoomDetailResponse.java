@@ -2,6 +2,7 @@ package com.example.learning_api.dto.response.classroom;
 
 import com.example.learning_api.dto.response.lesson.GetLessonDetailResponse;
 import com.example.learning_api.entity.sql.database.ClassRoomEntity;
+import com.example.learning_api.entity.sql.database.UserEntity;
 import com.example.learning_api.enums.ClassRoomStatus;
 import lombok.Data;
 
@@ -34,6 +35,7 @@ public class GetClassRoomDetailResponse {
     private List<String> categories;
     private Boolean isPublic;
     private boolean isEnrolled;
+    private UserEntity user;
     private List<Section> sections;
     @Data
     public static class Section {

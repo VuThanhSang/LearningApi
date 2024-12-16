@@ -4,6 +4,7 @@ import com.example.learning_api.constant.StatusCode;
 import com.example.learning_api.dto.request.deadline.GetUpcomingDeadlineResponse;
 import com.example.learning_api.dto.request.teacher.CreateTeacherRequest;
 import com.example.learning_api.dto.request.teacher.UpdateTeacherRequest;
+import com.example.learning_api.dto.response.cart.GetPaymentForTeacher;
 import com.example.learning_api.dto.response.teacher.CreateTeacherResponse;
 import com.example.learning_api.dto.response.teacher.GetTeachersResponse;
 import com.example.learning_api.dto.response.teacher.TeacherDashboardResponse;
@@ -149,6 +150,34 @@ public class TeacherController {
         }
         catch (Exception e){
             ResponseAPI<TeacherDashboardResponse> res = ResponseAPI.<TeacherDashboardResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
+
+    @GetMapping(path = "/transaction")
+    public ResponseEntity<ResponseAPI<GetPaymentForTeacher>> getPaymentForTeacher(
+            @RequestHeader("Authorization") String authorization,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        try{
+            String token = authorization.substring(7);
+            String userId = jwtService.extractUserId(token);
+            String teacherId = teacherService.getTeacherByUserId(userId).getId();
+            GetPaymentForTeacher getPaymentForTeacher =  teacherService.getPaymentForTeacher(teacherId, page-1, size);
+            ResponseAPI<GetPaymentForTeacher> res = ResponseAPI.<GetPaymentForTeacher>builder()
+                    .timestamp(new Date())
+                    .message("Get payment for teacher successfully")
+                    .data(getPaymentForTeacher)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetPaymentForTeacher> res = ResponseAPI.<GetPaymentForTeacher>builder()
                     .timestamp(new Date())
                     .message(e.getMessage())
                     .build();

@@ -3,6 +3,7 @@ package com.example.learning_api.service.core.Impl;
 import com.example.learning_api.dto.common.StudentSubmissionCountDto;
 import com.example.learning_api.dto.request.admin.ChangeRoleRequest;
 import com.example.learning_api.dto.response.admin.*;
+import com.example.learning_api.dto.response.cart.GetPaymentForTeacher;
 import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.ForumStatus;
 import com.example.learning_api.enums.RoleEnum;
@@ -39,6 +40,7 @@ public class AdminService implements IAdminService {
     private final ForumRepository forumRepository;
     private final NotificationRepository notificationRepository;
     private final CategoryRepository categoryRepository;
+    private final TransactionRepository transactionRepository;
     @Override
     public void changeRole(ChangeRoleRequest body) {
         try {
@@ -357,6 +359,50 @@ public class AdminService implements IAdminService {
     public List<CategoryEntity> getCategories(String name) {
         try {
             return categoryRepository.findAllSortByTotalClassRoomDescAndNameContaining(name);
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public GetPaymentForTeacher getPaymentForAdmin(int page, int size, String sort, String order, String status) {
+        try {
+            String upperOrder = order.toUpperCase();
+            if (!upperOrder.equals("ASC") && !upperOrder.equals("DESC")) {
+                throw new IllegalArgumentException("Invalid value '" + order + "' for orders given; Has to be either 'desc' or 'asc' (case insensitive)");
+            }
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(upperOrder), sort));
+            Page<TransactionEntity> transactionEntities;
+            if (status.isEmpty()) {
+                transactionEntities = transactionRepository.findAll(pageable);
+            } else {
+                transactionEntities = transactionRepository.findAllByStatus(status, pageable);
+            }
+            GetPaymentForTeacher resData = new GetPaymentForTeacher();
+            List<GetPaymentForTeacher.Transaction> transactions = new ArrayList<>();
+            for (TransactionEntity transactionEntity : transactionEntities) {
+                GetPaymentForTeacher.Transaction transaction = new GetPaymentForTeacher.Transaction();
+                transaction.setTransactionId(transactionEntity.getId());
+                transaction.setAmount(transactionEntity.getAmount());
+                transaction.setTransactionRef(transactionEntity.getTransactionRef());
+                transaction.setStatus(transactionEntity.getStatus());
+                UserEntity userEntity = userRepository.findById(transactionEntity.getUserId()).orElse(null);
+                StudentEntity studentEntity = studentRepository.findByUserId(transactionEntity.getUserId());
+                studentEntity.setUser(null);
+                userEntity.setStudent(studentEntity);
+                transaction.setUser(userEntity);
+                transaction.setCreatedAt(transactionEntity.getCreatedAt());
+                transaction.setUpdatedAt(transactionEntity.getUpdatedAt());
+                transaction.setUser(userRepository.findById(transactionEntity.getUserId()).orElse(null));
+                transaction.setClassroom(classRoomRepository.findById(transactionEntity.getClassroomId()).orElse(null));
+                transactions.add(transaction);
+            }
+            resData.setTransactions(transactions);
+            resData.setTotalClassroom((long) classRoomRepository.count());
+            resData.setTotalElement(transactionEntities.getTotalElements());
+            resData.setTotalPage(transactionEntities.getTotalPages());
+            resData.setTotalPrice(transactionEntities.stream().mapToLong(TransactionEntity::getAmount).sum());
+            return resData;
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }

@@ -3,9 +3,11 @@ package com.example.learning_api.controller;
 import com.example.learning_api.constant.StatusCode;
 import com.example.learning_api.dto.request.student.CreateStudentRequest;
 import com.example.learning_api.dto.request.student.UpdateStudentRequest;
+import com.example.learning_api.dto.response.cart.GetPaymentForStudent;
 import com.example.learning_api.dto.response.student.CreateStudentResponse;
 import com.example.learning_api.dto.response.student.GetStudentsResponse;
 import com.example.learning_api.model.ResponseAPI;
+import com.example.learning_api.service.common.JwtService;
 import com.example.learning_api.service.core.IStudentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ import static com.example.learning_api.constant.RouterConstant.*;
 @Slf4j
 public class StudentController {
     private final IStudentService studentService;
+    private final JwtService jwtService;
     @PostMapping(path = "")
     public ResponseEntity<ResponseAPI<CreateStudentResponse>> createStudent(@RequestBody @Valid CreateStudentRequest body) {
         try{
@@ -108,4 +111,33 @@ public class StudentController {
         }
 
     }
+
+
+    @GetMapping(path = "/transaction")
+    public ResponseEntity<ResponseAPI<GetPaymentForStudent>> getPaymentForStudent(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestHeader("Authorization") String authorization
+    ) {
+        try{
+            String token = authorization.substring(7);
+            String userId = jwtService.extractUserId(token);
+            GetPaymentForStudent resData = studentService.getPaymentForStudent(userId, page-1, size);
+            ResponseAPI<GetPaymentForStudent> res = ResponseAPI.<GetPaymentForStudent>builder()
+                    .timestamp(new Date())
+                    .message("Get payment for student successfully")
+                    .data(resData)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetPaymentForStudent> res = ResponseAPI.<GetPaymentForStudent>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
+
 }

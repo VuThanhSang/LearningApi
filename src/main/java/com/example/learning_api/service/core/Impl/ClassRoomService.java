@@ -228,6 +228,13 @@ public class ClassRoomService implements IClassRoomService {
             // Map dữ liệu sang DTO
             List<GetClassRoomsResponse.ClassRoomResponse> resData = classRooms.stream().map(classRoom -> {
                 GetClassRoomsResponse.ClassRoomResponse classRoomResponse = modelMapperService.mapClass(classRoom, GetClassRoomsResponse.ClassRoomResponse.class);
+                TeacherEntity teacher = teacherRepository.findById(classRoom.getTeacherId())
+                        .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
+                UserEntity user = userRepository.findById(teacher.getUserId())
+                        .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
+                teacher.setUser(null);
+                user.setTeacher(teacher);
+                classRoomResponse.setUser(user);
                 int count = studentEnrollmentsRepository.countByClassroomId(classRoom.getId());
                 classRoomResponse.setCurrentEnrollment(count);
                 classRoomResponse.setCategoryId(classRoom.getCategoryId());
@@ -314,6 +321,13 @@ public class ClassRoomService implements IClassRoomService {
                 GetClassRoomsResponse.ClassRoomResponse classRoomResponse = modelMapperService.mapClass(classRoom, GetClassRoomsResponse.ClassRoomResponse.class);
                 int count = studentEnrollmentsRepository.countByClassroomId(classRoom.getId());
                 classRoomResponse.setCurrentEnrollment(count);
+                TeacherEntity teacher = teacherRepository.findById(classRoom.getTeacherId())
+                        .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
+                UserEntity user = userRepository.findById(teacher.getUserId())
+                        .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
+                teacher.setUser(null);
+                user.setTeacher(teacher);
+                classRoomResponse.setUser(user);
                 classRoomResponse.setCategoryId(classRoom.getCategoryId());
                 List<ReviewEntity> allReviews = reviewRepository.findByClassroomId(classRoomResponse.getId());
                 double averageRating = allReviews.stream()
@@ -485,6 +499,12 @@ public class ClassRoomService implements IClassRoomService {
             resData.setTeacherId(classRoomEntity.getTeacherId());
             resData.setCreatedAt(classRoomEntity.getCreatedAt());
             resData.setUpdatedAt(classRoomEntity.getUpdatedAt());
+            TeacherEntity teacher = teacherRepository.findById(resData.getTeacherId())
+                    .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
+            UserEntity user = userRepository.findById(teacher.getUserId())
+                    .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
+            teacher.setUser(null);
+            user.setTeacher(teacher);
             Page<SectionEntity> sectionEntities = sectionRepository.findByClassRoomId(classRoomEntity.getId(),pageAble,status);
             List<GetClassRoomDetailResponse.Section> sections = new ArrayList<>();
             for (SectionEntity sectionEntity : sectionEntities){
@@ -537,6 +557,12 @@ public class ClassRoomService implements IClassRoomService {
 //                resData.setTeacherId(classRoomEntity.getTeacherId());
 //                resData.setCreatedAt(classRoomEntity.getCreatedAt());
 //                resData.setUpdatedAt(classRoomEntity.getUpdatedAt());
+           TeacherEntity teacher = teacherRepository.findById(resData.getTeacherId())
+                   .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
+           UserEntity user = userRepository.findById(teacher.getUserId())
+                   .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
+           teacher.setUser(null);
+           user.setTeacher(teacher);
                 StudentEnrollmentsEntity studentEnrollmentsEntity = studentEnrollmentsRepository.findByStudentIdAndClassroomId(userId, classroomId);
                 resData.setEnrolled(studentEnrollmentsEntity != null);
                 Page<SectionEntity> sectionEntities = sectionRepository.findByClassRoomId(classroomId,pageAble,status);

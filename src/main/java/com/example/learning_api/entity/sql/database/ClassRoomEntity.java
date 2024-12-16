@@ -39,5 +39,7 @@ public class ClassRoomEntity {
     private String createdAt;
     private String updatedAt;
 
+    @DBRef
+    private UserEntity user;
 
 }
