@@ -1,13 +1,20 @@
 package com.example.learning_api.service.core.Impl;
 
 import com.example.learning_api.entity.sql.database.ClassRoomEntity;
+import com.example.learning_api.entity.sql.database.NotificationEntity;
 import com.example.learning_api.entity.sql.database.ReviewEntity;
+import com.example.learning_api.entity.sql.database.TeacherEntity;
+import com.example.learning_api.enums.NotificationPriority;
 import com.example.learning_api.repository.database.ClassRoomRepository;
 import com.example.learning_api.repository.database.ReviewRepository;
+import com.example.learning_api.repository.database.TeacherRepository;
 import com.example.learning_api.service.core.IReviewService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -15,6 +22,8 @@ import org.springframework.stereotype.Service;
 public class ReviewService implements IReviewService {
     private final ReviewRepository reviewRepository;
     private final ClassRoomRepository classRoomRepository;
+    private final TeacherRepository teacherRepository;
+    private final NotificationService notificationService;
     @Override
     public void createReview(ReviewEntity review) {
         try{
@@ -31,6 +40,18 @@ public class ReviewService implements IReviewService {
             reviewEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
             reviewEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
             reviewRepository.save(reviewEntity);
+            NotificationEntity notificationEntity = new NotificationEntity();
+            notificationEntity.setNotificationSettingId("674473d53e126c2148ce1ad8");
+            notificationEntity.setTitle("New Review Created");
+            notificationEntity.setMessage("New Review for class  " + classRoomEntity.getName() + " has been created");
+            notificationEntity.setAuthorId(classRoomEntity.getId());
+            notificationEntity.setTargetUrl(classRoomEntity.getId());
+            notificationEntity.setPriority(NotificationPriority.NORMAL);
+            List<String> userIds = new ArrayList<>();
+            TeacherEntity teacherEntity = teacherRepository.findById(classRoomEntity.getTeacherId()).orElse(null);
+            userIds.add(teacherEntity.getUserId());
+            notificationService.createNotification(notificationEntity, userIds);
+
         }
         catch (Exception e){
             log.error("Error in creating review: ", e);

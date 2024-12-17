@@ -266,6 +266,7 @@ public class ClassRoomService implements IClassRoomService {
     }
 
     private Page<ClassRoomEntity> fetchClassRoomsForUser(List<String> classRoomIds, String search, String status, String category, Pageable pageable) {
+        status = ClassRoomStatus.COMPLETED.toString();
         if (status != null) {
             if (category != null && !category.isEmpty()) {
                 return classRoomRepository.findByCategoryAndNameContainingAndStatus(classRoomIds, category, search, status, pageable);
@@ -368,6 +369,9 @@ public class ClassRoomService implements IClassRoomService {
             Pageable pageable,
             String order
     ) {
+        // Set status to COMPLETED
+        status = ClassRoomStatus.COMPLETED.toString();
+
         // Xử lý tag
         if (tag != null && !tag.isEmpty()) {
             if (category != null && !category.isEmpty()) {
@@ -379,13 +383,13 @@ public class ClassRoomService implements IClassRoomService {
                     List<ClassRoomEntity> newClassrooms = classRoomRepository.findNewClassroomsByCategory(
                             registeredClassRoomIds, category, search, pageable);
                     return createPageFromList(newClassrooms, pageable);
-                }else if("price".equalsIgnoreCase(tag)){
+                } else if ("price".equalsIgnoreCase(tag)) {
                     boolean ascending = "asc".equalsIgnoreCase(order);
                     List<ClassRoomEntity> priceSortedClassrooms = classRoomRepository.findByCategoryAndSortByPrice(
                             category, registeredClassRoomIds, search, pageable, ascending
                     );
                     return createPageFromList(priceSortedClassrooms, pageable);
-                }else {
+                } else {
                     int sampleSize = pageable.getPageSize() * (pageable.getPageNumber() + 1);
                     List<ClassRoomEntity> randomClassrooms = classRoomRepository.findRandomClassroomsByCategory(
                             registeredClassRoomIds, category, search, sampleSize);
@@ -404,7 +408,6 @@ public class ClassRoomService implements IClassRoomService {
                         registeredClassRoomIds, search, pageable
                 );
                 return createPageFromList(priceSortedClassrooms, pageable);
-
             } else {
                 int sampleSize = pageable.getPageSize() * (pageable.getPageNumber() + 1);
                 List<ClassRoomEntity> randomClassrooms = classRoomRepository.findRandomClassrooms(
@@ -1017,12 +1020,18 @@ public class ClassRoomService implements IClassRoomService {
             classRoomEntity.setStatus(ClassRoomStatus.valueOf(status));
             NotificationEntity notificationEntity = new NotificationEntity();
             notificationEntity.setNotificationSettingId("674473d53e126c2148ce1ada");
-            notificationEntity.setTitle("Classroom has been " + status);
+            notificationEntity.setTitle("Classroom "+classRoomEntity.getName()+" has been " + status);
             notificationEntity.setMessage("Your Class:  " + classRoomEntity.getName() + " has been " + status);
             notificationEntity.setAuthorId(classRoomEntity.getId());
             notificationEntity.setTargetUrl(classRoomEntity.getId());
             notificationEntity.setPriority(NotificationPriority.NORMAL);
             List<String> ids= new ArrayList<>();
+            List<StudentEnrollmentsEntity> studentEnrollmentsEntities = studentEnrollmentsRepository.findByClassroomId(classroomId);
+            for (StudentEnrollmentsEntity studentEnrollmentsEntity : studentEnrollmentsEntities){
+                StudentEntity studentEntity = studentRepository.findById(studentEnrollmentsEntity.getStudentId()).get();
+
+                ids.add(studentEntity.getUserId());
+            }
             TeacherEntity teacherEntity = teacherRepository.findById(classRoomEntity.getTeacherId()).get();
             ids.add(teacherEntity.getUserId());
             notificationService.createNotification(notificationEntity,ids);

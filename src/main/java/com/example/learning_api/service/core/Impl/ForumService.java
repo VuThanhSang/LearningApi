@@ -827,7 +827,7 @@ public class ForumService implements IForumService {
                     GetForumsResponse.ForumResponse forumResponse = GetForumsResponse.ForumResponse.formForumEntity(forumEntity);
 
                     // Lấy thông tin user
-                    forumResponse.setAuthor(userRepository.findById(userId).get());
+                    forumResponse.setAuthor(userRepository.findById(forumResponse.getAuthorId()).get());
 
                     // Lấy files
                     List<FileEntity> fileEntities = fileRepository.findByOwnerIdAndOwnerType(

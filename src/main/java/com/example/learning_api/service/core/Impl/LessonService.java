@@ -34,6 +34,9 @@ public class LessonService implements ILessonService {
     private final DeadlineRepository deadlineRepository;
     private final FileRepository fileRepository;
     private final TestService testService;
+    private final StudentEnrollmentsRepository studentEnrollmentsRepository;
+    private final StudentRepository studentRepository;
+    private final NotificationService notificationService;
 
     @Override
     public void createLesson(CreateLessonRequest createLessonRequest) {
@@ -143,6 +146,21 @@ public class LessonService implements ILessonService {
                 deadlineRepository.save(deadlineEntity);
             }
             classRoomRepository.save(classRoomEntity);
+            NotificationEntity notificationEntity = new NotificationEntity();
+            notificationEntity.setNotificationSettingId("674473d53e126c2148ce1ac8");
+            notificationEntity.setTitle("New Content Created in " + classRoomEntity.getName());
+            notificationEntity.setMessage("New Content for class  " + classRoomEntity.getName() + " has been created");
+            notificationEntity.setAuthorId(classRoomEntity.getId());
+            notificationEntity.setTargetUrl(classRoomEntity.getId());
+            notificationEntity.setPriority(NotificationPriority.NORMAL);
+            List<StudentEnrollmentsEntity> studentEnrollmentsEntities = studentEnrollmentsRepository.findByClassroomId(classRoomEntity.getId());
+            List<String> userIds = new ArrayList<>();
+            for (StudentEnrollmentsEntity studentEnrollmentsEntity : studentEnrollmentsEntities){
+                StudentEntity studentEntity = studentRepository.findById(studentEnrollmentsEntity.getStudentId()).orElse(null);
+                if (studentEntity!=null)
+                    userIds.add(studentEntity.getUserId());
+            }
+            notificationService.createNotification(notificationEntity, userIds);
         }
 
         catch (Exception e){

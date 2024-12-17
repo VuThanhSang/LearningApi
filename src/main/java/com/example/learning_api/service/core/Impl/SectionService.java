@@ -165,7 +165,7 @@ public class SectionService implements ISectionService {
                 if (lessonEntity.getIndex()==0||role.equals("TEACHER")){
                     getLessonDetailResponse.setCanAccess(true);
                 } else if (previousLesson==null) {
-                    getLessonDetailResponse.setCanAccess(false);
+                    getLessonDetailResponse.setCanAccess(true);
 
                 }else{
                     getLessonDetailResponse.setCanAccess(progressRepository.existsByStudentIdAndClassroomIdAndLessonIdAndCompleted(userId,sectionEntity.get().getClassRoomId(),previousLesson.getId(),true));

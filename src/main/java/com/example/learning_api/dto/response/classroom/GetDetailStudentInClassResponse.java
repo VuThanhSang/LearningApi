@@ -25,6 +25,7 @@ public class GetDetailStudentInClassResponse {
     private StudentStatus status;
     private String studentName;
     private String studentAvatar;
+    private String progress;
 
     List<TestResultEntity> testResults;
     List<DeadlineSubmissionsEntity> deadlineSubmissions;

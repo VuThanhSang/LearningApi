@@ -2,9 +2,11 @@ package com.example.learning_api.dto.response.classroom;
 
 import com.example.learning_api.entity.sql.database.StudentEntity;
 import com.example.learning_api.entity.sql.database.UserEntity;
+import com.example.learning_api.repository.database.StudentRepository;
 import lombok.Data;
 
 import java.util.List;
+
 
 @Data
 public class GetStudentInClassResponse {
@@ -23,7 +25,7 @@ public class GetStudentInClassResponse {
         private String dateOfBirth;
         private String majorId;
         private UserEntity user;
-
+        private Integer progress;
         public static StudentResponse formStudentEntity(StudentEntity userEntity) {
             StudentResponse studentResponse = new StudentResponse();
             studentResponse.setId(userEntity.getId());
