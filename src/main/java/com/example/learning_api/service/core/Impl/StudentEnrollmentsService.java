@@ -3,10 +3,7 @@ package com.example.learning_api.service.core.Impl;
 import com.example.learning_api.dto.request.student_enrollments.EnrollStudentRequest;
 import com.example.learning_api.dto.response.classroom.GetStudentInClassResponse;
 import com.example.learning_api.dto.response.student.StudentsResponse;
-import com.example.learning_api.entity.sql.database.ClassRoomEntity;
-import com.example.learning_api.entity.sql.database.StudentEnrollmentsEntity;
-import com.example.learning_api.entity.sql.database.StudentEntity;
-import com.example.learning_api.entity.sql.database.UserEntity;
+import com.example.learning_api.entity.sql.database.*;
 import com.example.learning_api.enums.StudentEnrollmentStatus;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.core.IStudentEnrollmentsService;
@@ -34,6 +31,9 @@ public class StudentEnrollmentsService implements IStudentEnrollmentsService {
     private final CourseRepository courseRepository;
     private final ClassRoomRepository classroomRepository;
     private final UserRepository userRepository;
+    private final SectionRepository sectionRepository;
+    private final LessonRepository lessonRepository;
+    private final ProgressRepository progressRepository;
     @Autowired
     private MongoTemplate mongoTemplate;
     @Override
@@ -141,7 +141,6 @@ public class StudentEnrollmentsService implements IStudentEnrollmentsService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
-
     @Override
     public GetStudentInClassResponse getStudentInClass(String classroomId, Integer page, Integer limit, String search, String sort, String order) {
         try {
@@ -151,7 +150,7 @@ public class StudentEnrollmentsService implements IStudentEnrollmentsService {
             search = (search == null) ? "" : search;
 
             // Validate and sanitize sort parameter
-            List<String> allowedSortFields = Arrays.asList("id", "userId", "fullname", "gradeLevel");
+            List<String> allowedSortFields = Arrays.asList("id", "userId", "fullname", "gradeLevel", "progress");
             if (sort == null || !allowedSortFields.contains(sort)) {
                 sort = "fullname"; // default sort
             }
@@ -161,8 +160,7 @@ public class StudentEnrollmentsService implements IStudentEnrollmentsService {
             limit = (limit == null || limit <= 0) ? 10 : limit; // default limit
 
             // Fetch students enrolled in the classroom
-            List<StudentEnrollmentsEntity> enrollments = studentEnrollmentsRepository
-                    .findByClassroomId(classroomId);
+            List<StudentEnrollmentsEntity> enrollments = studentEnrollmentsRepository.findByClassroomId(classroomId);
 
             // Collect student IDs from enrollments
             List<String> studentIds = enrollments.stream()
@@ -172,17 +170,47 @@ public class StudentEnrollmentsService implements IStudentEnrollmentsService {
             // Fetch students with filtering
             List<StudentEntity> allStudents = studentRepository.findByIdInAndSearch(studentIds, search);
 
+            // Fetch sections and lessons for progress calculation
+            List<SectionEntity> sectionEntities = sectionRepository.findByClassRoomId(classroomId);
+
+            List<String> lessonIds = new ArrayList<>();
+            for (SectionEntity sectionEntity : sectionEntities) {
+                List<LessonEntity> lessonEntities = lessonRepository.findBySectionId(sectionEntity.getId());
+                for (LessonEntity lessonEntity : lessonEntities) {
+                    lessonIds.add(lessonEntity.getId());
+                }
+            }
+
+            // Compute progress for each student
+            List<GetStudentInClassResponse.StudentResponse> studentResponses = allStudents.stream()
+                    .map(student -> {
+                        GetStudentInClassResponse.StudentResponse response = GetStudentInClassResponse.StudentResponse.formStudentEntity(student);
+
+                        // Calculate progress
+                        List<ProgressEntity> countComplete = progressRepository.findByClassroomIdAndLessonIdInAndCompletedAndStudentId(
+                                classroomId, lessonIds, true, student.getId()
+                        );
+                        int countLesson = lessonIds.size();
+                        response.setProgress(countLesson > 0 ? (int) Math.ceil((double) countComplete.size() / countLesson * 100) : 0);
+
+                        return response;
+                    })
+                    .collect(Collectors.toList());
+
             // Sort students
-            Comparator<StudentEntity> comparator;
+            Comparator<GetStudentInClassResponse.StudentResponse> comparator;
             switch (sort) {
                 case "id":
-                    comparator = Comparator.comparing(StudentEntity::getId);
+                    comparator = Comparator.comparing(GetStudentInClassResponse.StudentResponse::getId);
                     break;
                 case "userId":
-                    comparator = Comparator.comparing(StudentEntity::getUserId);
+                    comparator = Comparator.comparing(GetStudentInClassResponse.StudentResponse::getUserId);
                     break;
                 case "gradeLevel":
-                    comparator = Comparator.comparing(StudentEntity::getGradeLevel);
+                    comparator = Comparator.comparing(GetStudentInClassResponse.StudentResponse::getGradeLevel);
+                    break;
+                case "progress":
+                    comparator = Comparator.comparing(GetStudentInClassResponse.StudentResponse::getProgress);
                     break;
                 default: // fullname
                     comparator = Comparator.comparing(student ->
@@ -190,29 +218,24 @@ public class StudentEnrollmentsService implements IStudentEnrollmentsService {
                     );
             }
 
-// Apply sorting direction AFTER creating the base comparator
+            // Apply sorting direction AFTER creating the base comparator
             if ("desc".equalsIgnoreCase(order)) {
                 comparator = comparator.reversed();
             }
 
             // Sort the students
-            allStudents.sort(comparator);
+            studentResponses.sort(comparator);
 
             // Paginate the results
             int start = page * limit;
-            int end = Math.min((start + limit), allStudents.size());
-            List<StudentEntity> paginatedStudents = allStudents.subList(start, end);
-
-            // Convert to response DTOs
-            List<GetStudentInClassResponse.StudentResponse> studentResponses = paginatedStudents.stream()
-                    .map(GetStudentInClassResponse.StudentResponse::formStudentEntity)
-                    .collect(Collectors.toList());
+            int end = Math.min((start + limit), studentResponses.size());
+            List<GetStudentInClassResponse.StudentResponse> paginatedStudents = studentResponses.subList(start, end);
 
             // Prepare the response
             GetStudentInClassResponse response = new GetStudentInClassResponse();
-            response.setStudents(studentResponses);
-            response.setTotalElements((long) allStudents.size());
-            response.setTotalPage((int) Math.ceil((double) allStudents.size() / limit));
+            response.setStudents(paginatedStudents);
+            response.setTotalElements((long) studentResponses.size());
+            response.setTotalPage((int) Math.ceil((double) studentResponses.size() / limit));
 
             return response;
         } catch (Exception e) {

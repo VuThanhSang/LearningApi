@@ -520,7 +520,7 @@ public class ClassRoomController {
                                                                                      @RequestParam(name="page",required = false,defaultValue = "1") int page,
                                                                                      @RequestParam(name="size",required = false,defaultValue = "10") int size,
                                                                                         @RequestParam(name="search",required = false,defaultValue = "") String search,
-                                                                                        @RequestParam(name="sort",required = false,defaultValue = "createdAt") String sortBy,
+                                                                                        @RequestParam(name="sort",required = false,defaultValue = "progress") String sortBy,
                                                                                         @RequestParam(name="sortDirection",required = false,defaultValue = "desc") String sortDirection)
                                                                                       {
         try {

@@ -151,6 +151,15 @@ public class  DeadlineSubmissionsService implements IDeadlineSubmissionsService 
             if (body.getStatus() != null) {
                 deadlineSubmissionsEntity.setStatus(DeadlineSubmissionStatus.valueOf(body.getStatus()));
             }
+            if (body.getTitle()!=null){
+                deadlineSubmissionsEntity.setTitle(body.getTitle());
+            }
+            if (body.getSubmission()!=null){
+                deadlineSubmissionsEntity.setSubmission(body.getSubmission());
+            }
+            if (body.getStatus()!=null){
+                deadlineSubmissionsEntity.setStatus(DeadlineSubmissionStatus.valueOf(body.getStatus()));
+            }
 
             processFiles(body.getFiles(), body.getTitle(), deadlineSubmissionsEntity);
             deadlineSubmissionsEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));

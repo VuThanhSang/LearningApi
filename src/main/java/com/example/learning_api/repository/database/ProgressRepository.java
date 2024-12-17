@@ -19,4 +19,5 @@ public interface ProgressRepository extends MongoRepository<ProgressEntity, Stri
 
     // Kiểm tra section đã hoàn thành hay chưa
     boolean existsByStudentIdAndClassroomIdAndSectionIdAndCompleted(String studentId, String classroomId, String sectionId, Boolean completed);
+    List<ProgressEntity> findByClassroomIdAndLessonIdInAndCompletedAndStudentId(String classroomId, List<String> lessonId, Boolean completed, String studentId);
 }

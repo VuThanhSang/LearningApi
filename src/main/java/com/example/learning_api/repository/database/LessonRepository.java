@@ -32,4 +32,6 @@ public interface LessonRepository extends MongoRepository<LessonEntity, String>{
     // Lấy bài học cụ thể theo section và index
     LessonEntity findBySectionIdAndIndex(String sectionId, Integer index);
 
+    List<LessonEntity> findBySectionId(String sectionId);
+
 }

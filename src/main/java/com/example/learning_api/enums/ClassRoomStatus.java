@@ -4,6 +4,7 @@ public enum ClassRoomStatus {
     OPEN,
     CLOSED,
     CANCELLED,
+    DRAFT,
     PENDING,
     IN_PROGRESS,
     COMPLETED,

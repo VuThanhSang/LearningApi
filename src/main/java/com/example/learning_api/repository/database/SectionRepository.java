@@ -19,4 +19,6 @@ public interface SectionRepository extends MongoRepository<SectionEntity, String
     @Query(value = "{ 'classRoomId': ?0 }", sort = "{ 'index': -1 }")
     List<SectionEntity> findTopByClassRoomIdOrderByIndexDesc(String classRoomId, Pageable pageable);
     SectionEntity findByClassRoomIdAndIndex(String classroomId, Integer index);
+
+    List<SectionEntity> findByClassRoomId(String classRoomId);
 }
