@@ -163,14 +163,22 @@ public class TeacherController {
     @GetMapping(path = "/transaction")
     public ResponseEntity<ResponseAPI<GetPaymentForTeacher>> getPaymentForTeacher(
             @RequestHeader("Authorization") String authorization,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "sort", defaultValue = "createdAt") String sort,
+            @RequestParam(value = "order", defaultValue = "desc") String order,
+            @RequestParam(value = "search", defaultValue = "") String search,
+            @RequestParam(value = "searchBy", defaultValue = "") String searchBy,
+            @RequestParam(value = "status", defaultValue = "") String status
     ) {
         try{
             String token = authorization.substring(7);
             String userId = jwtService.extractUserId(token);
             String teacherId = teacherService.getTeacherByUserId(userId).getId();
-            GetPaymentForTeacher getPaymentForTeacher =  teacherService.getPaymentForTeacher(teacherId, page-1, size);
+            if (!search.isEmpty() && searchBy.isEmpty()){
+                searchBy = "user";
+            }
+            GetPaymentForTeacher getPaymentForTeacher =  teacherService.getPaymentForTeacher(teacherId, page-1, size, sort, order, status, search, searchBy);
             ResponseAPI<GetPaymentForTeacher> res = ResponseAPI.<GetPaymentForTeacher>builder()
                     .timestamp(new Date())
                     .message("Get payment for teacher successfully")

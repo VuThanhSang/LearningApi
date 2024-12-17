@@ -4,6 +4,7 @@ import com.example.learning_api.entity.sql.database.UserEntity;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends MongoRepository<UserEntity, String> {
@@ -16,4 +17,6 @@ public interface UserRepository extends MongoRepository<UserEntity, String> {
     long countByRole(String role);
 
     long countByStatus(String status);
+    @Query("{ 'fullname': { $regex: ?0, $options: 'i' } }")
+    List<UserEntity> findIdsByFullnameRegex(String regex);
 }

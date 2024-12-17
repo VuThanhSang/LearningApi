@@ -115,14 +115,18 @@ public class StudentController {
 
     @GetMapping(path = "/transaction")
     public ResponseEntity<ResponseAPI<GetPaymentForStudent>> getPaymentForStudent(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestHeader("Authorization") String authorization
+            @RequestHeader("Authorization") String authorization,
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "sort", defaultValue = "createdAt") String sort,
+            @RequestParam(value = "order", defaultValue = "desc") String order,
+            @RequestParam(value = "search", defaultValue = "") String search,
+            @RequestParam(value = "status", defaultValue = "") String status
     ) {
         try{
             String token = authorization.substring(7);
             String userId = jwtService.extractUserId(token);
-            GetPaymentForStudent resData = studentService.getPaymentForStudent(userId, page-1, size);
+            GetPaymentForStudent resData = studentService.getPaymentForStudent(userId, page-1, size, sort, order, status, search);
             ResponseAPI<GetPaymentForStudent> res = ResponseAPI.<GetPaymentForStudent>builder()
                     .timestamp(new Date())
                     .message("Get payment for student successfully")

@@ -363,40 +363,79 @@ public class AdminService implements IAdminService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
-
     @Override
-    public GetPaymentForTeacher getPaymentForAdmin(int page, int size, String sort, String order, String status) {
+    public GetPaymentForTeacher getPaymentForAdmin(int page, int size, String sort, String order, String status, String search, String searchBy) {
         try {
             String upperOrder = order.toUpperCase();
             if (!upperOrder.equals("ASC") && !upperOrder.equals("DESC")) {
                 throw new IllegalArgumentException("Invalid value '" + order + "' for orders given; Has to be either 'desc' or 'asc' (case insensitive)");
             }
+
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(upperOrder), sort));
+            List<String> userIds = new ArrayList<>();
+            List<String> classroomIds = new ArrayList<>();
+
+            // Handle search by user or classroom based on `searchBy`
+            if (!search.isEmpty()) {
+                if ("user".equalsIgnoreCase(searchBy)) {
+                   List<UserEntity>  users = userRepository.findIdsByFullnameRegex(search);
+                    userIds = users.stream().map(UserEntity::getId).collect(Collectors.toList());
+                } else if ("class".equalsIgnoreCase(searchBy)) {
+                    List<ClassRoomEntity> classrooms = classRoomRepository.findIdsByNameRegex(search);
+                    classroomIds = classrooms.stream().map(ClassRoomEntity::getId).collect(Collectors.toList());
+                } else {
+                    throw new IllegalArgumentException("Invalid value '" + searchBy + "' for searchBy; Must be 'user' or 'class'");
+                }
+            }
+
+            // Fetch transactions based on filters
             Page<TransactionEntity> transactionEntities;
             if (status.isEmpty()) {
-                transactionEntities = transactionRepository.findAll(pageable);
+                if (searchBy.equals("user")) {
+                    transactionEntities = transactionRepository.findByUserIdIn(userIds, pageable);
+                } else if (searchBy.equals("class")) {
+                    transactionEntities = transactionRepository.findByClassroomIdIn(classroomIds, pageable);
+                } else {
+                    transactionEntities = transactionRepository.findAll(pageable);
+                }
             } else {
-                transactionEntities = transactionRepository.findAllByStatus(status, pageable);
+                if (!userIds.isEmpty()) {
+                    transactionEntities = transactionRepository.findByStatusAndUserIdIn(status, userIds, pageable);
+                } else if (!classroomIds.isEmpty()) {
+                    transactionEntities = transactionRepository.findByStatusAndClassroomIdIn(status, classroomIds, pageable);
+                } else {
+                    transactionEntities = transactionRepository.findAllByStatus(status, pageable);
+                }
             }
+
+            // Process transactions into the DTO
             GetPaymentForTeacher resData = new GetPaymentForTeacher();
             List<GetPaymentForTeacher.Transaction> transactions = new ArrayList<>();
+
             for (TransactionEntity transactionEntity : transactionEntities) {
                 GetPaymentForTeacher.Transaction transaction = new GetPaymentForTeacher.Transaction();
                 transaction.setTransactionId(transactionEntity.getId());
                 transaction.setAmount(transactionEntity.getAmount());
                 transaction.setTransactionRef(transactionEntity.getTransactionRef());
                 transaction.setStatus(transactionEntity.getStatus());
+
                 UserEntity userEntity = userRepository.findById(transactionEntity.getUserId()).orElse(null);
                 StudentEntity studentEntity = studentRepository.findByUserId(transactionEntity.getUserId());
-                studentEntity.setUser(null);
-                userEntity.setStudent(studentEntity);
+                if (studentEntity != null) {
+                    studentEntity.setUser(null);
+                }
+                if (userEntity != null) {
+                    userEntity.setStudent(studentEntity);
+                }
                 transaction.setUser(userEntity);
+
+                transaction.setPaymentMethod(transactionEntity.getPaymentMethod());
                 transaction.setCreatedAt(transactionEntity.getCreatedAt());
                 transaction.setUpdatedAt(transactionEntity.getUpdatedAt());
-                transaction.setUser(userRepository.findById(transactionEntity.getUserId()).orElse(null));
                 transaction.setClassroom(classRoomRepository.findById(transactionEntity.getClassroomId()).orElse(null));
                 transactions.add(transaction);
             }
+
             resData.setTransactions(transactions);
             resData.setTotalClassroom((long) classRoomRepository.count());
             resData.setTotalElement(transactionEntities.getTotalElements());

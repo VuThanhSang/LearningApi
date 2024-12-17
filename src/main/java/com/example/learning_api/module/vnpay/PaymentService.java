@@ -25,6 +25,7 @@ public class PaymentService {
     private final StudentEnrollmentsRepository studentEnrollmentsRepository;
     private final StudentRepository studentRepository;
     public PaymentDTO.VNPayResponse createVnPayPayment(HttpServletRequest request, @RequestBody PaymentRequest body) {
+        String bankCode = request.getParameter("bankCode");
 
         String transactionRef = UUID.randomUUID().toString();
         long totalAmount = 0;
@@ -46,14 +47,14 @@ public class PaymentService {
                 transactionEntity.setAmount(Long.valueOf(classRoomEntity.getPrice()));
                 transactionEntity.setStatus("PENDING");
                 transactionEntity.setTransactionRef(transactionRef);
-                transactionEntity.setCreatedAt(new Date().toString());
-                transactionEntity.setUpdatedAt(new Date().toString());
+                transactionEntity.setPaymentMethod(bankCode);
+                transactionEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+                transactionEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
                 paymentRepository.save(transactionEntity);
                 totalAmount += classRoomEntity.getPrice();
             }
         }
         long amount = totalAmount * 100L;
-        String bankCode = request.getParameter("bankCode");
 
 
 

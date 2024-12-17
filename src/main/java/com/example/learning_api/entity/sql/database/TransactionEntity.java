@@ -15,6 +15,7 @@ public class TransactionEntity {
     private String classroomId;
     private Long amount;
     private String transactionRef;
+    private String paymentMethod;
     private String status;
     private String createdAt;
     private String updatedAt;

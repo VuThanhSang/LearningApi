@@ -23,4 +23,17 @@ public interface TransactionRepository extends MongoRepository<TransactionEntity
     Page<TransactionEntity> findByUserId(String userId, Pageable pageable);
 
     Page<TransactionEntity> findAllByStatus(String status, Pageable pageable);
+
+    Page<TransactionEntity> findByUserIdIn(List<String> userIds, Pageable pageable);
+
+
+    Page<TransactionEntity> findByStatusAndUserIdIn(String status, List<String> userIds, Pageable pageable);
+
+    Page<TransactionEntity> findByStatusAndClassroomIdIn(String status, List<String> classroomIds, Pageable pageable);
+
+    Page<TransactionEntity> findByUserIdInAndClassroomIdIn(List<String> userIds, List<String> classroomIds, Pageable pageable);
+    Page<TransactionEntity> findByUserIdAndClassroomIdIn(String userId, List<String> classroomIds, Pageable pageable);
+    Page<TransactionEntity> findByStatusAndUserIdAndClassroomIdIn(String status, String userId, List<String> classroomIds, Pageable pageable);
+    Page<TransactionEntity> findByStatusAndUserId(String status, String userId, Pageable pageable);
+    Page<TransactionEntity> findByStatusAndUserIdInAndClassroomIdIn(String status, List<String> userIds, List<String> classroomIds, Pageable pageable);
 }

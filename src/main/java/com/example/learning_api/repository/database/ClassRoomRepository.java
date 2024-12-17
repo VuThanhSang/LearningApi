@@ -169,4 +169,6 @@ public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, St
     })
     List<ClassRoomEntity> findByAndSortByPrice(List<String> registeredClassRoomIds, String search, Pageable pageable);
 
+    @Query("{ 'name': { $regex: ?0, $options: 'i' } }")
+    List<ClassRoomEntity> findIdsByNameRegex(String regex);
 }
