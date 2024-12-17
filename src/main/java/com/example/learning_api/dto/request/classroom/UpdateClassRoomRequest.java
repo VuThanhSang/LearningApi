@@ -27,6 +27,6 @@ public class UpdateClassRoomRequest {
     private Integer enrollmentCapacity;
     private Integer price;
     private Integer duration;
-    private List<String> categories;
+    private String categoryId;
     private ClassRoomStatus status;
 }

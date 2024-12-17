@@ -166,7 +166,12 @@ public class ClassRoomService implements IClassRoomService {
                 classroom.setTeacherId(body.getTeacherId());
             }
 
-
+            if (body.getCategoryId()!=null){
+                if (categoryRepository.findById(body.getCategoryId()).isEmpty()){
+                    throw new IllegalArgumentException("CategoryId is not found");
+                }
+                classroom.setCategoryId(body.getCategoryId());
+            }
 
 
             if (body.getStatus()!=null){
