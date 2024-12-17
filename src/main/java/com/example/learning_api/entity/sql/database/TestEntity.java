@@ -32,4 +32,9 @@ public class TestEntity {
     private String updatedAt;
 
     private List<FileEntity> sources;
+
+
+
+    @DBRef
+    private List<TestResultEntity> testResults;
 }

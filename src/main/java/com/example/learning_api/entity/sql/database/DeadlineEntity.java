@@ -30,4 +30,8 @@ public class DeadlineEntity {
     private String updatedAt;
     @DBRef
     private List<FileEntity> files;
+
+    @DBRef
+    private List<DeadlineSubmissionsEntity> submissions;
+
 }
