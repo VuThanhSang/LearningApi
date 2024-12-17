@@ -54,6 +54,7 @@ public class ClassRoomService implements IClassRoomService {
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
+    private final SectionService sectionService;
     @Override
     public CreateClassRoomResponse createClassRoom(CreateClassRoomRequest body) {
         try{
@@ -948,11 +949,42 @@ public class ClassRoomService implements IClassRoomService {
                                 return notAttempted;
                             }))
                     .collect(Collectors.toList());
+            List<TestEntity> tests = testRepository.findByClassroomId(classroomId);
+            List<DeadlineEntity> deadlines = deadlineRepository.findAllByClassroomId(classroomId);
+            for (TestEntity test : tests) {
+                List<TestResultEntity> testResults = allTestResults.stream()
+                        .filter(result -> result.getTestId().equals(test.getId()))
+                        .toList();
+                if (testResults.isEmpty()) {
+                    TestResultEntity notAttempted = new TestResultEntity();
+                    notAttempted.setTestId(test.getId());
+                    notAttempted.setStudentId(studentId);
+                    notAttempted.setState(TestState.NOT_STARTED);
+                    allTestResults.add(notAttempted);
 
+                }
+                test.setTestResults(testResults);
+
+            }
+            for (DeadlineEntity deadline : deadlines) {
+                List<DeadlineSubmissionsEntity> deadlineSubmissions = allDeadlineSubmissions.stream()
+                        .filter(submission -> submission.getDeadlineId().equals(deadline.getId()))
+                        .toList();
+                if (deadlineSubmissions.isEmpty()) {
+                    DeadlineSubmissionsEntity notAttempted = new DeadlineSubmissionsEntity();
+                    notAttempted.setDeadlineId(deadline.getId());
+                    notAttempted.setStudentId(studentId);
+                    notAttempted.setStatus(DeadlineSubmissionStatus.NOT_SUBMITTED);
+                    allDeadlineSubmissions.add(notAttempted);
+                }
+                deadline.setSubmissions(deadlineSubmissions);
+            }
             res.setStudentAvatar(student.getUser().getAvatar());
             res.setStudentName(student.getUser().getFullname());
-            res.setTestResults(allTestResults);
-            res.setDeadlineSubmissions(allDeadlineSubmissions);
+            res.setTests(tests);
+            res.setDeadlines(deadlines);
+            GetSectionsResponse sections = sectionService.getSectionsByClassRoomId(classroomId,0,99,"USER",studentId);
+            res.setSections(sections);
             return res;
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());

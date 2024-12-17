@@ -1,6 +1,9 @@
 package com.example.learning_api.dto.response.classroom;
 
+import com.example.learning_api.dto.response.section.GetSectionsResponse;
+import com.example.learning_api.entity.sql.database.DeadlineEntity;
 import com.example.learning_api.entity.sql.database.DeadlineSubmissionsEntity;
+import com.example.learning_api.entity.sql.database.TestEntity;
 import com.example.learning_api.entity.sql.database.TestResultEntity;
 import com.example.learning_api.enums.StudentStatus;
 import jakarta.persistence.Id;
@@ -26,7 +29,7 @@ public class GetDetailStudentInClassResponse {
     private String studentName;
     private String studentAvatar;
     private String progress;
-
-    List<TestResultEntity> testResults;
-    List<DeadlineSubmissionsEntity> deadlineSubmissions;
+    List<TestEntity> tests;
+    List<DeadlineEntity> deadlines;
+    GetSectionsResponse sections;
 }
