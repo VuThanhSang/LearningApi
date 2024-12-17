@@ -51,8 +51,8 @@ public class PaymentController {
                 StudentEntity studentEntity = studentRepository.findByUserId(transactionEntity.getUserId());
                 studentEnrollmentsEntity.setStudentId(studentEntity.getId());
                 studentEnrollmentsEntity.setClassroomId(transactionEntity.getClassroomId());
-                studentEnrollmentsEntity.setCreatedAt(transactionEntity.getCreatedAt());
-                studentEnrollmentsEntity.setUpdatedAt(transactionEntity.getUpdatedAt());
+                studentEnrollmentsEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+                studentEnrollmentsEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
                 studentEnrollmentsRepository.save(studentEnrollmentsEntity);
             }
             // Chuyển hướng kèm tham số

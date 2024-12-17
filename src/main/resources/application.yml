@@ -90,4 +90,4 @@ payment:
 
 client:
   url:
-    payment-status: "http://localhost:3000/student/success-payment"
+    payment-status: "https://www.facebook.com"

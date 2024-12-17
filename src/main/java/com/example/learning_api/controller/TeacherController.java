@@ -6,6 +6,7 @@ import com.example.learning_api.dto.request.teacher.CreateTeacherRequest;
 import com.example.learning_api.dto.request.teacher.UpdateTeacherRequest;
 import com.example.learning_api.dto.response.cart.GetPaymentForTeacher;
 import com.example.learning_api.dto.response.teacher.CreateTeacherResponse;
+import com.example.learning_api.dto.response.teacher.GetTeacherPopularResponse;
 import com.example.learning_api.dto.response.teacher.GetTeachersResponse;
 import com.example.learning_api.dto.response.teacher.TeacherDashboardResponse;
 import com.example.learning_api.dto.response.test.GetTestInProgress;
@@ -19,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
+import java.util.List;
 
 import static com.example.learning_api.constant.RouterConstant.*;
 
@@ -185,5 +187,30 @@ public class TeacherController {
         }
 
     }
+
+    @GetMapping(path = "/popular")
+    public ResponseEntity<ResponseAPI<List<GetTeacherPopularResponse>>> getTeacherPopular(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        try{
+            List<GetTeacherPopularResponse> getTeachersResponse =  teacherService.getTeacherPopular(page-1, size);
+            ResponseAPI<List<GetTeacherPopularResponse>> res = ResponseAPI.<List<GetTeacherPopularResponse>>builder()
+                    .timestamp(new Date())
+                    .message("Get teacher popular successfully")
+                    .data(getTeachersResponse)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<List<GetTeacherPopularResponse>> res = ResponseAPI.<List<GetTeacherPopularResponse>>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+
+    }
+
 
 }

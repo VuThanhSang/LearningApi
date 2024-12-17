@@ -5,10 +5,13 @@ import com.example.learning_api.dto.request.teacher.CreateTeacherRequest;
 import com.example.learning_api.dto.request.teacher.UpdateTeacherRequest;
 import com.example.learning_api.dto.response.cart.GetPaymentForTeacher;
 import com.example.learning_api.dto.response.teacher.CreateTeacherResponse;
+import com.example.learning_api.dto.response.teacher.GetTeacherPopularResponse;
 import com.example.learning_api.dto.response.teacher.GetTeachersResponse;
 import com.example.learning_api.dto.response.teacher.TeacherDashboardResponse;
 import com.example.learning_api.dto.response.test.GetTestInProgress;
 import com.example.learning_api.entity.sql.database.TeacherEntity;
+
+import java.util.List;
 
 public interface ITeacherService {
     CreateTeacherResponse createTeacher(CreateTeacherRequest body);
@@ -19,4 +22,5 @@ public interface ITeacherService {
     TeacherEntity getTeacherByUserId(String teacherId);
     TeacherDashboardResponse getTeacherDashboard(String teacherId);
     GetPaymentForTeacher getPaymentForTeacher(String teacherId, int page, int size);
+    List<GetTeacherPopularResponse> getTeacherPopular(int page, int size);
 }
