@@ -2,6 +2,8 @@ package com.example.learning_api.repository.database;
 
 
 import com.example.learning_api.entity.sql.database.ProgressEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
@@ -20,4 +22,7 @@ public interface ProgressRepository extends MongoRepository<ProgressEntity, Stri
     // Kiểm tra section đã hoàn thành hay chưa
     boolean existsByStudentIdAndClassroomIdAndSectionIdAndCompleted(String studentId, String classroomId, String sectionId, Boolean completed);
     List<ProgressEntity> findByClassroomIdAndLessonIdInAndCompletedAndStudentId(String classroomId, List<String> lessonId, Boolean completed, String studentId);
+    @Query(value = "{ 'studentId' : ?0, 'classroomId' : ?1 , 'completed' : true, 'sectionId' : null }")
+    Page<ProgressEntity> findByStudentIdAndClassroomId(String studentId, String classroomId, Pageable pageable);
+
 }

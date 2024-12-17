@@ -2,6 +2,7 @@ package com.example.learning_api.service.core.Impl;
 
 import com.example.learning_api.constant.CloudinaryConstant;
 import com.example.learning_api.constant.ErrorConstant;
+import com.example.learning_api.dto.common.LessonCompleteDto;
 import com.example.learning_api.dto.request.classroom.*;
 import com.example.learning_api.dto.response.classroom.*;
 import com.example.learning_api.dto.response.CloudinaryUploadResponse;
@@ -912,10 +913,11 @@ public class ClassRoomService implements IClassRoomService {
             List<TestEntity> listTest = listTestOfClass.getContent();
 
             // Fetch all test results
+            // Fetch all test results
             List<TestResultEntity> allTestResults = listTest.stream()
                     .map(test -> listTestResult.stream()
                             .filter(result -> result.getTestId().equals(test.getId()))
-                            .findFirst()
+                            .max(Comparator.comparingDouble(TestResultOfTestResponse::getGrade))
                             .map(result -> {
                                 TestResultEntity entity = new TestResultEntity();
                                 entity.setId(result.getResultId());
@@ -983,8 +985,35 @@ public class ClassRoomService implements IClassRoomService {
             res.setStudentName(student.getUser().getFullname());
             res.setTests(tests);
             res.setDeadlines(deadlines);
+            res.setTotalTest(tests.size());
+            res.setTotalTestTaken((int) allTestResults.stream().filter(result -> result.getState() != TestState.NOT_STARTED).count());
             GetSectionsResponse sections = sectionService.getSectionsByClassRoomId(classroomId,0,99,"USER",studentId);
-            res.setSections(sections);
+            int totalLessonCompleted = 0;
+            int totalLesson= 0;
+            for (GetSectionsResponse.SectionResponse section : sections.getSections()){
+                for (GetSectionsResponse.LessonResponse lesson : section.getLessons()){
+                    totalLesson++;
+                    if (lesson.getIsComplete()){
+                        totalLessonCompleted++;
+                    }
+                }
+            }
+            res.setTotalLesson(totalLesson);
+            res.setTotalLessonComplete(totalLessonCompleted);
+            res.setProgress((double) Math.ceil((double) totalLessonCompleted / res.getTotalLesson() * 100));
+            Pageable pageable1 = PageRequest.of(0, 3);
+            Page<ProgressEntity> progresses = progressRepository.findByStudentIdAndClassroomId(studentId, classroomId, pageable1);
+            List<LessonCompleteDto> lessonCompletes = new ArrayList<>();
+            for (ProgressEntity progress : progresses) {
+                LessonCompleteDto lessonComplete = new LessonCompleteDto();
+                lessonComplete.setLessonId(progress.getLessonId());
+                LessonEntity lesson = lessonRepository.findById(progress.getLessonId())
+                        .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
+                lessonComplete.setLessonName(lesson.getName());
+                lessonComplete.setCreatedAt(progress.getCompletedAt());
+                lessonCompletes.add(lessonComplete);
+            }
+            res.setLastLessonComplete(lessonCompletes);
             return res;
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
@@ -1025,7 +1054,7 @@ public class ClassRoomService implements IClassRoomService {
             List<TestEntity> tests = testRepository.findByClassroomId(classroomId);
             List<StudentEntity> students = studentEnrollmentsRepository.findByClassroomId(classroomId).stream()
                     .map(studentEnrollmentsEntity -> studentRepository.findById(studentEnrollmentsEntity.getStudentId()).get())
-                    .collect(Collectors.toList());
+                    .toList();
             List<UserEntity> users = new ArrayList<>();
             for (StudentEntity student : students){
                 UserEntity user = student.getUser();

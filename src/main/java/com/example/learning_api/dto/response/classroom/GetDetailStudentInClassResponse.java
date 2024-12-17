@@ -1,5 +1,6 @@
 package com.example.learning_api.dto.response.classroom;
 
+import com.example.learning_api.dto.common.LessonCompleteDto;
 import com.example.learning_api.dto.response.section.GetSectionsResponse;
 import com.example.learning_api.entity.sql.database.DeadlineEntity;
 import com.example.learning_api.entity.sql.database.DeadlineSubmissionsEntity;
@@ -28,8 +29,12 @@ public class GetDetailStudentInClassResponse {
     private StudentStatus status;
     private String studentName;
     private String studentAvatar;
-    private String progress;
     List<TestEntity> tests;
     List<DeadlineEntity> deadlines;
-    GetSectionsResponse sections;
+    private Double progress;
+    private int totalTest;
+    private int totalTestTaken;
+    private int totalLesson;
+    private int totalLessonComplete;
+    private List<LessonCompleteDto> lastLessonComplete;
 }
