@@ -32,7 +32,8 @@ public class GetClassRoomDetailResponse {
     private Integer totalExam;
     private Integer totalDocument;
     private Integer price;
-    private List<String> categories;
+    private String categoryId;
+    private String categoryName;
     private Boolean isPublic;
     private boolean isEnrolled;
     private UserEntity user;

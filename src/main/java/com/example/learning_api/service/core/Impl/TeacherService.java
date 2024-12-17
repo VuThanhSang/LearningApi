@@ -6,6 +6,7 @@ import com.example.learning_api.dto.request.teacher.UpdateTeacherRequest;
 import com.example.learning_api.dto.response.cart.GetPaymentForTeacher;
 import com.example.learning_api.dto.response.deadline.UpcomingDeadlinesResponse;
 import com.example.learning_api.dto.response.teacher.CreateTeacherResponse;
+import com.example.learning_api.dto.response.teacher.GetTeacherPopularResponse;
 import com.example.learning_api.dto.response.teacher.GetTeachersResponse;
 import com.example.learning_api.dto.response.teacher.TeacherDashboardResponse;
 import com.example.learning_api.dto.response.test.GetTestInProgress;
@@ -265,6 +266,36 @@ public class TeacherService implements ITeacherService {
             throw new IllegalArgumentException(e.getMessage());
         }
 
+    }
+
+    @Override
+    public List<GetTeacherPopularResponse> getTeacherPopular(int page, int size) {
+        try{
+            Pageable pageable = PageRequest.of(page, size);
+            List<GetTeacherPopularResponse> resData = new ArrayList<>();
+            List<TeacherEntity> teacherEntities = teacherRepository.findAll(pageable).getContent();
+            for (TeacherEntity teacherEntity : teacherEntities){
+                UserEntity userEntity = userRepository.findById(teacherEntity.getUserId()).orElse(null);
+                GetTeacherPopularResponse teacherPopularResponse = new GetTeacherPopularResponse();
+                teacherPopularResponse.setId(teacherEntity.getId());
+                teacherPopularResponse.setFullname(userEntity.getFullname());
+                teacherPopularResponse.setAvatar(userEntity.getAvatar());
+                teacherPopularResponse.setExperience(teacherEntity.getExperience());
+                List<ClassRoomEntity> classRoomEntities = classroomRepository.findByTeacherId(teacherEntity.getId());
+                List<String> classroomIds = new ArrayList<>();
+                for (ClassRoomEntity classRoomEntity : classRoomEntities){
+                    classroomIds.add(classRoomEntity.getId());
+                }
+                List<StudentEnrollmentsEntity> studentEnrollmentsEntities = studentEnrollmentsRepository.findByClassroomIdIn(classroomIds);
+                teacherPopularResponse.setNumberStudent((long) studentEnrollmentsEntities.size());
+                resData.add(teacherPopularResponse);
+
+            }
+            return resData;
+        }
+        catch (Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
     }
 
 

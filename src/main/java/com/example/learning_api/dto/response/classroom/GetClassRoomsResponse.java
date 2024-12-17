@@ -45,6 +45,7 @@ public class GetClassRoomsResponse {
         private Integer totalDocument;
         private Integer price;
         private String categoryId;
+        private String categoryName;
         private String createdAt;
         private String updatedAt;
         private Double rating;

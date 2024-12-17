@@ -228,6 +228,11 @@ public class ClassRoomService implements IClassRoomService {
             // Map dữ liệu sang DTO
             List<GetClassRoomsResponse.ClassRoomResponse> resData = classRooms.stream().map(classRoom -> {
                 GetClassRoomsResponse.ClassRoomResponse classRoomResponse = modelMapperService.mapClass(classRoom, GetClassRoomsResponse.ClassRoomResponse.class);
+                if (classRoom.getCategoryId() != null) {
+                    classRoomResponse.setCategoryName(categoryRepository.findById(classRoom.getCategoryId())
+                            .orElse(null).getName());
+                }
+
                 TeacherEntity teacher = teacherRepository.findById(classRoom.getTeacherId())
                         .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
                 UserEntity user = userRepository.findById(teacher.getUserId())
@@ -319,6 +324,10 @@ public class ClassRoomService implements IClassRoomService {
             // Map dữ liệu sang DTO
             List<GetClassRoomsResponse.ClassRoomResponse> resData = unregisteredClassRooms.stream().map(classRoom -> {
                 GetClassRoomsResponse.ClassRoomResponse classRoomResponse = modelMapperService.mapClass(classRoom, GetClassRoomsResponse.ClassRoomResponse.class);
+                if (classRoom.getCategoryId() != null) {
+                    classRoomResponse.setCategoryName(categoryRepository.findById(classRoom.getCategoryId())
+                            .orElse(null).getName());
+                }
                 int count = studentEnrollmentsRepository.countByClassroomId(classRoom.getId());
                 classRoomResponse.setCurrentEnrollment(count);
                 TeacherEntity teacher = teacherRepository.findById(classRoom.getTeacherId())
@@ -438,6 +447,10 @@ public class ClassRoomService implements IClassRoomService {
             List<GetClassRoomsResponse.ClassRoomResponse> resData = new ArrayList<>();
             for (ClassRoomEntity classRoom : classRooms){
                 GetClassRoomsResponse.ClassRoomResponse classRoomResponse = modelMapperService.mapClass(classRoom, GetClassRoomsResponse.ClassRoomResponse.class);
+                if (classRoom.getCategoryId() != null) {
+                    classRoomResponse.setCategoryName(categoryRepository.findById(classRoom.getCategoryId())
+                            .orElse(null).getName());
+                }
                 resData.add(classRoomResponse);
             }
             GetClassRoomsResponse res = new GetClassRoomsResponse();
@@ -495,6 +508,11 @@ public class ClassRoomService implements IClassRoomService {
             resData.setImage(classRoomEntity.getImage());
             resData.setCurrentEnrollment(classRoomEntity.getCurrentEnrollment());
             resData.setInviteCode(classRoomEntity.getInviteCode());
+            resData.setCategoryId(classRoomEntity.getCategoryId());
+            if (classRoomEntity.getCategoryId() != null) {
+                resData.setCategoryName(categoryRepository.findById(classRoomEntity.getCategoryId())
+                        .orElse(null).getName());
+            }
             resData.setStatus(classRoomEntity.getStatus());
             resData.setTeacherId(classRoomEntity.getTeacherId());
             resData.setCreatedAt(classRoomEntity.getCreatedAt());
@@ -546,7 +564,13 @@ public class ClassRoomService implements IClassRoomService {
                 GetClassRoomDetailResponse resData = new GetClassRoomDetailResponse();
                 Pageable pageAble = PageRequest.of(0, 15);
                 resData = modelMapperService.mapClass(classRoomEntity, GetClassRoomDetailResponse.class);
-//                resData.setId(classRoomEntity.getId());
+                resData.setCategoryId(classRoomEntity.getCategoryId());
+                if (classRoomEntity.getCategoryId() != null) {
+                    resData.setCategoryName(categoryRepository.findById(classRoomEntity.getCategoryId())
+                            .orElse(null).getName());
+                }
+
+                //                resData.setId(classRoomEntity.getId());
 //                resData.setName(classRoomEntity.getName());
 //                resData.setDescription(classRoomEntity.getDescription());
 //                resData.setImage(classRoomEntity.getImage());
