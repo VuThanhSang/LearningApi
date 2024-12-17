@@ -35,5 +35,5 @@ public interface IAdminService {
     List<CategoryEntity> getCategories(String name);
 
 
-    GetPaymentForTeacher getPaymentForAdmin( int page, int size, String sort, String order, String status );
+    GetPaymentForTeacher getPaymentForAdmin(int page, int size, String sort, String order, String status, String search, String searchBy);
 }

@@ -21,6 +21,7 @@ public class GetPaymentForTeacher {
         private UserEntity user;
         private String status;
         private ClassRoomEntity classroom;
+        private String paymentMethod;
         private String createdAt;
         private String updatedAt;
     }

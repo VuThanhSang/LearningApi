@@ -5,6 +5,7 @@ import com.example.learning_api.dto.request.student.UpdateStudentRequest;
 import com.example.learning_api.dto.response.cart.GetPaymentForStudent;
 import com.example.learning_api.dto.response.student.CreateStudentResponse;
 import com.example.learning_api.dto.response.student.GetStudentsResponse;
+import com.example.learning_api.entity.sql.database.ClassRoomEntity;
 import com.example.learning_api.entity.sql.database.StudentEntity;
 import com.example.learning_api.entity.sql.database.TransactionEntity;
 import com.example.learning_api.entity.sql.database.UserEntity;
@@ -19,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -34,7 +36,7 @@ public class StudentService implements IStudentService {
     private final UserRepository userRepository;
     private final ClassRoomRepository classRoomRepository;
     private final TransactionRepository transactionRepository;
-
+    private final ClassRoomRepository classroomRepository;
     @Override
     public CreateStudentResponse createStudent(CreateStudentRequest body) {
         try{
@@ -134,29 +136,73 @@ public class StudentService implements IStudentService {
     }
 
     @Override
-    public GetPaymentForStudent getPaymentForStudent(String userId, int page, int size) {
+    public GetPaymentForStudent getPaymentForStudent(String userId, int page, int size, String sort, String order, String status, String search) {
         try {
+            // Validate sorting order
+            String upperOrder = order.toUpperCase();
+            if (!upperOrder.equals("ASC") && !upperOrder.equals("DESC")) {
+                throw new IllegalArgumentException("Invalid value '" + order + "' for orders; Must be 'asc' or 'desc'");
+            }
+
+            // Configure pageable
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(upperOrder), sort));
+
+            // Fetch student entity
             StudentEntity studentEntity = studentRepository.findByUserId(userId);
             if (studentEntity == null) {
                 throw new IllegalArgumentException("Student not found");
             }
-            Pageable pageable = PageRequest.of(page, size);
-            Page<TransactionEntity> transactionEntities = transactionRepository.findByUserId(userId, pageable);
+
+            // Fetch transactions for the student
+            Page<TransactionEntity> transactionEntities;
+
+            // Filter by classroom name if search is provided
+            if (!search.isEmpty()) {
+                List<ClassRoomEntity> filteredClassrooms = classroomRepository.findIdsByNameRegex(search);
+                List<String> classroomIds = filteredClassrooms.stream().map(ClassRoomEntity::getId).toList();
+
+                if (status.isEmpty()) {
+                    transactionEntities = transactionRepository.findByUserIdAndClassroomIdIn(userId, classroomIds, pageable);
+                } else {
+                    transactionEntities = transactionRepository.findByStatusAndUserIdAndClassroomIdIn(status, userId, classroomIds, pageable);
+                }
+            } else {
+                if (status.isEmpty()) {
+                    transactionEntities = transactionRepository.findByUserId(userId, pageable);
+                } else {
+                    transactionEntities = transactionRepository.findByStatusAndUserId(status, userId, pageable);
+                }
+            }
+
+            // Prepare response data
+            GetPaymentForStudent resData = new GetPaymentForStudent();
             List<GetPaymentForStudent.Transaction> transactions = new ArrayList<>();
+
+            // Map transaction data
             for (TransactionEntity transactionEntity : transactionEntities) {
                 GetPaymentForStudent.Transaction transaction = modelMapperService.mapClass(transactionEntity, GetPaymentForStudent.Transaction.class);
-                transaction.setClassroom(classRoomRepository.findById(transactionEntity.getClassroomId()).get());
+
+                // Fetch classroom details
+                ClassRoomEntity classRoomEntity = classroomRepository.findById(transactionEntity.getClassroomId())
+                        .orElseThrow(() -> new IllegalArgumentException("Classroom not found"));
+                transaction.setClassroom(classRoomEntity);
+
+                transaction.setPaymentMethod(transactionEntity.getPaymentMethod());
                 transactions.add(transaction);
             }
-            GetPaymentForStudent resData = new GetPaymentForStudent();
+
+            // Set response data
+            resData.setTransactions(transactions);
             resData.setTotalPrice(transactionEntities.stream().mapToLong(TransactionEntity::getAmount).sum());
-            resData.setTotalClassroom(transactionEntities.stream().map(TransactionEntity::getClassroomId).distinct().count());
+            resData.setTotalClassroom(transactionEntities.stream()
+                    .map(TransactionEntity::getClassroomId)
+                    .distinct()
+                    .count());
             resData.setTotalElement(transactionEntities.getTotalElements());
             resData.setTotalPage(transactionEntities.getTotalPages());
-            resData.setTransactions(transactions);
+
             return resData;
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }
     }

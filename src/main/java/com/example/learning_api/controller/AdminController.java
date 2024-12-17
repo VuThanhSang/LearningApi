@@ -319,9 +319,16 @@ public class AdminController {
                                                                                 @RequestParam(value = "size", defaultValue = "10") int size,
                                                                                 @RequestParam(value = "sort", defaultValue = "createdAt") String sort,
                                                                                 @RequestParam(value = "order", defaultValue = "desc") String order,
+                                                                                @RequestParam(value = "search", defaultValue = "") String search,
+                                                                                @RequestParam(value = "searchBy", defaultValue = "") String searchBy,
                                                                                 @RequestParam(value = "status", defaultValue = "") String status) {
         try{
-            GetPaymentForTeacher data = adminService.getPaymentForAdmin(page-1, size, sort, order, status);
+            if (!search.isEmpty() && searchBy.isEmpty()){
+                searchBy = "user";
+            }
+
+
+            GetPaymentForTeacher data = adminService.getPaymentForAdmin(page-1, size, sort, order, status, search,searchBy);
             ResponseAPI<GetPaymentForTeacher> res = ResponseAPI.<GetPaymentForTeacher>builder()
                     .timestamp(new Date())
                     .data(data)

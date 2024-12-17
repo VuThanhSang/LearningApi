@@ -21,6 +21,6 @@ public interface ITeacherService {
     void addSubjectSpecialization(String teacherId, String majorId);
     TeacherEntity getTeacherByUserId(String teacherId);
     TeacherDashboardResponse getTeacherDashboard(String teacherId);
-    GetPaymentForTeacher getPaymentForTeacher(String teacherId, int page, int size);
+    GetPaymentForTeacher getPaymentForTeacher(String teacherId, int page, int size, String sort, String order, String status, String search, String searchBy);
     List<GetTeacherPopularResponse> getTeacherPopular(int page, int size);
 }

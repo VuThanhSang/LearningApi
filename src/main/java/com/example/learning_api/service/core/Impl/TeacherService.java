@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -41,6 +42,7 @@ public class TeacherService implements ITeacherService {
     private final ReviewRepository reviewRepository;
     private final TransactionRepository transactionRepository;
     private final StudentRepository studentRepository;
+    private final ClassRoomRepository classRoomRepository;
     @Override
     public CreateTeacherResponse createTeacher(CreateTeacherRequest body) {
         try{
@@ -231,43 +233,95 @@ public class TeacherService implements ITeacherService {
     }
 
     @Override
-    public GetPaymentForTeacher getPaymentForTeacher(String teacherId, int page, int size) {
+    public GetPaymentForTeacher getPaymentForTeacher(String teacherId, int page, int size, String sort, String order, String status, String search, String searchBy) {
         try {
-            Pageable pageable = PageRequest.of(page, size);
-            List<ClassRoomEntity> classRoomEntities = classroomRepository.findByTeacherId(teacherId);
-            List<String> classroomIds = new ArrayList<>();
-            for (ClassRoomEntity classRoomEntity : classRoomEntities) {
-                classroomIds.add(classRoomEntity.getId());
+            // Validate sorting order
+            String upperOrder = order.toUpperCase();
+            if (!upperOrder.equals("ASC") && !upperOrder.equals("DESC")) {
+                throw new IllegalArgumentException("Invalid value '" + order + "' for orders; Must be 'asc' or 'desc'");
             }
-            Page<TransactionEntity> transactionEntities = transactionRepository.findByClassroomIdIn(classroomIds, pageable);
+
+            // Configure pageable
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(upperOrder), sort));
+
+            // Fetch classrooms for the teacher
+            List<ClassRoomEntity> classRoomEntities = classroomRepository.findByTeacherId(teacherId);
+            List<String> classroomIds = classRoomEntities.stream().map(ClassRoomEntity::getId).toList();
+
+            // Handle searchBy logic (filter by user or classroom name)
+            List<String> filteredClassroomIds = new ArrayList<>();
+            List<String> userIds = new ArrayList<>();
+            if (!search.isEmpty()) {
+                if ("user".equalsIgnoreCase(searchBy)) {
+                    List<UserEntity> users = userRepository.findIdsByFullnameRegex(search);
+                    userIds = users.stream().map(UserEntity::getId).toList();
+                } else if ("class".equalsIgnoreCase(searchBy)) {
+                    List<ClassRoomEntity> filteredClassrooms = classRoomRepository.findIdsByNameRegex(search);
+                     filteredClassroomIds = filteredClassrooms.stream().map(ClassRoomEntity::getId).toList();
+                    classroomIds=filteredClassroomIds;
+                } else {
+                    throw new IllegalArgumentException("Invalid value '" + searchBy + "' for searchBy; Must be 'user' or 'class'");
+                }
+            }
+
+            // Fetch transactions based on filters
+            Page<TransactionEntity> transactionEntities;
+            if (status.isEmpty()) {
+                if (!userIds.isEmpty()) {
+                    transactionEntities = transactionRepository.findByUserIdInAndClassroomIdIn(userIds, classroomIds, pageable);
+                } else if (!filteredClassroomIds.isEmpty()) {
+                    transactionEntities = transactionRepository.findByClassroomIdIn(filteredClassroomIds, pageable);
+                } else {
+                    transactionEntities = transactionRepository.findByClassroomIdIn(classroomIds, pageable);
+                }
+            } else {
+                if (!userIds.isEmpty()) {
+                    transactionEntities = transactionRepository.findByStatusAndUserIdInAndClassroomIdIn(status, userIds, classroomIds, pageable);
+                } else if (!filteredClassroomIds.isEmpty()) {
+                    transactionEntities = transactionRepository.findByStatusAndClassroomIdIn(status, filteredClassroomIds, pageable);
+                } else {
+                    transactionEntities = transactionRepository.findByStatusAndClassroomIdIn(status, classroomIds, pageable);
+                }
+            }
+
+            // Prepare response data
             GetPaymentForTeacher resData = new GetPaymentForTeacher();
             List<GetPaymentForTeacher.Transaction> transactions = new ArrayList<>();
+
+            // Map transaction data
             for (TransactionEntity transactionEntity : transactionEntities) {
                 GetPaymentForTeacher.Transaction transaction = modelMapperService.mapClass(transactionEntity, GetPaymentForTeacher.Transaction.class);
+
+                // Fetch user details
                 UserEntity userEntity = userRepository.findById(transactionEntity.getUserId())
                         .orElseThrow(() -> new IllegalArgumentException("User not found"));
                 StudentEntity studentEntity = studentRepository.findByUserId(userEntity.getId());
-                studentEntity.setUser(null);
-                userEntity.setStudent(studentEntity);
+                if (studentEntity != null) {
+                    studentEntity.setUser(null);
+                    userEntity.setStudent(studentEntity);
+                }
                 transaction.setUser(userEntity);
+
+                // Fetch classroom details
                 ClassRoomEntity classRoomEntity = classroomRepository.findById(transactionEntity.getClassroomId())
                         .orElseThrow(() -> new IllegalArgumentException("Classroom not found"));
                 transaction.setClassroom(classRoomEntity);
+
                 transactions.add(transaction);
             }
+
+            // Set response data
             resData.setTransactions(transactions);
-            resData.setTotalClassroom(transactionEntities.getTotalElements());
-            resData.setTotalElement((long) transactionEntities.getTotalPages());
+            resData.setTotalClassroom((long) classRoomEntities.size());
+            resData.setTotalElement(transactionEntities.getTotalElements());
             resData.setTotalPage(transactionEntities.getTotalPages());
             resData.setTotalPrice(transactionEntities.stream().mapToLong(TransactionEntity::getAmount).sum());
+
             return resData;
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }
-
     }
-
     @Override
     public List<GetTeacherPopularResponse> getTeacherPopular(int page, int size) {
         try{
