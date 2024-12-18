@@ -169,6 +169,7 @@ public class TeacherController {
             @RequestParam(value = "order", defaultValue = "desc") String order,
             @RequestParam(value = "search", defaultValue = "") String search,
             @RequestParam(value = "searchBy", defaultValue = "") String searchBy,
+            @RequestParam(value = "createdAtRange", defaultValue = "") String createdAtRange,
             @RequestParam(value = "status", defaultValue = "") String status
     ) {
         try{
@@ -178,7 +179,7 @@ public class TeacherController {
             if (!search.isEmpty() && searchBy.isEmpty()){
                 searchBy = "user";
             }
-            GetPaymentForTeacher getPaymentForTeacher =  teacherService.getPaymentForTeacher(teacherId, page-1, size, sort, order, status, search, searchBy);
+            GetPaymentForTeacher getPaymentForTeacher =  teacherService.getPaymentForTeacher(teacherId, page-1, size, sort, order, status, search, searchBy,createdAtRange);
             ResponseAPI<GetPaymentForTeacher> res = ResponseAPI.<GetPaymentForTeacher>builder()
                     .timestamp(new Date())
                     .message("Get payment for teacher successfully")

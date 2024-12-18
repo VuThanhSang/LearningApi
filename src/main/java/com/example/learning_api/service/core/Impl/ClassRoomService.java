@@ -169,9 +169,14 @@ public class ClassRoomService implements IClassRoomService {
             }
 
             if (body.getCategoryId()!=null){
-                if (categoryRepository.findById(body.getCategoryId()).isEmpty()){
-                    throw new IllegalArgumentException("CategoryId is not found");
-                }
+                CategoryEntity category = categoryRepository.findById(classroom.getCategoryId())
+                        .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
+                category.setTotalClassRoom(category.getTotalClassRoom()-1);
+                categoryRepository.save(category);
+                CategoryEntity newCategory = categoryRepository.findById(body.getCategoryId())
+                        .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
+                newCategory.setTotalClassRoom(newCategory.getTotalClassRoom()+1);
+                categoryRepository.save(newCategory);
                 classroom.setCategoryId(body.getCategoryId());
             }
 
@@ -257,6 +262,19 @@ public class ClassRoomService implements IClassRoomService {
                         .orElse(0.0);
                 classRoomResponse.setRating(averageRating);
                 classRoomResponse.setTotalRating(allReviews.size());
+                List<SectionEntity> sectionEntities = sectionRepository.findByClassRoomId(classRoomResponse.getId());
+
+                List<String> lessonIds = new ArrayList<>();
+                for (SectionEntity sectionEntity : sectionEntities) {
+                    List<LessonEntity> lessonEntities = lessonRepository.findBySectionId(sectionEntity.getId());
+                    for (LessonEntity lessonEntity : lessonEntities) {
+                        lessonIds.add(lessonEntity.getId());
+                    }
+                }
+                List<ProgressEntity> countComplete = progressRepository.findByClassroomIdAndLessonIdInAndCompletedAndStudentId(
+                        classRoomResponse.getId(), lessonIds, true, studentId
+                );
+                classRoomResponse.setTotalLessonComplete(countComplete.size());
                 return classRoomResponse;
             }).collect(Collectors.toList());
 
@@ -383,7 +401,7 @@ public class ClassRoomService implements IClassRoomService {
                     return createPageFromList(popularClassrooms, pageable);
                 } else if ("new".equalsIgnoreCase(tag)) {
                     List<ClassRoomEntity> newClassrooms = classRoomRepository.findNewClassroomsByCategory(
-                            registeredClassRoomIds, category, search, pageable);
+                            registeredClassRoomIds, category, search, pageable,status);
                     return createPageFromList(newClassrooms, pageable);
                 } else if ("price".equalsIgnoreCase(tag)) {
                     boolean ascending = "asc".equalsIgnoreCase(order);
@@ -413,7 +431,7 @@ public class ClassRoomService implements IClassRoomService {
             } else {
                 int sampleSize = pageable.getPageSize() * (pageable.getPageNumber() + 1);
                 List<ClassRoomEntity> randomClassrooms = classRoomRepository.findRandomClassrooms(
-                        registeredClassRoomIds, search, sampleSize);
+                        registeredClassRoomIds, search, sampleSize,status);
                 return createPageFromList(randomClassrooms, pageable);
             }
         }
@@ -621,6 +639,18 @@ public class ClassRoomService implements IClassRoomService {
 
                 }
                 resData.setSections(sections);
+
+           List<String> lessonIds = new ArrayList<>();
+           for (SectionEntity sectionEntity : sectionEntities) {
+               List<LessonEntity> lessonEntities = lessonRepository.findBySectionId(sectionEntity.getId());
+               for (LessonEntity lessonEntity : lessonEntities) {
+                   lessonIds.add(lessonEntity.getId());
+               }
+           }
+           List<ProgressEntity> countComplete = progressRepository.findByClassroomIdAndLessonIdInAndCompletedAndStudentId(
+                   resData.getId(), lessonIds, true, userId
+           );
+           resData.setTotalLessonComplete(countComplete.size());
                 return resData;
 
        }

@@ -121,12 +121,13 @@ public class StudentController {
             @RequestParam(value = "sort", defaultValue = "createdAt") String sort,
             @RequestParam(value = "order", defaultValue = "desc") String order,
             @RequestParam(value = "search", defaultValue = "") String search,
-            @RequestParam(value = "status", defaultValue = "") String status
+            @RequestParam(value = "status", defaultValue = "") String status,
+            @RequestParam(value = "createdAtRange", defaultValue = "") String createdAtRange
     ) {
         try{
             String token = authorization.substring(7);
             String userId = jwtService.extractUserId(token);
-            GetPaymentForStudent resData = studentService.getPaymentForStudent(userId, page-1, size, sort, order, status, search);
+            GetPaymentForStudent resData = studentService.getPaymentForStudent(userId, page-1, size, sort, order, status, search,createdAtRange);
             ResponseAPI<GetPaymentForStudent> res = ResponseAPI.<GetPaymentForStudent>builder()
                     .timestamp(new Date())
                     .message("Get payment for student successfully")

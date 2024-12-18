@@ -37,6 +37,7 @@ public class GetClassRoomsResponse {
         private Long duration;
         private Integer totalVideo;
         private Integer totalLesson;
+        private Integer totalLessonComplete;;
         private Integer totalStudent;
         private Integer totalResource;
         private Integer totalAssignment;

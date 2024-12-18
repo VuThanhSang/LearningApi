@@ -36,6 +36,7 @@ public class GetClassRoomDetailResponse {
     private String categoryName;
     private Boolean isPublic;
     private boolean isEnrolled;
+    private Integer totalLessonComplete;
     private UserEntity user;
     private List<Section> sections;
     @Data

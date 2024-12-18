@@ -321,6 +321,7 @@ public class AdminController {
                                                                                 @RequestParam(value = "order", defaultValue = "desc") String order,
                                                                                 @RequestParam(value = "search", defaultValue = "") String search,
                                                                                 @RequestParam(value = "searchBy", defaultValue = "") String searchBy,
+                                                                                @RequestParam(value = "createdAtRange", defaultValue = "") String createdAtRange,
                                                                                 @RequestParam(value = "status", defaultValue = "") String status) {
         try{
             if (!search.isEmpty() && searchBy.isEmpty()){
@@ -328,7 +329,7 @@ public class AdminController {
             }
 
 
-            GetPaymentForTeacher data = adminService.getPaymentForAdmin(page-1, size, sort, order, status, search,searchBy);
+            GetPaymentForTeacher data = adminService.getPaymentForAdmin(page-1, size, sort, order, status, search,searchBy,createdAtRange);
             ResponseAPI<GetPaymentForTeacher> res = ResponseAPI.<GetPaymentForTeacher>builder()
                     .timestamp(new Date())
                     .data(data)
