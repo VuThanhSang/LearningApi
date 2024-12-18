@@ -29,8 +29,7 @@ public class TeacherEntity {
     private String createdAt;
     private String updatedAt;
     private UserEntity user;
-    @DBRef
-    private List<CourseEntity> courses;
+
     @DBRef
     private List<ClassRoomEntity> classRooms;
 }

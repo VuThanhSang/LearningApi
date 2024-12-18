@@ -6,6 +6,7 @@ import com.example.learning_api.dto.response.admin.GetClassRoomsAdminResponse;
 import com.example.learning_api.dto.response.admin.GetUserDetailResponse;
 import com.example.learning_api.dto.response.admin.GetUsersResponse;
 import com.example.learning_api.dto.response.cart.GetPaymentForTeacher;
+import com.example.learning_api.dto.response.classroom.GetApprovalClassroomResponse;
 import com.example.learning_api.dto.response.classroom.GetClassRoomsResponse;
 import com.example.learning_api.dto.response.student.GetStudentsResponse;
 import com.example.learning_api.dto.response.teacher.GetTeachersResponse;
@@ -36,4 +37,8 @@ public interface IAdminService {
 
 
     GetPaymentForTeacher getPaymentForAdmin(int page, int size, String sort, String order, String status, String search, String searchBy,String createdAtRange);
+
+    GetApprovalClassroomResponse getApprovalClassrooms(int page, int size, String search, String sort, String order, String status);
+    void approveClassroom(String id, String status);
+
 }

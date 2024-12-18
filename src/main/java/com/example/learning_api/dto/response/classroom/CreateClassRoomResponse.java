@@ -1,10 +1,7 @@
 package com.example.learning_api.dto.response.classroom;
 
-import com.example.learning_api.entity.sql.database.ScheduleEntity;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
 
 @Data
 @NoArgsConstructor

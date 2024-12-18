@@ -4,10 +4,9 @@ import com.example.learning_api.dto.common.StudentSubmissionCountDto;
 import com.example.learning_api.dto.request.admin.ChangeRoleRequest;
 import com.example.learning_api.dto.response.admin.*;
 import com.example.learning_api.dto.response.cart.GetPaymentForTeacher;
+import com.example.learning_api.dto.response.classroom.GetApprovalClassroomResponse;
 import com.example.learning_api.entity.sql.database.*;
-import com.example.learning_api.enums.ForumStatus;
-import com.example.learning_api.enums.RoleEnum;
-import com.example.learning_api.enums.UserStatus;
+import com.example.learning_api.enums.*;
 import com.example.learning_api.repository.database.*;
 import com.example.learning_api.service.common.CloudinaryService;
 import com.example.learning_api.service.core.IAdminService;
@@ -43,6 +42,7 @@ public class AdminService implements IAdminService {
     private final NotificationRepository notificationRepository;
     private final CategoryRepository categoryRepository;
     private final TransactionRepository transactionRepository;
+    private final ApprovalClassroomRepository approvalClassroomRequestRepository;
     @Override
     public void changeRole(ChangeRoleRequest body) {
         try {
@@ -426,6 +426,77 @@ public class AdminService implements IAdminService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
+
+    @Override
+    public GetApprovalClassroomResponse getApprovalClassrooms(int page, int size, String search, String sort, String order, String status) {
+        try {
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(order), sort));
+            List<ClassRoomEntity> classrooms = classRoomRepository.findByNameContaining(search);
+            List<String> classroomIds = classrooms.stream().map(ClassRoomEntity::getId).collect(Collectors.toList());
+
+            Page<ApprovalClassroomRequestEntity> approvalRequests;
+            if (status.isEmpty()) {
+                approvalRequests = approvalClassroomRequestRepository.findByClassroomIds(classroomIds, pageable);
+            } else {
+                approvalRequests = approvalClassroomRequestRepository.findByClassroomIdsAndStatus(classroomIds, status, pageable);
+            }
+
+            GetApprovalClassroomResponse response = new GetApprovalClassroomResponse();
+            response.setTotalPage(approvalRequests.getTotalPages());
+            response.setTotalElement((int) approvalRequests.getTotalElements());
+            response.setData(approvalRequests.getContent().stream().map(request -> {
+                GetApprovalClassroomResponse.ApprovalRequest approvalRequest = new GetApprovalClassroomResponse.ApprovalRequest();
+                approvalRequest.setId(request.getId());
+                approvalRequest.setClassroomId(request.getClassroomId());
+                approvalRequest.setTeacherId(request.getTeacherId());
+                UserEntity teacher = userRepository.findById(request.getTeacherId()).orElse(null);
+                approvalRequest.setTeacher(teacher);
+                approvalRequest.setStatus(request.getStatus().name());
+                approvalRequest.setCreatedAt(request.getCreatedAt());
+                approvalRequest.setUpdatedAt(request.getUpdatedAt());
+
+                ClassRoomEntity classroom = classRoomRepository.findById(request.getClassroomId()).orElse(null);
+                approvalRequest.setClassroom(classroom);
+
+                return approvalRequest;
+            }).collect(Collectors.toList()));
+
+            return response;
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void approveClassroom(String id, String status) {
+        try {
+            ApprovalClassroomRequestEntity approvalRequest = approvalClassroomRequestRepository.findById(id).orElse(null);
+            if (approvalRequest == null) {
+                throw new IllegalArgumentException("Approval request not found");
+            }
+
+            approvalRequest.setStatus(ApprovalClassStatus.valueOf(status));
+//            NotificationEntity notificationEntity = new NotificationEntity();
+//            notificationEntity.setNotificationSettingId("674473d53e126c2148ce1ada");
+//            notificationEntity.setTitle("Classroom "+classRoomEntity.getName()+" has been " + status);
+//            notificationEntity.setMessage("Your Class:  " + classRoomEntity.getName() + " has been " + status);
+//            notificationEntity.setAuthorId(classRoomEntity.getId());
+//            notificationEntity.setTargetUrl(classRoomEntity.getId());
+//            notificationEntity.setPriority(NotificationPriority.NORMAL);
+            List<String> ids= new ArrayList<>();
+            if (status.equals(ApprovalClassStatus.APPROVED.name())) {
+                ClassRoomEntity classroom = classRoomRepository.findById(approvalRequest.getClassroomId()).orElse(null);
+                if (classroom != null) {
+                    classroom.setStatus(ClassRoomStatus.COMPLETED);
+                    classRoomRepository.save(classroom);
+                }
+            }
+            approvalClassroomRequestRepository.save(approvalRequest);
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
     private GetPaymentForTeacher processTransactions(Page<TransactionEntity> transactionEntities) {
         GetPaymentForTeacher resData = new GetPaymentForTeacher();
         List<GetPaymentForTeacher.Transaction> transactions = new ArrayList<>();

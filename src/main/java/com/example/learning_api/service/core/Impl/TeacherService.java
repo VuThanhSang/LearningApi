@@ -38,7 +38,6 @@ public class TeacherService implements ITeacherService {
     private final TeacherRepository teacherRepository;
     private final UserRepository userRepository;
     private final SubjectSpecializationRepository subjectSpecializationRepository;
-    private final MajorsRepository majorsRepository;
     private final DeadlineRepository deadlineRepository;
     private final TestRepository testRepository;
     private final StudentEnrollmentsRepository studentEnrollmentsRepository;
@@ -153,9 +152,7 @@ public class TeacherService implements ITeacherService {
             if (majorId==null){
                 throw new IllegalArgumentException("MajorId is required");
             }
-            if (majorsRepository.findById(majorId)==null){
-                throw new IllegalArgumentException("MajorId is not found");
-            }
+
             SubjectSpecializationEntity subjectSpecializationEntity = new SubjectSpecializationEntity();
             subjectSpecializationEntity.setTeacherId(teacherId);
             subjectSpecializationEntity.setMajorsId(majorId);

@@ -7,6 +7,7 @@ import com.example.learning_api.dto.response.admin.GetClassRoomsAdminResponse;
 import com.example.learning_api.dto.response.admin.GetUserDetailResponse;
 import com.example.learning_api.dto.response.admin.GetUsersResponse;
 import com.example.learning_api.dto.response.cart.GetPaymentForTeacher;
+import com.example.learning_api.dto.response.classroom.GetApprovalClassroomResponse;
 import com.example.learning_api.dto.response.classroom.GetClassRoomForAdminResponse;
 import com.example.learning_api.dto.response.forum.GetForumsResponse;
 import com.example.learning_api.entity.sql.database.CategoryEntity;
@@ -404,4 +405,49 @@ public class AdminController {
         }
     }
 
+
+    @GetMapping(path = "/approval-classroom")
+    public ResponseEntity<ResponseAPI<GetApprovalClassroomResponse>> getApprovalClassroom(@RequestParam(value = "page", defaultValue = "1") int page,
+                                                                                          @RequestParam(value = "size", defaultValue = "10") int size,
+                                                                                          @RequestParam(value = "search", defaultValue = "") String search,
+                                                                                          @RequestParam(value = "status", defaultValue = "") String status,
+                                                                                          @RequestParam(value = "sortDirection", defaultValue = "desc") String sortDirection,
+                                                                                          @RequestParam(value = "sortBy", defaultValue = "createdAt") String sortBy) {
+        try{
+            GetApprovalClassroomResponse data = adminService.getApprovalClassrooms(page-1, size, search, sortBy, sortDirection, status);
+            ResponseAPI<GetApprovalClassroomResponse> res = ResponseAPI.<GetApprovalClassroomResponse>builder()
+                    .timestamp(new Date())
+                    .message("Get approval classroom successfully")
+                    .data(data)
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<GetApprovalClassroomResponse> res = ResponseAPI.<GetApprovalClassroomResponse>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
+
+    @PatchMapping(path = "/approval-classroom/{id}/{status}")
+    public ResponseEntity<ResponseAPI<String>> approveClassroom(@PathVariable String id, @PathVariable String status) {
+        try{
+            adminService.approveClassroom(id, status);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message("Approve classroom successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        }
+        catch (Exception e){
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
 }
