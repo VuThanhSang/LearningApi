@@ -20,6 +20,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.time.*;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -364,21 +366,43 @@ public class AdminService implements IAdminService {
         }
     }
     @Override
-    public GetPaymentForTeacher getPaymentForAdmin(int page, int size, String sort, String order, String status, String search, String searchBy) {
+    public GetPaymentForTeacher getPaymentForAdmin(int page, int size, String sort, String order, String status, String search, String searchBy, String createdAtRange) {
         try {
             String upperOrder = order.toUpperCase();
             if (!upperOrder.equals("ASC") && !upperOrder.equals("DESC")) {
-                throw new IllegalArgumentException("Invalid value '" + order + "' for orders given; Has to be either 'desc' or 'asc' (case insensitive)");
+                throw new IllegalArgumentException("Invalid value '" + order + "' for orders; Has to be either 'desc' or 'asc' (case insensitive)");
             }
+
+            // Determine time boundaries for `createdAt` as timestamps in milliseconds
+            Long startTimestamp = null;
+            Long endTimestamp = System.currentTimeMillis(); // Current time in milliseconds
+
+            if ("TODAY".equalsIgnoreCase(createdAtRange)) {
+                startTimestamp = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+            } else if ("WEEK".equalsIgnoreCase(createdAtRange)) {
+                startTimestamp = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                        .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+            } else if ("MONTH".equalsIgnoreCase(createdAtRange)) {
+                startTimestamp = LocalDate.now().with(TemporalAdjusters.firstDayOfMonth())
+                        .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+            } else if ("YEAR".equalsIgnoreCase(createdAtRange)) {
+                startTimestamp = LocalDate.now().with(TemporalAdjusters.firstDayOfYear())
+                        .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+            }else{
+                startTimestamp = LocalDate.now().with(TemporalAdjusters.firstDayOfYear())
+                        .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+            }
+            String startTimestampStr = String.valueOf(startTimestamp);
+            String endTimestampStr = String.valueOf(endTimestamp);
 
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(upperOrder), sort));
             List<String> userIds = new ArrayList<>();
             List<String> classroomIds = new ArrayList<>();
 
-            // Handle search by user or classroom based on `searchBy`
+            // Handle search by user or classroom
             if (!search.isEmpty()) {
                 if ("user".equalsIgnoreCase(searchBy)) {
-                   List<UserEntity>  users = userRepository.findIdsByFullnameRegex(search);
+                    List<UserEntity> users = userRepository.findIdsByFullnameRegex(search);
                     userIds = users.stream().map(UserEntity::getId).collect(Collectors.toList());
                 } else if ("class".equalsIgnoreCase(searchBy)) {
                     List<ClassRoomEntity> classrooms = classRoomRepository.findIdsByNameRegex(search);
@@ -391,59 +415,77 @@ public class AdminService implements IAdminService {
             // Fetch transactions based on filters
             Page<TransactionEntity> transactionEntities;
             if (status.isEmpty()) {
-                if (searchBy.equals("user")) {
-                    transactionEntities = transactionRepository.findByUserIdIn(userIds, pageable);
-                } else if (searchBy.equals("class")) {
-                    transactionEntities = transactionRepository.findByClassroomIdIn(classroomIds, pageable);
-                } else {
-                    transactionEntities = transactionRepository.findAll(pageable);
-                }
+                transactionEntities = fetchByFiltersWithoutStatus(pageable, userIds, classroomIds, startTimestampStr, endTimestampStr);
             } else {
-                if (!userIds.isEmpty()) {
-                    transactionEntities = transactionRepository.findByStatusAndUserIdIn(status, userIds, pageable);
-                } else if (!classroomIds.isEmpty()) {
-                    transactionEntities = transactionRepository.findByStatusAndClassroomIdIn(status, classroomIds, pageable);
-                } else {
-                    transactionEntities = transactionRepository.findAllByStatus(status, pageable);
-                }
+                transactionEntities = fetchByFiltersWithStatus(pageable, status, userIds, classroomIds, startTimestampStr, endTimestampStr);
             }
 
             // Process transactions into the DTO
-            GetPaymentForTeacher resData = new GetPaymentForTeacher();
-            List<GetPaymentForTeacher.Transaction> transactions = new ArrayList<>();
-
-            for (TransactionEntity transactionEntity : transactionEntities) {
-                GetPaymentForTeacher.Transaction transaction = new GetPaymentForTeacher.Transaction();
-                transaction.setTransactionId(transactionEntity.getId());
-                transaction.setAmount(transactionEntity.getAmount());
-                transaction.setTransactionRef(transactionEntity.getTransactionRef());
-                transaction.setStatus(transactionEntity.getStatus());
-
-                UserEntity userEntity = userRepository.findById(transactionEntity.getUserId()).orElse(null);
-                StudentEntity studentEntity = studentRepository.findByUserId(transactionEntity.getUserId());
-                if (studentEntity != null) {
-                    studentEntity.setUser(null);
-                }
-                if (userEntity != null) {
-                    userEntity.setStudent(studentEntity);
-                }
-                transaction.setUser(userEntity);
-
-                transaction.setPaymentMethod(transactionEntity.getPaymentMethod());
-                transaction.setCreatedAt(transactionEntity.getCreatedAt());
-                transaction.setUpdatedAt(transactionEntity.getUpdatedAt());
-                transaction.setClassroom(classRoomRepository.findById(transactionEntity.getClassroomId()).orElse(null));
-                transactions.add(transaction);
-            }
-
-            resData.setTransactions(transactions);
-            resData.setTotalClassroom((long) classRoomRepository.count());
-            resData.setTotalElement(transactionEntities.getTotalElements());
-            resData.setTotalPage(transactionEntities.getTotalPages());
-            resData.setTotalPrice(transactionEntities.stream().mapToLong(TransactionEntity::getAmount).sum());
-            return resData;
+            return processTransactions(transactionEntities);
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+    private GetPaymentForTeacher processTransactions(Page<TransactionEntity> transactionEntities) {
+        GetPaymentForTeacher resData = new GetPaymentForTeacher();
+        List<GetPaymentForTeacher.Transaction> transactions = new ArrayList<>();
+
+        for (TransactionEntity transactionEntity : transactionEntities) {
+            GetPaymentForTeacher.Transaction transaction = new GetPaymentForTeacher.Transaction();
+
+            // Map basic fields
+            transaction.setTransactionId(transactionEntity.getId());
+            transaction.setAmount(transactionEntity.getAmount());
+            transaction.setTransactionRef(transactionEntity.getTransactionRef());
+            transaction.setStatus(transactionEntity.getStatus());
+            transaction.setPaymentMethod(transactionEntity.getPaymentMethod());
+            transaction.setCreatedAt(transactionEntity.getCreatedAt());
+            transaction.setUpdatedAt(transactionEntity.getUpdatedAt());
+
+            // Fetch and map user information
+            UserEntity userEntity = userRepository.findById(transactionEntity.getUserId()).orElse(null);
+            if (userEntity != null) {
+                StudentEntity studentEntity = studentRepository.findByUserId(transactionEntity.getUserId());
+                if (studentEntity != null) {
+                    studentEntity.setUser(null); // Avoid circular reference
+                }
+                userEntity.setStudent(studentEntity);
+                transaction.setUser(userEntity);
+            }
+
+            // Fetch and map classroom information
+            ClassRoomEntity classroomEntity = classRoomRepository.findById(transactionEntity.getClassroomId()).orElse(null);
+            transaction.setClassroom(classroomEntity);
+
+            transactions.add(transaction);
+        }
+
+        // Set response metadata
+        resData.setTransactions(transactions);
+        resData.setTotalClassroom((long) classRoomRepository.count());
+        resData.setTotalElement(transactionEntities.getTotalElements());
+        resData.setTotalPage(transactionEntities.getTotalPages());
+        resData.setTotalPrice(transactionEntities.stream().mapToLong(TransactionEntity::getAmount).sum());
+
+        return resData;
+    }
+    private Page<TransactionEntity> fetchByFiltersWithoutStatus(Pageable pageable, List<String> userIds, List<String> classroomIds, String startTimestamp, String endTimestamp) {
+        if (!userIds.isEmpty()) {
+            return transactionRepository.findByUserIdInAndCreatedAtBetween(userIds, startTimestamp, endTimestamp, pageable);
+        } else if (!classroomIds.isEmpty()) {
+            return transactionRepository.findByClassroomIdInAndCreatedAtBetween(classroomIds, startTimestamp, endTimestamp, pageable);
+        } else {
+            return transactionRepository.findAllByCreatedAtBetween(startTimestamp, endTimestamp, pageable);
+        }
+    }
+
+    private Page<TransactionEntity> fetchByFiltersWithStatus(Pageable pageable, String status, List<String> userIds, List<String> classroomIds, String startTimestamp, String endTimestamp) {
+        if (!userIds.isEmpty()) {
+            return transactionRepository.findByStatusAndUserIdInAndCreatedAtBetween(status, userIds, startTimestamp, endTimestamp, pageable);
+        } else if (!classroomIds.isEmpty()) {
+            return transactionRepository.findByStatusAndClassroomIdInAndCreatedAtBetween(status, classroomIds, startTimestamp, endTimestamp, pageable);
+        } else {
+            return transactionRepository.findByStatusAndCreatedAtBetween(status, startTimestamp, endTimestamp, pageable);
         }
     }
 

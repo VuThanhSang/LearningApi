@@ -132,23 +132,23 @@ public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, St
     List<ClassRoomEntity> findPopularClassrooms(List<String> excludedIds, String search, String status);
 
     @Aggregation(pipeline = {
-            "{ $match: { '_id': { $nin: ?0 }, 'status': { $ne: 'BLOCKED' }, 'name': { $regex: ?1, $options: 'i' } } }",
+            "{ $match: { '_id': { $nin: ?0 }, 'status': ?3, 'name': { $regex: ?1, $options: 'i' } } }",
             "{ $sample: { size: ?2 } }" // Lấy ngẫu nhiên một số lượng nhất định
     })
-    List<ClassRoomEntity> findRandomClassrooms(List<String> excludedIds, String search, int sampleSize);
+    List<ClassRoomEntity> findRandomClassrooms(List<String> excludedIds, String search, int sampleSize,String status);
     @Aggregation(pipeline = {
-            "{ $match: { '_id': { $nin: ?0 }, 'categoryId': ?1, 'status': { $ne: 'BLOCKED' }, 'name': { $regex: ?2, $options: 'i' } } }",
+            "{ $match: { '_id': { $nin: ?0 }, 'categoryId': ?1, 'status': ?3, 'name': { $regex: ?2, $options: 'i' } } }",
             "{ $sort: { 'currentEnrollment': -1 } }"
     })
     List<ClassRoomEntity> findPopularClassroomsByCategory(List<String> excludedIds, String categoryId, String search, String status);
 
     @Aggregation(pipeline = {
-            "{ $match: { '_id': { $nin: ?0 }, 'categoryId': ?1, 'status': { $ne: 'BLOCKED' }, 'name': { $regex: ?2, $options: 'i' } } }",
+            "{ $match: { '_id': { $nin: ?0 }, 'categoryId': ?1, 'status': ?3, 'name': { $regex: ?2, $options: 'i' } } }",
             "{ $sort: { 'createdAt': -1 } }",
             "{ $skip: ?#{#pageable.offset} }",
             "{ $limit: ?#{#pageable.pageSize} }"
     })
-    List<ClassRoomEntity> findNewClassroomsByCategory(List<String> excludedIds, String categoryId, String search, Pageable pageable);
+    List<ClassRoomEntity> findNewClassroomsByCategory(List<String> excludedIds, String categoryId, String search, Pageable pageable,String status);
 
     @Aggregation(pipeline = {
             "{ $match: { '_id': { $nin: ?0 }, 'categoryId': ?1, 'status': { $ne: 'BLOCKED' }, 'name': { $regex: ?2, $options: 'i' } } }",

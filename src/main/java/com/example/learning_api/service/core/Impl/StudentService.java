@@ -23,6 +23,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -134,9 +138,8 @@ public class StudentService implements IStudentService {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
-
     @Override
-    public GetPaymentForStudent getPaymentForStudent(String userId, int page, int size, String sort, String order, String status, String search) {
+    public GetPaymentForStudent getPaymentForStudent(String userId, int page, int size, String sort, String order, String status, String search, String createdAtRange) {
         try {
             // Validate sorting order
             String upperOrder = order.toUpperCase();
@@ -146,6 +149,29 @@ public class StudentService implements IStudentService {
 
             // Configure pageable
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(upperOrder), sort));
+
+            // Determine time boundaries for `createdAt`
+            Long startTimestamp = null;
+            Long endTimestamp = System.currentTimeMillis();
+
+            if ("TODAY".equalsIgnoreCase(createdAtRange)) {
+                startTimestamp = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+            } else if ("WEEK".equalsIgnoreCase(createdAtRange)) {
+                startTimestamp = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                        .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+            } else if ("MONTH".equalsIgnoreCase(createdAtRange)) {
+                startTimestamp = LocalDate.now().with(TemporalAdjusters.firstDayOfMonth())
+                        .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+            } else if ("YEAR".equalsIgnoreCase(createdAtRange)) {
+                startTimestamp = LocalDate.now().with(TemporalAdjusters.firstDayOfYear())
+                        .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+            } else {
+                startTimestamp = LocalDate.now().with(TemporalAdjusters.firstDayOfYear())
+                        .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+            }
+
+            String startTimestampStr = String.valueOf(startTimestamp);
+            String endTimestampStr = String.valueOf(endTimestamp);
 
             // Fetch student entity
             StudentEntity studentEntity = studentRepository.findByUserId(userId);
@@ -162,15 +188,19 @@ public class StudentService implements IStudentService {
                 List<String> classroomIds = filteredClassrooms.stream().map(ClassRoomEntity::getId).toList();
 
                 if (status.isEmpty()) {
-                    transactionEntities = transactionRepository.findByUserIdAndClassroomIdIn(userId, classroomIds, pageable);
+                    transactionEntities = transactionRepository.findByUserIdAndClassroomIdInAndCreatedAtBetween(
+                            userId, classroomIds, startTimestampStr, endTimestampStr, pageable);
                 } else {
-                    transactionEntities = transactionRepository.findByStatusAndUserIdAndClassroomIdIn(status, userId, classroomIds, pageable);
+                    transactionEntities = transactionRepository.findByStatusAndUserIdAndClassroomIdInAndCreatedAtBetween(
+                            status, userId, classroomIds, startTimestampStr, endTimestampStr, pageable);
                 }
             } else {
                 if (status.isEmpty()) {
-                    transactionEntities = transactionRepository.findByUserId(userId, pageable);
+                    transactionEntities = transactionRepository.findByUserIdAndCreatedAtBetween(
+                            userId, startTimestampStr, endTimestampStr, pageable);
                 } else {
-                    transactionEntities = transactionRepository.findByStatusAndUserId(status, userId, pageable);
+                    transactionEntities = transactionRepository.findByStatusAndUserIdAndCreatedAtBetween(
+                            status, userId, startTimestampStr, endTimestampStr, pageable);
                 }
             }
 
@@ -184,10 +214,11 @@ public class StudentService implements IStudentService {
 
                 // Fetch classroom details
                 ClassRoomEntity classRoomEntity = classroomRepository.findById(transactionEntity.getClassroomId())
-                        .orElseThrow(() -> new IllegalArgumentException("Classroom not found"));
+                        .orElse(null);
                 transaction.setClassroom(classRoomEntity);
 
                 transaction.setPaymentMethod(transactionEntity.getPaymentMethod());
+                transaction.setTransactionId(transactionEntity.getId());
                 transactions.add(transaction);
             }
 

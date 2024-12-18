@@ -15,5 +15,5 @@ public interface IStudentService {
     GetStudentsResponse getStudents(int page, int size, String search);
     StudentEntity getStudentByUserId(String userId);
 
-    GetPaymentForStudent getPaymentForStudent(String userId, int page, int size, String sort, String order, String status, String search);
+    GetPaymentForStudent getPaymentForStudent(String userId, int page, int size, String sort, String order, String status, String search, String createdAtRange);
 }
