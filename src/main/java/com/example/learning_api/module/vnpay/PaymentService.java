@@ -37,7 +37,10 @@ public class PaymentService {
                 TransactionEntity transactionEntity = paymentRepository.findByUserIdAndClassroomIdAndStatus(body.getUserId(), classroomId, "PENDING");
                 if (transactionEntity != null) {
                     transactionEntity.setTransactionRef(transactionRef);
-                    totalAmount += transactionEntity.getAmount();
+                    transactionEntity.setPaymentMethod(bankCode);
+                    transactionEntity.setAmount(Long.valueOf(classRoomEntity.getPrice()));
+                    paymentRepository.save(transactionEntity);
+                    totalAmount += classRoomEntity.getPrice();
                     continue;
                 }else{
                     transactionEntity = new TransactionEntity();
