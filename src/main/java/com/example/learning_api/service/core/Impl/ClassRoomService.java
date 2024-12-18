@@ -431,7 +431,7 @@ public class ClassRoomService implements IClassRoomService {
             } else {
                 int sampleSize = pageable.getPageSize() * (pageable.getPageNumber() + 1);
                 List<ClassRoomEntity> randomClassrooms = classRoomRepository.findRandomClassrooms(
-                        registeredClassRoomIds, search, sampleSize,status);
+                        registeredClassRoomIds, search, sampleSize);
                 return createPageFromList(randomClassrooms, pageable);
             }
         }
