@@ -10,7 +10,9 @@ import com.example.learning_api.dto.request.faculty.ImportFacultyRequest;
 import com.example.learning_api.dto.response.classroom.*;
 import com.example.learning_api.dto.response.section.GetSectionsResponse;
 import com.example.learning_api.dto.response.student.StudentsResponse;
+import com.example.learning_api.entity.sql.database.ApprovalClassroomRequestEntity;
 import com.example.learning_api.entity.sql.database.StudentEntity;
+import com.example.learning_api.enums.ApprovalClassStatus;
 import com.example.learning_api.model.ResponseAPI;
 import com.example.learning_api.repository.database.StudentRepository;
 import com.example.learning_api.service.common.JwtService;
@@ -42,6 +44,7 @@ public class ClassRoomController {
     private final IStudentService studentService;
     private final ITeacherService teacherService;
     private final IStudentEnrollmentsService studentEnrollmentsService;
+
     @PostMapping(path = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyAuthority('ADMIN','TEACHER')")
     public ResponseEntity<ResponseAPI<CreateClassRoomResponse>> createClassRoom(@ModelAttribute @Valid CreateClassRoomRequest body,@CookieValue(name = "refreshToken", required = false) String refreshToken) {
@@ -581,5 +584,30 @@ public class ClassRoomController {
             return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
         }
     }
+    @PostMapping(path = "/{classroomId}/approval-request")
+    public ResponseEntity<ResponseAPI<String>> sendApprovalRequest(@PathVariable String classroomId,@RequestHeader(name = "Authorization") String authorizationHeader){
+        try {
+            String accessToken = authorizationHeader.replace("Bearer ", "");
+            String userId = jwtService.extractUserId(accessToken);
+            ApprovalClassroomRequestEntity body = new ApprovalClassroomRequestEntity();
+            body.setTeacherId(userId);
+            body.setStatus(ApprovalClassStatus.PENDING);
+            body.setClassroomId(classroomId);
+            classRoomService.sendApprovalClassroomRequest(body);
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message("Send approval request successfully")
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.OK);
+        } catch (Exception e) {
+            ResponseAPI<String> res = ResponseAPI.<String>builder()
+                    .timestamp(new Date())
+                    .message(e.getMessage())
+                    .build();
+            return new ResponseEntity<>(res, StatusCode.BAD_REQUEST);
+        }
+    }
+
+
 
 }

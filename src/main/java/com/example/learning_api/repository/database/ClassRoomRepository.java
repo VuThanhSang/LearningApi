@@ -15,6 +15,9 @@ public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, St
     @Query("{ 'name' : { $regex: ?0, $options: 'i' }, 'status': { $ne: 'BLOCKED' } }")
     Page<ClassRoomEntity> findByNameContaining(String search, Pageable pageable);
 
+    @Query("{ 'name' : { $regex: ?0, $options: 'i' }, 'status': { $ne: 'BLOCKED' } }")
+    List<ClassRoomEntity> findByNameContaining(String search);
+
     @Query("{ 'name' : { $regex: ?0, $options: 'i' } }")
     Page<ClassRoomEntity> findByNameContainingForAdmin(String search, Pageable pageable);
 

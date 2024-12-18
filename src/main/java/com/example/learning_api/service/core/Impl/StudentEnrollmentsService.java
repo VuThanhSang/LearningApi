@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 public class StudentEnrollmentsService implements IStudentEnrollmentsService {
     private final StudentEnrollmentsRepository studentEnrollmentsRepository;
     private final StudentRepository studentRepository;
-    private final CourseRepository courseRepository;
     private final ClassRoomRepository classroomRepository;
     private final UserRepository userRepository;
     private final SectionRepository sectionRepository;
@@ -81,9 +80,7 @@ public class StudentEnrollmentsService implements IStudentEnrollmentsService {
             if (studentRepository.findById(studentId).isEmpty()) {
                 throw new IllegalArgumentException("StudentId is not found");
             }
-            if (courseRepository.findById(courseId).isEmpty()) {
-                throw new IllegalArgumentException("CourseId is not found");
-            }
+
 //            studentEnrollmentsRepository.deleteByStudentIdAndCourseId(studentId, courseId);
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
@@ -103,9 +100,7 @@ public class StudentEnrollmentsService implements IStudentEnrollmentsService {
             if (studentRepository.findById(studentId).isEmpty()) {
                 throw new IllegalArgumentException("StudentId is not found");
             }
-            if (courseRepository.findById(courseId).isEmpty()) {
-                throw new IllegalArgumentException("CourseId is not found");
-            }
+
             StudentEnrollmentsEntity studentEnrollmentsEntity = studentEnrollmentsRepository.findByStudentIdAndCourseId(studentId, courseId);
             studentEnrollmentsEntity.setStatus(StudentEnrollmentStatus.COMPLETED);
             studentEnrollmentsEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
@@ -130,9 +125,7 @@ public class StudentEnrollmentsService implements IStudentEnrollmentsService {
             if (studentRepository.findById(studentId).isEmpty()) {
                 throw new IllegalArgumentException("StudentId is not found");
             }
-            if (courseRepository.findById(courseId).isEmpty()) {
-                throw new IllegalArgumentException("CourseId is not found");
-            }
+
             StudentEnrollmentsEntity studentEnrollmentsEntity = studentEnrollmentsRepository.findByStudentIdAndCourseId(studentId, courseId);
             studentEnrollmentsEntity.setGrade(String.valueOf(grade));
             studentEnrollmentsEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));

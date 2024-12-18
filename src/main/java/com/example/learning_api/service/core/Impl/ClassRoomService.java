@@ -39,9 +39,6 @@ public class ClassRoomService implements IClassRoomService {
     private final TeacherRepository teacherRepository;
     private final StudentRepository studentRepository;
     private final StudentEnrollmentsRepository studentEnrollmentsRepository;
-    private final ScheduleRepository scheduleRepository;
-    private final TermsRepository termRepository;
-    private final FacultyRepository facultyRepository;
     private final ExcelReader excelReader;
     private final RecentClassRepository recentClassRepository;
     private final JoinClassRequestRepository joinClassRequestRepository;
@@ -56,6 +53,7 @@ public class ClassRoomService implements IClassRoomService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final SectionService sectionService;
+    private final ApprovalClassroomRepository approvalClassroomRepository;
     @Override
     public CreateClassRoomResponse createClassRoom(CreateClassRoomRequest body) {
         try{
@@ -674,9 +672,7 @@ public class ClassRoomService implements IClassRoomService {
                 classRoomEntity.setDescription(row.get(1));
 
                 classRoomEntity.setTeacherId(row.get(4));
-                if (termRepository.findById(row.get(3)).isEmpty()){
-                    throw new IllegalArgumentException("TermId is not found");
-                }
+
                 classRoomEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
                 classRoomEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
                 classRoomRepository.save(classRoomEntity);
@@ -1166,6 +1162,32 @@ public class ClassRoomService implements IClassRoomService {
             response.setData(reviews);
 
             return response;
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void sendApprovalClassroomRequest(ApprovalClassroomRequestEntity body) {
+        try {
+            ClassRoomEntity classRoom = classRoomRepository.findById(body.getClassroomId())
+                    .orElseThrow(() -> new CustomException(ErrorConstant.NOT_FOUND));
+            TeacherEntity teacher = teacherRepository.findByUserId(body.getTeacherId());
+
+            if (!classRoom.getTeacherId().equals(teacher.getId())) {
+                throw new IllegalArgumentException("TeacherId is not authorized to approve classroom request");
+            }
+
+            ApprovalClassroomRequestEntity  approvalClassroomRequestEntity = approvalClassroomRepository.findByClassroomIdAndTeacherId(body.getClassroomId(),body.getTeacherId());
+            if (approvalClassroomRequestEntity == null) {
+                approvalClassroomRequestEntity = new ApprovalClassroomRequestEntity();
+            }
+            approvalClassroomRequestEntity.setClassroomId(body.getClassroomId());
+            approvalClassroomRequestEntity.setTeacherId(body.getTeacherId());
+            approvalClassroomRequestEntity.setStatus(body.getStatus());
+            approvalClassroomRequestEntity.setCreatedAt(String.valueOf(System.currentTimeMillis()));
+            approvalClassroomRequestEntity.setUpdatedAt(String.valueOf(System.currentTimeMillis()));
+            approvalClassroomRepository.save(approvalClassroomRequestEntity);
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }

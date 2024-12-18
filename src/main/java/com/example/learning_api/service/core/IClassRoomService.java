@@ -6,6 +6,7 @@ import com.example.learning_api.dto.request.classroom.InviteClassByEmailResponse
 import com.example.learning_api.dto.request.classroom.UpdateClassRoomRequest;
 import com.example.learning_api.dto.response.classroom.*;
 import com.example.learning_api.dto.response.section.GetSectionsResponse;
+import com.example.learning_api.entity.sql.database.ApprovalClassroomRequestEntity;
 
 import java.util.List;
 
@@ -33,4 +34,6 @@ public interface IClassRoomService {
     void changeStatusClassRoom(String classroomId, String status);
     GetClassRoomRankinResponse getClassRoomRanking(String classroomId,int page,int size,Integer rating);
 
+
+    void sendApprovalClassroomRequest(ApprovalClassroomRequestEntity body);
 }
