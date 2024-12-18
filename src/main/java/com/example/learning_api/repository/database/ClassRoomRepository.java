@@ -18,7 +18,7 @@ public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, St
     @Query("{ 'name' : { $regex: ?0, $options: 'i' } }")
     Page<ClassRoomEntity> findByNameContainingForAdmin(String search, Pageable pageable);
 
-    @Query("{ 'name' : { $regex: ?0, $options: 'i' }, 'status' : ?1, 'status': { $ne: 'BLOCKED' } }")
+    @Query("{ 'name' : { $regex: ?0, $options: 'i' }, 'status' : ?1 }")
     Page<ClassRoomEntity> findByNameContainingAndStatus(String search, String status, Pageable pageable);
 
     @Query("{ 'name' : { $regex: ?0, $options: 'i' }, 'status' : ?1 }")
@@ -27,13 +27,13 @@ public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, St
     @Query("{ '_id' : { $in: ?0 }, 'name' : { $regex: ?1, $options: 'i' }, 'status': { $ne: 'BLOCKED' } }")
     Page<ClassRoomEntity> findByIdInAndNameContaining(List<String> classroomIds, String search, Pageable pageable);
 
-    @Query("{ '_id' : { $in: ?0 }, 'name' : { $regex: ?1, $options: 'i' }, $and: [ { 'status': ?2 }, { 'status': { $ne: 'BLOCKED' } } ] }")
+    @Query("{ '_id' : { $in: ?0 }, 'name' : { $regex: ?1, $options: 'i' }, 'status': ?2 }")
     Page<ClassRoomEntity> findByIdInAndNameContainingAndStatus(List<String> classroomIds, String search, String status, Pageable pageable);
 
     @Query("{ 'teacherId' : ?0, 'name' : { $regex: ?1, $options: 'i' }, 'status': { $ne: 'BLOCKED' } }")
     Page<ClassRoomEntity> findByTeacherIdAndNameContaining(String teacherId, String search, Pageable pageable);
 
-    @Query("{ 'teacherId' : ?0, 'name' : { $regex: ?1, $options: 'i' }, $and: [ { 'status': ?2 }, { 'status': { $ne: 'BLOCKED' } } ] }")
+    @Query("{ 'teacherId' : ?0, 'name' : { $regex: ?1, $options: 'i' }, 'status': ?2 }")
     Page<ClassRoomEntity> findByTeacherIdAndNameContainingAndStatus(String teacherId, String search, String status, Pageable pageable);
 
     @Query("{ 'courseId' : ?0, 'status': { $ne: 'BLOCKED' } }")
@@ -89,19 +89,20 @@ public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, St
     @Query("{ 'teacherId' : ?0, 'status': { $ne: 'BLOCKED' } }")
     Page<ClassRoomEntity> findByTeacherId(String teacherId, Pageable pageable);
     List<ClassRoomEntity> findByTeacherId(String teacherId);
+
     @Query("{ '_id' : { $in: ?0 }, 'categoryId' : ?1, 'name' : { $regex: ?2, $options: 'i' }, 'status': { $ne: 'BLOCKED' } }")
     Page<ClassRoomEntity> findByCategoryAndNameContaining(List<String> classroomIds, String categoryId, String search, Pageable pageable);
 
-    @Query("{ '_id' : { $in: ?0 }, 'categoryId' : ?1, 'name' : { $regex: ?2, $options: 'i' }, $and: [ { 'status': ?3 }, { 'status': { $ne: 'BLOCKED' } } ] }")
+    @Query("{ '_id' : { $in: ?0 }, 'categoryId' : ?1, 'name' : { $regex: ?2, $options: 'i' }, 'status': ?3 }")
     Page<ClassRoomEntity> findByCategoryAndNameContainingAndStatus(List<String> classroomIds, String categoryId, String search, String status, Pageable pageable);
 
-    @Query("{ 'teacherId' : ?0, 'categoryId' : ?1, 'name' : { $regex: ?2, $options: 'i' }, 'status': { $ne: 'BLOCKED' } }")
+    @Query("{ 'teacherId' : ?0, 'categoryId' : ?1, 'name' : { $regex: ?2, $options: 'i' }, 'status': ?3 }")
     Page<ClassRoomEntity> findByTeacherIDCategoryAndNameContainingAndStatus(String teacherId, String categoryId, String search, String status, Pageable pageable);
 
-    @Query("{ 'teacherId' : ?0, 'categoryId' : ?1, 'name' : { $regex: ?2, $options: 'i' }, 'status': { $ne: 'BLOCKED' } }")
+    @Query("{ 'teacherId' : ?0, 'categoryId' : ?1, 'name' : { $regex: ?2, $options: 'i' }, 'status': 'COMPLETED")
     Page<ClassRoomEntity> findByTeacherIDCategoryAndNameContaining(String teacherId, String categoryId, String search, Pageable pageable);
 
-    @Query("{ '_id': { $nin: ?0 }, 'name': { $regex: ?1, $options: 'i' }, 'status': { $ne: 'BLOCKED' } }")
+    @Query("{ '_id': { $nin: ?0 }, 'name': { $regex: ?1, $options: 'i' }, 'status': 'COMPLETED")
     Page<ClassRoomEntity> findByIdNotInAndNameContaining(List<String> excludedIds, String name, Pageable pageable);
 
     @Query("{ '_id': { $nin: ?0 }, 'name': { $regex: ?1, $options: 'i' }, 'status': ?2 }")
@@ -110,32 +111,29 @@ public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, St
     @Query("{ 'categoryId': ?0, 'name': { $regex: ?1, $options: 'i' }, '_id': { $nin: ?2 } }")
     Page<ClassRoomEntity> findByCategoryAndNameContainingAndIdNotIn(String categoryId, String name, List<String> excludedIds, Pageable pageable);
 
-    @Query("{ 'categoryId': ?0, 'name': { $regex: ?1, $options: 'i' }, 'status': { $nin: [?2] } }")
+    @Query("{'_id': { $nin: ?0 }, 'categoryId': ?1, 'name': { $regex: ?2, $options: 'i' }, 'status': ?3 }")
     Page<ClassRoomEntity> findByCategoryAndNameContainingAndStatusNotIn(List<String> excludedIds, String categoryId, String name, String status, Pageable pageable);
 
-
-
-    @Query("{ '_id': { $nin: ?0 }, 'name': { $regex: ?1, $options: 'i' }, 'status': { $ne: 'BLOCKED' } }")
     @Aggregation(pipeline = {
-            "{ $match: { '_id': { $nin: ?0 }, 'status': { $ne: 'BLOCKED' }, 'name': { $regex: ?1, $options: 'i' } } }",
+            "{ $match: { '_id': { $nin: ?0 }, 'status': 'COMPLETED', 'name': { $regex: ?1, $options: 'i' } } }",
             "{ $sort: { 'createdAt': -1 } }",
             "{ $skip: ?#{#pageable.offset} }",
             "{ $limit: ?#{#pageable.pageSize} }"
     })
     List<ClassRoomEntity> findNewClassrooms(List<String> excludedIds, String search, Pageable pageable);
 
-
     @Aggregation(pipeline = {
-            "{ $match: { '_id': { $nin: ?0 }, 'status': { $ne: 'BLOCKED' } } }",
+            "{ $match: { '_id': { $nin: ?0 }, 'status': ?2, 'name': { $regex: ?1, $options: 'i' } } }",
             "{ $sort: { 'currentEnrollment': -1 } }"
     })
     List<ClassRoomEntity> findPopularClassrooms(List<String> excludedIds, String search, String status);
 
     @Aggregation(pipeline = {
-            "{ $match: { '_id': { $nin: ?0 }, 'status': ?3, 'name': { $regex: ?1, $options: 'i' } } }",
-            "{ $sample: { size: ?2 } }" // Lấy ngẫu nhiên một số lượng nhất định
+            "{ $match: { '_id': { $nin: ?0 }, 'status': 'COMPLETED', 'name': { $regex: ?1, $options: 'i' } } }",
+            "{ $sample: { size: ?2 } }"
     })
-    List<ClassRoomEntity> findRandomClassrooms(List<String> excludedIds, String search, int sampleSize,String status);
+    List<ClassRoomEntity> findRandomClassrooms(List<String> excludedIds, String search, int sampleSize);
+
     @Aggregation(pipeline = {
             "{ $match: { '_id': { $nin: ?0 }, 'categoryId': ?1, 'status': ?3, 'name': { $regex: ?2, $options: 'i' } } }",
             "{ $sort: { 'currentEnrollment': -1 } }"
@@ -148,24 +146,24 @@ public interface ClassRoomRepository extends MongoRepository<ClassRoomEntity, St
             "{ $skip: ?#{#pageable.offset} }",
             "{ $limit: ?#{#pageable.pageSize} }"
     })
-    List<ClassRoomEntity> findNewClassroomsByCategory(List<String> excludedIds, String categoryId, String search, Pageable pageable,String status);
+    List<ClassRoomEntity> findNewClassroomsByCategory(List<String> excludedIds, String categoryId, String search, Pageable pageable, String status);
 
     @Aggregation(pipeline = {
-            "{ $match: { '_id': { $nin: ?0 }, 'categoryId': ?1, 'status': { $ne: 'BLOCKED' }, 'name': { $regex: ?2, $options: 'i' } } }",
+            "{ $match: { '_id': { $nin: ?0 }, 'categoryId': ?1, 'status': 'COMPLETED', 'name': { $regex: ?2, $options: 'i' } } }",
             "{ $sample: { size: ?3 } }"
     })
     List<ClassRoomEntity> findRandomClassroomsByCategory(List<String> excludedIds, String categoryId, String search, int sampleSize);
+
     @Aggregation(pipeline = {
             "{ $match: { category: ?0, name: { $regex: ?1, $options: 'i' }, classroomId: { $nin: ?2 } } }",
             "{ $sort: { price: ?4 } }",
-            "{ $skip: ?3 }",  // ?3 is for offset
-            "{ $limit: ?5 }"   // ?5 is for page size
+            "{ $skip: ?3 }",
+            "{ $limit: ?5 }"
     })
-    public List<ClassRoomEntity> findByCategoryAndSortByPrice(
-            String category, List<String> registeredClassRoomIds, String search, Pageable pageable, boolean ascending);
+    List<ClassRoomEntity> findByCategoryAndSortByPrice(String category, List<String> registeredClassRoomIds, String search, Pageable pageable, boolean ascending);
 
     @Aggregation(pipeline = {
-            "{ $match: { '_id': { $nin: ?0 }, 'status': { $ne: 'BLOCKED' }, 'name': { $regex: ?1, $options: 'i' } } }",
+            "{ $match: { '_id': { $nin: ?0 }, 'status': 'COMPLETED', 'name': { $regex: ?1, $options: 'i' } } }"
     })
     List<ClassRoomEntity> findByAndSortByPrice(List<String> registeredClassRoomIds, String search, Pageable pageable);
 
