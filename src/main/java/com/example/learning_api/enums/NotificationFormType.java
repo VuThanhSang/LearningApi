@@ -47,5 +47,9 @@ public enum NotificationFormType {
     PAYMENT_CONFIRMATION,   // Xác nhận thanh toán
     ENROLLMENT_CONFIRMATION, // Xác nhận đăng ký
     CLASSROOM_EXPIRY_SOON,      // Khóa học sắp hết hạn
-    TEACHER_NOTIFICATION
+    TEACHER_NOTIFICATION,
+    REVIEW_CLASS,
+    CLASSROOM_UPDATE,
+    CLASSROOM_STATUS,
+
 }
